@@ -1,0 +1,18 @@
+# File: drugbank-config-example.yml
+# Date: 26-Aug-2019 jdw
+#
+# Updates:
+---
+DEFAULT: {}
+#
+# Site specific path and server configuration options -
+#
+site_info_configuration:
+    CONFIG_SUPPORT_TOKEN: CONFIG_SUPPORT_TOKEN_ENV
+    #
+    # Supporting and integrated resource data cache directory names
+    #
+    DRUGBANK_CACHE_DIR: DrugBank
+    _DRUGBANK_AUTH_USERNAME: 0qrpNd4OhGuVsJqEpcsAVEovZ0hl6QkgxmbTy3bPssd06Z9tuM6bJqgsWwmFCd0JnjIMIEWyKPMmF1pI5g==
+    _DRUGBANK_AUTH_PASSWORD: lA/K132i8DOtLdMHfm3gpNqprZ6ABKjsCRxfcXIMnxpKQzBv/B6dmC7x1vRO86JhqdT0b84=
+    #

@@ -1,0 +1,17 @@
+# File: pharos-config-example.yml
+# Date: 9-Nov-2020 jdw
+#
+# Updates:
+---
+DEFAULT: {}
+#
+# Site specific path and server configuration options -
+#
+site_info_configuration:
+    CONFIG_SUPPORT_TOKEN: CONFIG_SUPPORT_TOKEN_ENV
+    #
+    MYSQL_DB_HOST_NAME: localhost
+    MYSQL_DB_PORT_NUMBER: "3306"
+    _MYSQL_DB_USER_NAME: wrIzBGtCsQmkjc7tbEPQ3oEaOnpvivXaKcQsvXD6kn4KHMvA7LCL4O9GlAI=
+    _MYSQL_DB_PASSWORD: qXPp32Z6DhNVMwo9fQIK5+KB13c1Jd43E3Bn6LmJcSyXc0NAt4H/hwo/xglYpmELV5Vqaw==
+    MYSQL_DB_DATABASE_NAME: mysql

@@ -1,0 +1,4 @@
+--extra-index-url https://pypi.anaconda.org/OpenEye/simple
+rcsb.utils.io >= 0.82
+rcsb.utils.config >= 0.35
+rcsb.utils.seqalign >= 0.14

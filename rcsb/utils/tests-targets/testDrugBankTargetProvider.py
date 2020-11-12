@@ -36,6 +36,8 @@ logger = logging.getLogger()
 
 
 class DrugBankTargetProviderTests(unittest.TestCase):
+    skipFull = True
+
     def setUp(self):
         configPath = os.path.join(HERE, "test-data", "drugbank-config-example.yml")
         configName = "site_info_configuration"
@@ -59,14 +61,20 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         ok = dbtP.testCache()
         self.assertTrue(ok)
 
+    # @unittest.skipIf(skipFull, "Very long test")
+    def testFetchDrugBankTargetsWithTaxonomy(self):
+        dbtP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=False, username=self.__user, password=self.__pw, addTaxonomy=True)
+        ok = dbtP.testCache()
+        self.assertTrue(ok)
+
 
 def fetchDrugBankTargets():
     suiteSelect = unittest.TestSuite()
     suiteSelect.addTest(DrugBankTargetProviderTests("testFetchDrugBankTargets"))
+    suiteSelect.addTest(DrugBankTargetProviderTests("testFetchDrugBankTargetsWithTaxonomy"))
     return suiteSelect
 
 
 if __name__ == "__main__":
-
     mySuite = fetchDrugBankTargets()
     unittest.TextTestRunner(verbosity=2).run(mySuite)

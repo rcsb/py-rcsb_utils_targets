@@ -1,3 +1,4 @@
 # RCSB_UTILS_TARGETS HISTORY
    7-Nov-2020  - V0.11 Created module
+  12-Nov-2020  - V0.12 Add consolidation of DrugBank target FASTA files
 

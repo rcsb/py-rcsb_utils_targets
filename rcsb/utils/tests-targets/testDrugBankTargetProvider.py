@@ -61,7 +61,7 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         ok = dbtP.testCache()
         self.assertTrue(ok)
 
-    # @unittest.skipIf(skipFull, "Very long test")
+    @unittest.skipIf(skipFull, "Very long test")
     def testFetchDrugBankTargetsWithTaxonomy(self):
         dbtP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=False, username=self.__user, password=self.__pw, addTaxonomy=True)
         ok = dbtP.testCache()

@@ -43,6 +43,7 @@ class PharosTargetProviderTests(unittest.TestCase):
         self.__user = cfgOb.get("_MYSQL_DB_USER_NAME", sectionName=configName)
         self.__pw = cfgOb.get("_MYSQL_DB_PASSWORD", sectionName=configName)
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
+        self.__dirPath = os.path.join(self.__cachePath, "Pharos-targets")
         self.__dataPath = os.path.join(HERE, "test-data")
         self.__mU = MarshalUtil(workPath=self.__cachePath)
         self.__pharosFixture()
@@ -55,7 +56,7 @@ class PharosTargetProviderTests(unittest.TestCase):
             ok = False
             fU = FileUtil()
             srcPath = os.path.join(self.__dataPath, "Pharos")
-            dstPath = os.path.join(self.__cachePath, "Pharos")
+            dstPath = self.__dirPath
             for fn in ["drug_activity", "cmpd_activity", "target", "protein", "t2tc"]:
                 inpPath = os.path.join(srcPath, fn + ".tdd.gz")
                 outPath = os.path.join(dstPath, fn + ".tdd.gz")
@@ -92,7 +93,7 @@ class PharosTargetProviderTests(unittest.TestCase):
             ptP = PharosTargetProvider(cachePath=self.__cachePath, useCache=True, reloadDb=False)
             ok = ptP.testCache()
             self.assertTrue(ok)
-            fastaPath = os.path.join(self.__cachePath, "pharos_targets_notax.fa")
+            fastaPath = os.path.join(self.__dirPath, "pharos_targets_notax.fa")
             ok = ptP.exportProteinFasta(fastaPath, addTaxonomy=False)
             self.assertTrue(ok)
             #
@@ -107,7 +108,7 @@ class PharosTargetProviderTests(unittest.TestCase):
             ok = ptP.testCache()
             self.assertTrue(ok)
             #
-            fastaPath = os.path.join(self.__cachePath, "pharos_targets_tax.fa")
+            fastaPath = os.path.join(self.__dirPath, "pharos_targets_tax.fa")
             ok = ptP.exportProteinFasta(fastaPath, addTaxonomy=True)
             self.assertTrue(ok)
         except Exception as e:
@@ -119,7 +120,7 @@ class PharosTargetProviderTests(unittest.TestCase):
             ptP = PharosTargetProvider(cachePath=self.__cachePath, useCache=True, reloadDb=False)
             ok = ptP.testCache()
             self.assertTrue(ok)
-            cofactorDataPath = os.path.join(self.__cachePath, "pharos_cofactors.json")
+            cofactorDataPath = os.path.join(self.__dirPath, "pharos_cofactors.json")
             ok = ptP.exportCofactors(cofactorDataPath, fmt="json")
             self.assertTrue(ok)
         except Exception as e:

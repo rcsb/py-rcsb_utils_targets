@@ -27,9 +27,8 @@ class PharosTargetProvider:
 
     def __init__(self, **kwargs):
         #
-        self.__version = "0.50"
         self.__cachePath = kwargs.get("cachePath", ".")
-        self.__dirPath = os.path.join(self.__cachePath, "Pharos")
+        self.__dirPath = os.path.join(self.__cachePath, "Pharos-targets")
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
         self.__reload(self.__dirPath, **kwargs)

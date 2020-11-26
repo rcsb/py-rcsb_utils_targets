@@ -38,6 +38,8 @@ logger = logging.getLogger()
 
 
 class ChEMBLTargetProviderTests(unittest.TestCase):
+    skipFull = True
+
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
         self.__dataPath = os.path.join(HERE, "test-data")
@@ -58,7 +60,7 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
                 uD[int(sr[0])] = {"name": sr[1], "baseUrl": sr[10], "entryUrl": sr[11]}
             logger.info("uD = %r", uD)
             ok = self.__mU.doExport(os.path.join(self.__cachePath, "unichem-source-list.json"), uD, fmt="json", indent=3)
-
+            self.assertTrue(ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
             self.fail()
@@ -158,6 +160,7 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
             self.fail()
 
     #
+    @unittest.skipIf(skipFull, "Very long test")
     def testFetchChEMBLTargetsWithTax(self):
         try:
             ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False, addTaxonomy=True)

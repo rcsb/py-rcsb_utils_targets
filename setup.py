@@ -41,7 +41,7 @@ setup(
     ),
     entry_points={"console_scripts": []},
     #
-    install_requires=["rcsb.utils.io >= 0.82", "rcsb.utils.config >= 0.35", "rcsb.utils.seqalign >= 0.14"],
+    install_requires=["rcsb.utils.io >= 0.82", "rcsb.utils.config >= 0.35", "rcsb.utils.seqalign >= 0.14", "chembl-webresource-client >= 0.10.2"],
     packages=find_packages(exclude=["rcsb.mock-data", "rcsb.utils.tests-targets", "rcsb.utils.tests-*", "tests.*"]),
     package_data={
         # If any package contains *.md or *.rst ...  files, include them:

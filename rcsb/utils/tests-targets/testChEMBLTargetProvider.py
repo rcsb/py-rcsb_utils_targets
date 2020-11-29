@@ -144,6 +144,21 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
             logger.exception("Failing with %s", str(e))
             self.fail()
 
+    def testMolelcuesByInChI(self):
+        try:
+            logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
+            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=False)
+            ok = ctP.testCache()
+            self.assertTrue(ok)
+            mL = ["NXFFJDQHYLNEJK-CYBMUJFWSA-N", "WWSWYXNVCBLWNZ-QIZQQNKQSA-N"]
+            oD = ctP.getMoleculeByInChIKey(mL)
+            #
+            ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-inchikey-matches.json"), oD, fmt="json", indent=3)
+            self.assertTrue(ok)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+            self.fail()
+
     def testUniChemData(self):
         try:
             logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member

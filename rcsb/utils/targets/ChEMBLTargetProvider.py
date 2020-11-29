@@ -244,6 +244,31 @@ class ChEMBLTargetProvider:
             logger.exception("Failing with %s", str(e))
         return oD
 
+    def getMoleculeByInChIKey(self, inchiKeyList):
+        """Get molecule data for the input InChI Key list.
+
+        Args:
+            inchiKeyList (list): list of InChI Key identifiers
+
+        Returns:
+          (dict):  dictionary  {ChEMBId: {molecule data}}
+
+        """
+        oD = {}
+        chunkSize = 50
+        try:
+            for ii in range(0, len(inchiKeyList), chunkSize):
+                drug = new_client.molecule  # pylint: disable=no-member
+                drug.set_format("json")
+                mDL = drug.get(inchiKeyList[ii : ii + chunkSize])
+                if mDL:
+                    logger.info("mDL (%d)", len(mDL))
+                    for mD in mDL:
+                        oD.setdefault(mD["molecule_chembl_id"], []).append(mD)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        return oD
+
     def getUniChemData(self, inchiKeyList):
         """Get UniChem data for the input InChiKey list.
 

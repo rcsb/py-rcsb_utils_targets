@@ -3,4 +3,5 @@
   12-Nov-2020  - V0.12 Add consolidation of DrugBank target FASTA files
   24-Nov-2020  - V0.13 Add ChEMBLTargetProvider() and tests
   28-Nov-2020  - V0.14 Add CARDTargetProvider() and tests
+  30-Nov-2020  - V0.15 Add SAbDabTargetProvider() and tests
 

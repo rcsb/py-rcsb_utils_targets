@@ -31,7 +31,8 @@ class SAbDabTargetProvider(object):
         self.__oD = self.__reload(self.__dirPath, **kwargs)
         #
 
-    def testCache(self, minCount=1000):
+    def testCache(self, minCount=590):
+        logger.info("SAbDab count %d", len(self.__oD))
         if self.__oD and len(self.__oD) > minCount:
             return True
         else:

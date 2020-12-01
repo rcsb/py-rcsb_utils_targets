@@ -21,7 +21,7 @@ from chembl_webresource_client.unichem import unichem_client
 
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
-from rcsb.utils.seqalign.MiscUtils import MiscUtils
+from rcsb.utils.seq.UniProtIdMappingProvider import UniProtIdMappingProvider
 
 
 logger = logging.getLogger(__name__)
@@ -104,12 +104,10 @@ class ChEMBLTargetProvider:
         #
         oD = {}
         uD = {}
+        missTax = 0
         try:
             if addTaxonomy:
-                miscU = MiscUtils()
-                outDirPath = os.path.join(cachePath, "uniprot_id_mapping_selected")
-                taxMapFileName = "uniprot_taxonomy.pic"
-                taxD = miscU.getUniprotXref(13, outDirPath, taxMapFileName, fmt="pickle", useCache=True)
+                umP = UniProtIdMappingProvider(cachePath=cachePath, useCache=True)
             #
             fD = mU.doImport(chemblTargetRawPath, fmt="fasta", commentStyle="default")
             #
@@ -117,17 +115,18 @@ class ChEMBLTargetProvider:
                 chemblId = seqId.strip().split(" ")[0].strip()
                 unpId = seqId[seqId.find("[") + 1 : seqId.find("]")]
                 seq = sD["sequence"]
+                oD[chemblId] = {"sequence": seq, "uniprotId": unpId, "chemblId": chemblId}
                 if addTaxonomy:
-                    taxId = taxD[unpId] if unpId in taxD else "-1"
-                    seqId = unpId + "|" + chemblId + "|" + taxId
-                else:
-                    seqId = unpId + "|" + chemblId
+                    taxId = umP.getMappedId(unpId, mapName="NCBI-taxon")
+                    oD[chemblId]["taxId"] = taxId if taxId else -1
+                    if not taxId:
+                        missTax += 1
+                #
                 uD.setdefault(unpId, []).append(chemblId)
-                oD[seqId] = {"sequence": seq}
             #
-            ok1 = mU.doExport(chemblTargetPath, oD, fmt="fasta")
+            ok1 = mU.doExport(chemblTargetPath, oD, fmt="fasta", makeComment=True)
             ok2 = mU.doExport(chemblTargetUniprotMapPath, uD, fmt="json")
-            logger.info("ChEMBL mapping path %s (%d)", chemblTargetUniprotMapPath, len(uD))
+            logger.info("ChEMBL mapping path %s (%d) missing taxonomy count (%d)", chemblTargetUniprotMapPath, len(uD), missTax)
             return ok1 & ok2
         except Exception as e:
             logger.exception("Failing with %s", str(e))

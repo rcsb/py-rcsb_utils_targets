@@ -77,6 +77,7 @@ class SAbDabTargetProvider(object):
             for rD in rDL:
                 tS = "|".join(rD[ky].strip() for ky in ["Therapeutic", "Format", "CH1 Isotype", "VD LC", "Highest_Clin_Trial (Jan '20)", "Est. Status"])
                 tS = "".join(tS.split())
+                #
                 oD[rD["Therapeutic"]] = {
                     kTup[1]: rD[kTup[0]]
                     for kTup in [
@@ -91,10 +92,13 @@ class SAbDabTargetProvider(object):
                 hSeq = rD["Heavy Sequence"] if rD["Heavy Sequence"] != "na" else None
                 lSeq = rD["Light Sequence"] if rD["Light Sequence"] != "na" else None
                 if hSeq:
-                    seqObj[tS + "|heavy"] = {"sequence": hSeq.strip()}
+                    tS = rD["Therapeutic"] + "|heavy"
+                    seqObj[tS] = {"sequence": hSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "heavy"}
                 if lSeq:
-                    seqObj[tS + "|light"] = {"sequence": lSeq.strip()}
-            ok1 = mU.doExport(fastaPath, seqObj, fmt="fasta")
+                    tS = rD["Therapeutic"] + "|light"
+                    seqObj[tS] = {"sequence": lSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "light"}
+                #
+            ok1 = mU.doExport(fastaPath, seqObj, fmt="fasta", makeComment=True)
             ok2 = mU.doExport(dataPath, oD, fmt="json", indent=3)
             logger.info("Exporting SAbDab %d sequences in %r status %r", len(seqObj), fastaPath, ok1 and ok2)
         except Exception as e:

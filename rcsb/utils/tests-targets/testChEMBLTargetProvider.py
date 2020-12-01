@@ -175,10 +175,10 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
             self.fail()
 
     #
-    @unittest.skipIf(skipFull, "Very long test")
+    # @unittest.skipIf(skipFull, "Very long test")
     def testFetchChEMBLTargetsWithTax(self):
         try:
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False, addTaxonomy=True)
+            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=True)
             ok = ctP.testCache()
             self.assertTrue(ok)
         except Exception as e:

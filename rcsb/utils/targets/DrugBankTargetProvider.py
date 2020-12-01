@@ -22,7 +22,7 @@ import time
 
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
-from rcsb.utils.seqalign.MiscUtils import MiscUtils
+from rcsb.utils.seq.UniProtIdMappingProvider import UniProtIdMappingProvider
 
 logger = logging.getLogger(__name__)
 
@@ -141,10 +141,7 @@ class DrugBankTargetProvider(object):
         uD = {}
         try:
             if addTaxonomy:
-                miscU = MiscUtils()
-                outDirPath = os.path.join(self.__cachePath, "uniprot_id_mapping_selected")
-                taxMapFileName = "uniprot_taxonomy.pic"
-                taxD = miscU.getUniprotXref(13, outDirPath, taxMapFileName, fmt="pickle", useCache=True)
+                umP = UniProtIdMappingProvider(cachePath=self.__cachePath, useCache=True)
             #
             for fp in inpPathList:
                 fD = mU.doImport(fp, fmt="fasta", commentStyle="default")
@@ -154,14 +151,13 @@ class DrugBankTargetProvider(object):
                     seq = sD["sequence"]
                     tL = seqId.split("|")
                     unpId = tL[1].split(" ")[0]
+                    oD[unpId] = {"sequence": seq, "uniprotId": unpId}
                     if addTaxonomy:
-                        taxId = taxD[unpId] if unpId in taxD else "-1"
-                        seqId = unpId + "|" + taxId
-                    else:
-                        seqId = unpId
+                        taxId = umP.getMappedId(unpId, mapName="NCBI-taxon")
+                        oD[unpId]["taxId"] = taxId if taxId else -1
                     uD.setdefault(unpId, []).extend(dbIdL)
-                    oD[seqId] = {"sequence": seq}
-            ok1 = mU.doExport(os.path.join(dirPath, drugBankfastaFileName), oD, fmt="fasta")
+
+            ok1 = mU.doExport(os.path.join(dirPath, drugBankfastaFileName), oD, fmt="fasta", makeComment=True)
             ok2 = mU.doExport(os.path.join(dirPath, drugBankTargetMapFileName), uD, fmt="json")
             return ok1 & ok2
         except Exception as e:

@@ -97,10 +97,9 @@ class CARDTargetProvider:
                     sId = qD["seqId"]
                     seq = qD["sequence"]
                     taxId = qD["taxId"]
-                    seqId = modelId + "|" + aroId + "|" + sId + "|" + taxId
-                    sD[seqId] = {"sequence": seq}
+                    sD[sId] = {"sequence": seq, "modelId": modelId, "aroId": aroId, "seqId": sId, "taxId": taxId}
 
-            ok = self.__mU.doExport(fastaPath, sD, fmt="fasta")
+            ok = self.__mU.doExport(fastaPath, sD, fmt="fasta", makeComment=True)
             logger.info("Export CARD fasta (%d) status %r", len(sD), ok)
         except Exception as e:
             logger.exception("Failing for model %r tD %r with %s", modelId, tD, str(e))

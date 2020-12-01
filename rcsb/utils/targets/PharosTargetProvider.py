@@ -17,7 +17,7 @@ import time
 from rcsb.utils.io.ExecUtils import ExecUtils
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
-from rcsb.utils.seqalign.MiscUtils import MiscUtils
+from rcsb.utils.seq.UniProtIdMappingProvider import UniProtIdMappingProvider
 
 logger = logging.getLogger(__name__)
 
@@ -99,27 +99,24 @@ class PharosTargetProvider:
             pDL = self.__mU.doImport(proteinFilePath, fmt="tdd", rowFormat="dict")
             fD = {}
             if addTaxonomy:
-                mU = MiscUtils()
-                outDirPath = os.path.join(self.__cachePath, "uniprot_id_mapping_selected")
-                taxMapFileName = "uniprot_taxonomy.pic"
-                taxD = mU.getUniprotXref(13, outDirPath, taxMapFileName, fmt="pickle", useCache=True)
+                umP = UniProtIdMappingProvider(cachePath=self.__cachePath, useCache=True)
+                #
                 for pD in pDL:
                     unpId = pD["uniprot"]
                     proteinId = pD["id"]
-                    taxId = taxD[unpId] if unpId in taxD else "-1"
-                    seqId = unpId + "|" + proteinId + "|" + taxId
                     seq = pD["seq"]
-                    fD[seqId] = {"sequence": seq}
+                    taxId = umP.getMappedId(unpId, mapName="NCBI-taxon")
+                    taxId = taxId if taxId else "-1"
+                    fD[proteinId] = {"sequence": seq, "uniprotId": unpId, "proteinId": proteinId, "taxId": taxId}
             else:
                 for pD in pDL:
                     unpId = pD["uniprot"]
                     proteinId = pD["id"]
                     seq = pD["seq"]
-                    seqId = unpId + "|" + proteinId
-                    fD[seqId] = {"sequence": seq}
+                    fD[proteinId] = {"sequence": seq, "uniprotId": unpId, "proteinId": proteinId}
             #
             logger.info("Writing %d pharos targets to %s", len(fD), fastaPath)
-            ok = self.__mU.doExport(fastaPath, fD, fmt="fasta")
+            ok = self.__mU.doExport(fastaPath, fD, fmt="fasta", makeComment=True)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return ok

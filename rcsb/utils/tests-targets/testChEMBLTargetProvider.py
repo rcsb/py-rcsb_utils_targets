@@ -48,23 +48,6 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testGetUniChemSources(self):
-        try:
-            srL = self.__mU.doImport(os.path.join(self.__dataPath, "UC_SOURCE.tdd"), fmt="tdd", rowFormat="list")
-            # logger.info("srDL %r", srL)
-            uD = {}
-            for sr in srL:
-                if len(sr) < 12:
-                    logger.info("bad sr %r", sr)
-                    continue
-                uD[int(sr[0])] = {"name": sr[1], "baseUrl": sr[10], "entryUrl": sr[11]}
-            logger.info("uD = %r", uD)
-            ok = self.__mU.doExport(os.path.join(self.__cachePath, "unichem-source-list.json"), uD, fmt="json", indent=3)
-            self.assertTrue(ok)
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-            self.fail()
-
     def testFetchChEMBLTargets(self):
         try:
             ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False, addTaxonomy=False)
@@ -74,7 +57,7 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
             logger.exception("Failing with %s", str(e))
             self.fail()
 
-    def testActivityData(self):
+    def testFetchActivityData(self):
         try:
             logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
             ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=False)
@@ -92,7 +75,7 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
             logger.exception("Failing with %s", str(e))
             self.fail()
 
-    def testMechanismData(self):
+    def testFetchMechanismData(self):
         oD = {}
         try:
             logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
@@ -105,70 +88,6 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
             oD.update(ctP.getMechanismData(tL))
             #
             ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-target-mechanism.json"), oD, fmt="json", indent=3)
-            self.assertTrue(ok)
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-            self.fail()
-
-    def testDrugData(self):
-        try:
-            logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=False)
-            ok = ctP.testCache()
-            self.assertTrue(ok)
-            mL = ["CHEMBL815", "CHEMBL426559", "CHEMBL548", "CHEMBL2442750", "CHEMBL1201379", "CHEMBL3039498", "CHEMBL3137332"]
-            #
-            oD = ctP.getDrugData(mL)
-            #
-            logger.info("molD %r", list(oD.keys()))
-            ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-drug.json"), oD, fmt="json", indent=3)
-            self.assertTrue(ok)
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-            self.fail()
-
-    def testMoleculeData(self):
-        try:
-            logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=False)
-            ok = ctP.testCache()
-            self.assertTrue(ok)
-            mL = ["CHEMBL815", "CHEMBL426559", "CHEMBL548", "CHEMBL2442750", "CHEMBL1201379", "CHEMBL3039498", "CHEMBL3137332"]
-            #
-            oD = ctP.getMoleculeData(mL)
-            #
-            logger.info("molD %r", list(oD.keys()))
-            ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-molecule.json"), oD, fmt="json", indent=3)
-            self.assertTrue(ok)
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-            self.fail()
-
-    def testMolelcuesByInChI(self):
-        try:
-            logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=False)
-            ok = ctP.testCache()
-            self.assertTrue(ok)
-            mL = ["NXFFJDQHYLNEJK-CYBMUJFWSA-N", "WWSWYXNVCBLWNZ-QIZQQNKQSA-N"]
-            oD = ctP.getMoleculeByInChIKey(mL)
-            #
-            ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-inchikey-matches.json"), oD, fmt="json", indent=3)
-            self.assertTrue(ok)
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-            self.fail()
-
-    def testUniChemData(self):
-        try:
-            logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=False)
-            ok = ctP.testCache()
-            self.assertTrue(ok)
-            mL = ["NXFFJDQHYLNEJK-CYBMUJFWSA-N", "WWSWYXNVCBLWNZ-QIZQQNKQSA-N"]
-            oD = ctP.getUniChemData(mL)
-            #
-            ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "unichem-inchikey-matches.json"), oD, fmt="json", indent=3)
             self.assertTrue(ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
@@ -189,6 +108,8 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
 def chemblTargetSuite():
     suiteSelect = unittest.TestSuite()
     suiteSelect.addTest(ChEMBLTargetProviderTests("testFetchChEMBLTargets"))
+    suiteSelect.addTest(ChEMBLTargetProviderTests("testFetchMechanismData"))
+    suiteSelect.addTest(ChEMBLTargetProviderTests("testFetchActivityData"))
     return suiteSelect
 
 

@@ -93,11 +93,12 @@ class PharosTargetProvider:
             )
         return True
 
-    def exportProteinFasta(self, fastaPath, addTaxonomy=False):
+    def exportProteinFasta(self, fastaPath, taxonPath, addTaxonomy=False):
         try:
             proteinFilePath = os.path.join(self.__dirPath, "protein.tdd")
             pDL = self.__mU.doImport(proteinFilePath, fmt="tdd", rowFormat="dict")
             fD = {}
+            taxonL = []
             if addTaxonomy:
                 umP = UniProtIdMappingProvider(cachePath=self.__cachePath, useCache=True)
                 #
@@ -107,13 +108,33 @@ class PharosTargetProvider:
                     seq = pD["seq"]
                     taxId = umP.getMappedId(unpId, mapName="NCBI-taxon")
                     taxId = taxId if taxId else "-1"
-                    fD[proteinId] = {"sequence": seq, "uniprotId": unpId, "proteinId": proteinId, "taxId": taxId}
+                    cD = {"sequence": seq, "uniprotId": unpId, "proteinId": proteinId, "taxId": taxId}
+                    seqId = ""
+                    cL = []
+                    for k, v in cD.items():
+                        if k in ["sequence"]:
+                            continue
+                        cL.append(str(v))
+                        cL.append(str(k))
+                    seqId = "|".join(cL)
+                    fD[seqId] = cD
+                    taxonL.append("%s\t%s" % (seqId, taxId))
+                ok = self.__mU.doExport(taxonPath, taxonL, fmt="list")
             else:
                 for pD in pDL:
                     unpId = pD["uniprot"]
                     proteinId = pD["id"]
                     seq = pD["seq"]
-                    fD[proteinId] = {"sequence": seq, "uniprotId": unpId, "proteinId": proteinId}
+                    cD = {"sequence": seq, "uniprotId": unpId, "proteinId": proteinId}
+                    seqId = ""
+                    cL = []
+                    for k, v in cD.items():
+                        if k in ["sequence"]:
+                            continue
+                        cL.append(str(v))
+                        cL.append(str(k))
+                    seqId = "|".join(cL)
+                    fD[seqId] = cD
             #
             logger.info("Writing %d pharos targets to %s", len(fD), fastaPath)
             ok = self.__mU.doExport(fastaPath, fD, fmt="fasta", makeComment=True)

@@ -54,7 +54,6 @@ class CARDTargetProvider:
         #
         fU.mkdir(dirPath)
         cardDataPath = os.path.join(dirPath, "card-select-data.json")
-        cardFastaPath = os.path.join(dirPath, "card-targets.fasta")
         #
         logger.info("useCache %r CARDDumpPath %r", useCache, cardDumpPath)
         if useCache and self.__mU.exists(cardDataPath):
@@ -69,14 +68,16 @@ class CARDTargetProvider:
             fU.unbundleTarfile(os.path.join(cardDumpDirPath, cardDumpFileName[:-4]), dirPath=cardDumpDirPath)
             logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
             oD, version = self.__parseCardData(os.path.join(cardDumpDirPath, "card.json"))
-            ok1 = self.__mU.doExport(cardDataPath, {"version": version, "data": oD}, fmt="json", indent=3)
-            ok2 = self.__exportCardFasta(cardFastaPath, oD)
-            ok = ok1 and ok2
+            ok = self.__mU.doExport(cardDataPath, {"version": version, "data": oD}, fmt="json", indent=3)
             logger.info("Export CARD data (%d) status %r", len(oD), ok)
         # ---
         return oD, version
 
-    def __exportCardFasta(self, fastaPath, cardD):
+    def exportCardFasta(self, fastaPath, taxonPath):
+        ok = self.__exportCardFasta(fastaPath, taxonPath, self.__oD)
+        return ok
+
+    def __exportCardFasta(self, fastaPath, taxonPath, cardD):
         """Export a CARD sequence target fasta file
 
         Args:
@@ -87,6 +88,7 @@ class CARDTargetProvider:
             (bool): True for success or False otherwise
         """
         sD = {}
+        taxonL = []
         try:
             for modelId, tD in cardD.items():
                 # aroAcc = tD["accession"]
@@ -97,10 +99,23 @@ class CARDTargetProvider:
                     sId = qD["seqId"]
                     seq = qD["sequence"]
                     taxId = qD["taxId"]
-                    sD[sId] = {"sequence": seq, "modelId": modelId, "aroId": aroId, "seqId": sId, "taxId": taxId}
+                    cD = {"sequence": seq, "modelId": modelId, "aroId": aroId, "seqId": sId, "taxId": taxId}
+                    #
+                    cId = ""
+                    cL = []
+                    for k, v in cD.items():
+                        if k in ["sequence"]:
+                            continue
+                        cL.append(str(v))
+                        cL.append(str(k))
+                    cId = "|".join(cL)
+                    sD[cId] = cD
+                    taxonL.append("%s\t%s" % (cId, taxId))
 
             ok = self.__mU.doExport(fastaPath, sD, fmt="fasta", makeComment=True)
             logger.info("Export CARD fasta (%d) status %r", len(sD), ok)
+            ok = self.__mU.doExport(taxonPath, taxonL, fmt="list")
+            logger.info("Export Taxon (%d) status %r", len(taxonL), ok)
         except Exception as e:
             logger.exception("Failing for model %r tD %r with %s", modelId, tD, str(e))
         return ok

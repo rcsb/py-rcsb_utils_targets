@@ -34,11 +34,10 @@ logger = logging.getLogger()
 
 
 class SAbDabTargetProviderTests(unittest.TestCase):
-    # skipFull = True
-
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
         #
+        self.__fastaPath = os.path.join(HERE, "test-output", "sabdab-targets.fa")
         self.__startTime = time.time()
         logger.info("Starting %s at %s", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
 
@@ -50,8 +49,10 @@ class SAbDabTargetProviderTests(unittest.TestCase):
         logger.info("Completed %s at %s (%.4f seconds)", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - self.__startTime)
 
     def testFetchSAbDabTargets(self):
-        ctP = SAbDabTargetProvider(cachePath=self.__cachePath, useCache=False)
-        ok = ctP.testCache()
+        stP = SAbDabTargetProvider(cachePath=self.__cachePath, useCache=False)
+        ok = stP.testCache()
+        self.assertTrue(ok)
+        ok = stP.exportFasta(self.__fastaPath)
         self.assertTrue(ok)
 
 

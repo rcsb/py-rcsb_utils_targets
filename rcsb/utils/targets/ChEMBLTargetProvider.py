@@ -27,21 +27,19 @@ logger = logging.getLogger(__name__)
 class ChEMBLTargetProvider:
     """Accessors for ChEMBL target assignments."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, cachePath, useCache, **kwargs):
         #
-        self.__reload(**kwargs)
-        self.__parseFasta(**kwargs)
+        self.__cachePath = cachePath
+        self.__dirPath = os.path.join(self.__cachePath, "ChEMBL-targets")
+        self.__ok = self.__reload(self.__dirPath, useCache, **kwargs)
         #
 
     def testCache(self):
-        return True
+        return self.__ok
 
-    def __reload(self, **kwargs):
+    def __reload(self, dirPath, useCache, **kwargs):
         startTime = time.time()
-        cachePath = kwargs.get("cachePath", ".")
-        useCache = kwargs.get("useCache", True)
         chemblDbUrl = kwargs.get("ChEMBLDbUrl", "ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/")
-        dirPath = os.path.join(cachePath, "ChEMBL-targets")
         ok = False
         fU = FileUtil()
         fU.mkdir(dirPath)
@@ -77,21 +75,20 @@ class ChEMBLTargetProvider:
             #
         return ok
 
-    def __parseFasta(self, **kwargs):
-        cachePath = kwargs.get("cachePath", ".")
-        dirPath = os.path.join(cachePath, "ChEMBL-targets")
-        #
+    def exportFasta(self, fastaPath, taxonPath, addTaxonomy=False):
+        ok = self.__parseFasta(fastaPath, taxonPath, self.__cachePath, self.__dirPath, addTaxonomy=addTaxonomy)
+        return ok
+
+    def __parseFasta(self, fastaPath, taxonPath, cachePath, dirPath, addTaxonomy=False):
+        # input paths
         chemblTargetRawPath = os.path.join(dirPath, "chembl_targets_raw.fa.gz")
         mappingFilePath = os.path.join(dirPath, "chembl_uniprot_mapping.txt")
-        #
-        chemblTargetPath = os.path.join(dirPath, "chembl_targets.fa")
+        # output paths
         chemblTargetUniprotMapPath = os.path.join(dirPath, "chembl_uniprot_target_mapping.json")
-        #
         chemblTargetUniprotRawMap = os.path.join(dirPath, "chembl_uniprot_target_mapping_raw.json")
         #
-        addTaxonomy = kwargs.get("addTaxonomy", False)
         mU = MarshalUtil(workPath=cachePath)
-        #
+        # ----
         mapD = {}
         rowL = mU.doImport(mappingFilePath, fmt="tdd", rowFormat="list")
         for row in rowL:
@@ -102,6 +99,7 @@ class ChEMBLTargetProvider:
         oD = {}
         uD = {}
         missTax = 0
+        taxonL = []
         try:
             if addTaxonomy:
                 umP = UniProtIdMappingProvider(cachePath=cachePath, useCache=True)
@@ -112,19 +110,35 @@ class ChEMBLTargetProvider:
                 chemblId = seqId.strip().split(" ")[0].strip()
                 unpId = seqId[seqId.find("[") + 1 : seqId.find("]")]
                 seq = sD["sequence"]
-                oD[chemblId] = {"sequence": seq, "uniprotId": unpId, "chemblId": chemblId}
+                cD = {"sequence": seq, "uniprotId": unpId, "chemblId": chemblId}
                 if addTaxonomy:
                     taxId = umP.getMappedId(unpId, mapName="NCBI-taxon")
-                    oD[chemblId]["taxId"] = taxId if taxId else -1
+                    cD["taxId"] = taxId if taxId else -1
                     if not taxId:
                         missTax += 1
                 #
+                seqId = ""
+                cL = []
+                for k, v in cD.items():
+                    if k in ["sequence"]:
+                        continue
+                    cL.append(str(v))
+                    cL.append(str(k))
+                seqId = "|".join(cL)
+                oD[seqId] = cD
+                if addTaxonomy:
+                    taxonL.append("%s\t%s" % (seqId, taxId))
+                #
                 uD.setdefault(unpId, []).append(chemblId)
             #
-            ok1 = mU.doExport(chemblTargetPath, oD, fmt="fasta", makeComment=True)
+            ok1 = mU.doExport(fastaPath, oD, fmt="fasta", makeComment=True)
+            ok3 = True
+            if addTaxonomy:
+                ok3 = mU.doExport(taxonPath, taxonL, fmt="list")
+            #
             ok2 = mU.doExport(chemblTargetUniprotMapPath, uD, fmt="json")
             logger.info("ChEMBL mapping path %s (%d) missing taxonomy count (%d)", chemblTargetUniprotMapPath, len(uD), missTax)
-            return ok1 & ok2
+            return ok1 & ok2 & ok3
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         #

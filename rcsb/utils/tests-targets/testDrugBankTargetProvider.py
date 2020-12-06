@@ -45,6 +45,8 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         self.__user = cfgOb.get("_DRUGBANK_AUTH_USERNAME", sectionName=configName)
         self.__pw = cfgOb.get("_DRUGBANK_AUTH_PASSWORD", sectionName=configName)
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
+        self.__fastaPath = os.path.join(HERE, "test-output", "drugbank-targets.fa")
+        self.__taxonPath = os.path.join(HERE, "test-output", "drugbank-targets-taxon.tdd")
         #
         self.__startTime = time.time()
         logger.info("Starting %s at %s", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
@@ -60,11 +62,15 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         dbtP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=False, username=self.__user, password=self.__pw)
         ok = dbtP.testCache()
         self.assertTrue(ok)
+        ok = dbtP.exportFasta(self.__fastaPath, self.__taxonPath, addTaxonomy=False)
+        self.assertTrue(ok)
 
     @unittest.skipIf(skipFull, "Very long test")
     def testFetchDrugBankTargetsWithTaxonomy(self):
         dbtP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=False, username=self.__user, password=self.__pw, addTaxonomy=True)
         ok = dbtP.testCache()
+        self.assertTrue(ok)
+        ok = dbtP.exportFasta(self.__fastaPath, self.__taxonPath, addTaxonomy=True)
         self.assertTrue(ok)
 
 

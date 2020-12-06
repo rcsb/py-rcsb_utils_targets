@@ -42,6 +42,8 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
 
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
+        self.__fastaPath = os.path.join(HERE, "test-output", "chembl-targets.fa")
+        self.__taxonPath = os.path.join(HERE, "test-output", "chembl-targets-taxon.tdd")
         self.__dataPath = os.path.join(HERE, "test-data")
         self.__mU = MarshalUtil(workPath=self.__cachePath)
 
@@ -52,6 +54,8 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
         try:
             ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False, addTaxonomy=False)
             ok = ctP.testCache()
+            self.assertTrue(ok)
+            ok = ctP.exportFasta(self.__fastaPath, self.__taxonPath, addTaxonomy=False)
             self.assertTrue(ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
@@ -99,6 +103,8 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
         try:
             ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=True)
             ok = ctP.testCache()
+            self.assertTrue(ok)
+            ok = ctP.exportFasta(self.__fastaPath, self.__taxonPath, addTaxonomy=True)
             self.assertTrue(ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))

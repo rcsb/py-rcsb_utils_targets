@@ -40,12 +40,11 @@ class DrugBankTargetProvider(object):
         self.__cachePath = kwargs.get("cachePath", ".")
         self.__dirPath = os.path.join(self.__cachePath, "DrugBank-targets")
         self.__fastaPathList = self.__reload(self.__dirPath, **kwargs)
-        self.__consolidateFasta(self.__dirPath, self.__fastaPathList, **kwargs)
         self.__version = None
 
     def testCache(self):
         try:
-            return True
+            return len(self.__fastaPathList) >= 4
         except Exception as e:
             logger.debug("Failing with %s", str(e))
         return False
@@ -130,15 +129,18 @@ class DrugBankTargetProvider(object):
                 retFilePathList.append(retFilePath)
         return retFilePathList
 
-    def __consolidateFasta(self, dirPath, inpPathList, **kwargs):
+    def exportFasta(self, fastaPath, taxonPath, addTaxonomy=False):
+        ok = self.__consolidateFasta(fastaPath, taxonPath, self.__dirPath, self.__fastaPathList, addTaxonomy=addTaxonomy)
+        return ok
+
+    def __consolidateFasta(self, fastaPath, taxonPath, dirPath, inpPathList, addTaxonomy=False):
         #
-        drugBankfastaFileName = kwargs.get("drugBankfastaFileName ", "drugbank_targets.fa")
-        drugBankTargetMapFileName = kwargs.get("drugBankTargetMapFileName", "drugbank_target_drug_map.json")
-        addTaxonomy = kwargs.get("addTaxonomy", False)
+        drugBankTargetMapPath = os.path.join(dirPath, "drugbank_target_drug_map.json")
         #
         mU = MarshalUtil(workPath=dirPath)
         oD = {}
         uD = {}
+        taxonL = []
         try:
             if addTaxonomy:
                 umP = UniProtIdMappingProvider(cachePath=self.__cachePath, useCache=True)
@@ -151,15 +153,30 @@ class DrugBankTargetProvider(object):
                     seq = sD["sequence"]
                     tL = seqId.split("|")
                     unpId = tL[1].split(" ")[0]
-                    oD[unpId] = {"sequence": seq, "uniprotId": unpId}
+                    cD = {"sequence": seq, "uniprotId": unpId}
                     if addTaxonomy:
                         taxId = umP.getMappedId(unpId, mapName="NCBI-taxon")
-                        oD[unpId]["taxId"] = taxId if taxId else -1
+                        cD["taxId"] = taxId if taxId else -1
+                    #
+                    seqId = ""
+                    cL = []
+                    for k, v in cD.items():
+                        if k in ["sequence"]:
+                            continue
+                        cL.append(str(v))
+                        cL.append(str(k))
+                    seqId = "|".join(cL)
+                    oD[seqId] = cD
+                    if addTaxonomy:
+                        taxonL.append("%s\t%s" % (seqId, taxId))
                     uD.setdefault(unpId, []).extend(dbIdL)
 
-            ok1 = mU.doExport(os.path.join(dirPath, drugBankfastaFileName), oD, fmt="fasta", makeComment=True)
-            ok2 = mU.doExport(os.path.join(dirPath, drugBankTargetMapFileName), uD, fmt="json")
-            return ok1 & ok2
+            ok1 = mU.doExport(fastaPath, oD, fmt="fasta", makeComment=True)
+            ok2 = mU.doExport(drugBankTargetMapPath, uD, fmt="json")
+            ok3 = True
+            if addTaxonomy:
+                ok3 = mU.doExport(taxonPath, taxonL, fmt="list")
+            return ok1 & ok2 & ok3
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         #

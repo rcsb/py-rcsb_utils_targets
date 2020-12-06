@@ -93,8 +93,9 @@ class PharosTargetProviderTests(unittest.TestCase):
             ptP = PharosTargetProvider(cachePath=self.__cachePath, useCache=True, reloadDb=False)
             ok = ptP.testCache()
             self.assertTrue(ok)
-            fastaPath = os.path.join(self.__dirPath, "pharos_targets_notax.fa")
-            ok = ptP.exportProteinFasta(fastaPath, addTaxonomy=False)
+            fastaPath = self.__cachePath = os.path.join(HERE, "test-output", "pharos-targets.fa")
+            taxonPath = self.__cachePath = os.path.join(HERE, "test-output", "pharos-targets-taxon.tdd")
+            ok = ptP.exportProteinFasta(fastaPath, taxonPath, addTaxonomy=False)
             self.assertTrue(ok)
             #
         except Exception as e:
@@ -108,8 +109,9 @@ class PharosTargetProviderTests(unittest.TestCase):
             ok = ptP.testCache()
             self.assertTrue(ok)
             #
-            fastaPath = os.path.join(self.__dirPath, "pharos_targets_tax.fa")
-            ok = ptP.exportProteinFasta(fastaPath, addTaxonomy=True)
+            fastaPath = self.__cachePath = os.path.join(HERE, "test-output", "pharos-targets.fa")
+            taxonPath = self.__cachePath = os.path.join(HERE, "test-output", "pharos-targets-taxon.tdd")
+            ok = ptP.exportProteinFasta(fastaPath, taxonPath, addTaxonomy=True)
             self.assertTrue(ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))

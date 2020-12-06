@@ -28,7 +28,7 @@ class SAbDabTargetProvider(object):
         self.__dirPath = os.path.join(self.__cachePath, "SAbDab-targets")
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
-        self.__oD = self.__reload(self.__dirPath, **kwargs)
+        self.__oD, self.__dumpPath = self.__reload(self.__dirPath, **kwargs)
         #
 
     def testCache(self, minCount=590):
@@ -40,44 +40,28 @@ class SAbDabTargetProvider(object):
 
     def __reload(self, dirPath, **kwargs):
         startTime = time.time()
+        oD = {}
         useCache = kwargs.get("useCache", True)
         targetUrl = kwargs.get("targetUrl", "http://opig.stats.ox.ac.uk/webapps/newsabdab/static/downloads/TheraSAbDab_SeqStruc_OnlineDownload.csv")
+        #
         ok = False
         fU = FileUtil()
         _, dumpFileName = os.path.split(targetUrl)
         #
         fU.mkdir(dirPath)
         dumpPath = os.path.join(dirPath, dumpFileName)
-        fastaPath = os.path.join(dirPath, "SAbDab-targets.fasta")
         dataPath = os.path.join(dirPath, "SAbDab-data.json")
         #
         logger.info("useCache %r sabdabDumpPath %r", useCache, dumpPath)
-        if useCache and self.__mU.exists(dataPath) and self.__mU.exists(fastaPath):
+        if useCache and self.__mU.exists(dataPath):
             oD = self.__mU.doImport(dataPath, fmt="json")
         else:
             logger.info("Fetching url %s path %s", targetUrl, dumpPath)
             ok = fU.get(targetUrl, dumpPath)
-        #
-        if useCache and fU.exists(fastaPath):
-            pass
-        else:
-            oD = self.__convertDumpToFasta(dumpPath=dumpPath, fastaPath=fastaPath, dataPath=dataPath)
-        # ---
-        logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
-        return oD
-
-    def __convertDumpToFasta(self, dumpPath="TheraSAbDab_SeqStruc_OnlineDownload.csv", fastaPath="antibody-seq.fasta", dataPath="antibody-data.json"):
-        ok1 = ok2 = False
-        oD = {}
-        try:
-            mU = MarshalUtil()
-            rDL = mU.doImport(dumpPath, fmt="csv", rowFormat="dict")
+            #
+            rDL = self.__mU.doImport(dumpPath, fmt="csv", rowFormat="dict")
             logger.debug("rD keys %r", list(rDL[0].keys()))
-            seqObj = {}
             for rD in rDL:
-                tS = "|".join(rD[ky].strip() for ky in ["Therapeutic", "Format", "CH1 Isotype", "VD LC", "Highest_Clin_Trial (Jan '20)", "Est. Status"])
-                tS = "".join(tS.split())
-                #
                 oD[rD["Therapeutic"]] = {
                     kTup[1]: rD[kTup[0]]
                     for kTup in [
@@ -89,18 +73,44 @@ class SAbDabTargetProvider(object):
                         ("Est. Status", "status"),
                     ]
                 }
+
+            ok = self.__mU.doExport(dataPath, oD, fmt="json", indent=3)
+            logger.info("Exporting SAbDab %d data records in %r status %r", len(oD), dataPath, ok)
+
+        # ---
+        logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        return oD, dumpPath
+
+    def exportFasta(self, fastaPath):
+        ok = self.__convertDumpToFasta(dumpPath=self.__dumpPath, fastaPath=fastaPath)
+        return ok
+
+    #
+    def __convertDumpToFasta(self, dumpPath, fastaPath):
+        ok = False
+        try:
+            rDL = self.__mU.doImport(dumpPath, fmt="csv", rowFormat="dict")
+            logger.debug("rD keys %r", list(rDL[0].keys()))
+            sD = {}
+            for rD in rDL:
                 hSeq = rD["Heavy Sequence"] if rD["Heavy Sequence"] != "na" else None
                 lSeq = rD["Light Sequence"] if rD["Light Sequence"] != "na" else None
                 if hSeq:
-                    tS = rD["Therapeutic"] + "|heavy"
-                    seqObj[tS] = {"sequence": hSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "heavy"}
+                    cD = {"sequence": hSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "heavy"}
                 if lSeq:
-                    tS = rD["Therapeutic"] + "|light"
-                    seqObj[tS] = {"sequence": lSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "light"}
+                    cD = {"sequence": lSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "light"}
+                seqId = ""
+                cL = []
+                for k, v in cD.items():
+                    if k in ["sequence"]:
+                        continue
+                    cL.append(str(v))
+                    cL.append(str(k))
+                seqId = "|".join(cL)
+                sD[seqId] = cD
                 #
-            ok1 = mU.doExport(fastaPath, seqObj, fmt="fasta", makeComment=True)
-            ok2 = mU.doExport(dataPath, oD, fmt="json", indent=3)
-            logger.info("Exporting SAbDab %d sequences in %r status %r", len(seqObj), fastaPath, ok1 and ok2)
+            ok = self.__mU.doExport(fastaPath, sD, fmt="fasta", makeComment=True)
+            logger.info("Exporting SAbDab %d fasta sequences in %r status %r", len(sD), fastaPath, ok)
         except Exception as e:
             logger.exception("Failing for %r with %s", dumpPath, str(e))
-        return oD
+        return ok

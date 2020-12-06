@@ -35,10 +35,11 @@ logger = logging.getLogger()
 
 
 class CARDTargetProviderTests(unittest.TestCase):
-    # skipFull = True
-
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
+        #
+        self.__fastaPath = os.path.join(HERE, "test-output", "card-targets.fa")
+        self.__taxonPath = os.path.join(HERE, "test-output", "card-targets-taxon.tdd")
         #
         self.__startTime = time.time()
         logger.info("Starting %s at %s", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
@@ -53,6 +54,8 @@ class CARDTargetProviderTests(unittest.TestCase):
     def testFetchCARDTargets(self):
         ctP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
         ok = ctP.testCache()
+        self.assertTrue(ok)
+        ok = ctP.exportCardFasta(self.__fastaPath, self.__taxonPath)
         self.assertTrue(ok)
 
 

@@ -52,7 +52,7 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
 
     def testFetchChEMBLTargets(self):
         try:
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False, addTaxonomy=False)
+            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False)
             ok = ctP.testCache()
             self.assertTrue(ok)
             ok = ctP.exportFasta(self.__fastaPath, self.__taxonPath, addTaxonomy=False)
@@ -64,7 +64,7 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
     def testFetchActivityData(self):
         try:
             logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=False)
+            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True)
             ok = ctP.testCache()
             self.assertTrue(ok)
             # P43088|CHEMBL1987|9606
@@ -83,7 +83,7 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
         oD = {}
         try:
             logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=False)
+            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True)
             ok = ctP.testCache()
             self.assertTrue(ok)
             # P43088|CHEMBL1987|9606
@@ -101,7 +101,7 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
     @unittest.skipIf(skipFull, "Very long test")
     def testFetchChEMBLTargetsWithTax(self):
         try:
-            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True, addTaxonomy=True)
+            ctP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=True)
             ok = ctP.testCache()
             self.assertTrue(ok)
             ok = ctP.exportFasta(self.__fastaPath, self.__taxonPath, addTaxonomy=True)

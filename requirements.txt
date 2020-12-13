@@ -1,5 +1,5 @@
 --extra-index-url https://pypi.anaconda.org/OpenEye/simple
-rcsb.utils.io >= 0.91
+rcsb.utils.io >= 0.93
 rcsb.utils.config >= 0.35
 rcsb.utils.seq >= 0.48
 chembl-webresource-client >= 0.10.2

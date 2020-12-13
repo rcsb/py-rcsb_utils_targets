@@ -70,11 +70,19 @@ class PharosTargetProvider:
                 outAppend=False,
                 timeOut=None,
             )
-            ok = exU.run(
-                "mysql",
-                execArgList=["-u", mysqlUser, "--password=%s" % mysqlPassword, "tcrd6"],
-                outPath=logPath,
-                inpPath=pharosDumpPath,
+            # ok = exU.run(
+            #     "mysql",
+            #     execArgList=["-u", mysqlUser, "--password=%s" % mysqlPassword, "tcrd6"],
+            #     outPath=logPath,
+            #     inpPath=pharosDumpPath,
+            #     outAppend=True,
+            #     timeOut=None,
+            # )
+            shellCmd = 'trap "" SIGHUP SIGINT SIGTERM; nohup mysql -u %s --password=%s tcrd6 < %s >& %s' % (mysqlUser, mysqlPassword, pharosDumpPath, logPath)
+            ok = exU.runShell(
+                shellCmd,
+                outPath=None,
+                inpPath=None,
                 outAppend=True,
                 timeOut=None,
             )

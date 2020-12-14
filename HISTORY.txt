@@ -8,4 +8,4 @@
    2-Dec-2020  - V0.17 Migrate molecule based ChEMBL methods to rcsb.utils.chemref.ChEMBLProvider()
    6-Dec-2020  - V0.18 Expose an exportFasta() method in each provider and add taxon ouput file options
   13-Dec-2020  - V0.19 Make Pharos sql restore a shell process.
-
+  14-Dec-2020  - V0.20 Suppress stderr in the export of mysql table data.

@@ -98,6 +98,7 @@ class PharosTargetProvider:
                 outPath=os.path.join(dirPath, "%s.tdd" % tbl),
                 outAppend=False,
                 timeOut=None,
+                suppressStderr=True,
             )
         return True
 

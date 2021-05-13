@@ -15,3 +15,13 @@ site_info_configuration:
     _MYSQL_DB_USER_NAME: wrIzBGtCsQmkjc7tbEPQ3oEaOnpvivXaKcQsvXD6kn4KHMvA7LCL4O9GlAI=
     _MYSQL_DB_PASSWORD: qXPp32Z6DhNVMwo9fQIK5+KB13c1Jd43E3Bn6LmJcSyXc0NAt4H/hwo/xglYpmELV5Vqaw==
     MYSQL_DB_DATABASE_NAME: mysql
+    # local|server
+    STASH_MODE: server
+    STASH_LOCAL_BASE_PATH: stash-storage
+    #
+    STASH_SERVER_URL: sftp://bl-west.rcsb.org
+    STASH_SERVER_FALLBACK_URL: sftp://bl-east.rcsb.org
+    _STASH_AUTH_USERNAME: 4Thjq6SFXelrqhyawXGkwNHQ2MJQRGjHpedv4mhpRlmIc7muS7YrlSQpS3Rao7EFskrZ
+    _STASH_AUTH_PASSWORD: FAQNnkUD6mjGTWeciRE7yQZu4/txndI6f4LBnGvmAbMT2/ndsmQ+xcUb7ShDnMhdurMbkH4i
+    _STASH_SERVER_BASE_PATH: 9Hdw+MvKcF+zwv4yr+n61fYuVey6nTu7JRMpFbDuSjqVDYQEh8NCS23GpJJJMDKVIw==
+    #

@@ -143,7 +143,8 @@ class DrugBankTargetProvider(object):
         taxonL = []
         try:
             if addTaxonomy:
-                umP = UniProtIdMappingProvider(cachePath=self.__cachePath, useCache=True)
+                umP = UniProtIdMappingProvider(self.__cachePath)
+                umP.reload(useCache=True)
             #
             for fp in inpPathList:
                 fD = mU.doImport(fp, fmt="fasta", commentStyle="default")

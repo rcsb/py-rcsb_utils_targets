@@ -63,13 +63,13 @@ class SAbDabTargetProvider(object):
             logger.debug("rD keys %r", list(rDL[0].keys()))
             for rD in rDL:
                 oD[rD["Therapeutic"]] = {
-                    kTup[1]: rD[kTup[0]]
+                    kTup[1]: rD[kTup[0]] if rD[kTup[0]] not in ["na", "na;na"] else None
                     for kTup in [
-                        ("Therapeutic", "name"),
-                        ("Format", "format"),
-                        ("CH1 Isotype", "chiIsotype"),
+                        ("Therapeutic", "antibodyName"),
+                        ("Format", "antiBodyFormat"),
+                        ("CH1 Isotype", "ch1Isotype"),
                         ("VD LC", "VD_LC"),
-                        ("Highest_Clin_Trial (Jan '20)", "maxPhase"),
+                        ("Highest_Clin_Trial (Jan '20)", "maxClinicalPhase"),
                         ("Est. Status", "status"),
                     ]
                 }

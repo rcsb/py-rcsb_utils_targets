@@ -37,6 +37,9 @@ class ChEMBLTargetProvider:
     def testCache(self):
         return self.__ok
 
+    def getTargetDataPath(self):
+        return os.path.join(self.__dirPath, "chembl-target-data.json")
+
     def __reload(self, dirPath, useCache, **kwargs):
         startTime = time.time()
         chemblDbUrl = kwargs.get("ChEMBLDbUrl", "ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/")
@@ -102,7 +105,8 @@ class ChEMBLTargetProvider:
         taxonL = []
         try:
             if addTaxonomy:
-                umP = UniProtIdMappingProvider(cachePath=cachePath, useCache=True)
+                umP = UniProtIdMappingProvider(cachePath)
+                umP.reload(useCache=True)
             #
             fD = mU.doImport(chemblTargetRawPath, fmt="fasta", commentStyle="default")
             #

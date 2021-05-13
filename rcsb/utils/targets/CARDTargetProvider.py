@@ -38,6 +38,12 @@ class CARDTargetProvider:
         else:
             return False
 
+    def getTargetDataPath(self):
+        return os.path.join(self.__dirPath, "card-target-data.json")
+
+    def getCofactorDataPath(self):
+        return None
+
     def __reload(self, dirPath, **kwargs):
         oD = None
         version = None
@@ -91,15 +97,18 @@ class CARDTargetProvider:
         taxonL = []
         try:
             for modelId, tD in cardD.items():
+                modelBitScore = None
                 # aroAcc = tD["accession"]
                 aroId = tD["id"]
                 if "sequences" not in tD:
                     continue
+                modelBitScore = tD["modelBitScore"] if "modelBitScore" in tD else None
                 for qD in tD["sequences"]:
                     sId = qD["seqId"]
                     seq = qD["sequence"]
                     taxId = qD["taxId"]
                     cD = {"sequence": seq, "modelId": modelId, "aroId": aroId, "seqId": sId, "taxId": taxId}
+                    cD["bitScore"] = modelBitScore if modelBitScore else "-1.0"
                     #
                     cId = ""
                     cL = []
@@ -159,6 +168,14 @@ class CARDTargetProvider:
                             )
                 except Exception as e:
                     logger.exception("Failing with %s", str(e))
+
+                try:
+                    if "model_param" in mD and "blastp_bit_score" in mD["model_param"] and "param_value" in mD["model_param"]["blastp_bit_score"]:
+                        oD[modelId]["modelBitScore"] = mD["model_param"]["blastp_bit_score"]["param_value"]
+
+                except Exception as e:
+                    logger.exception("Failing with %s", str(e))
+
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return oD, version

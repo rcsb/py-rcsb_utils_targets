@@ -38,18 +38,22 @@ class PharosTargetProviderTests(unittest.TestCase):
 
     def setUp(self):
         configPath = os.path.join(HERE, "test-data", "pharos-config-example.yml")
-        configName = "site_info_configuration"
-        cfgOb = ConfigUtil(configPath=configPath, defaultSectionName=configName)
-        self.__user = cfgOb.get("_MYSQL_DB_USER_NAME", sectionName=configName)
-        self.__pw = cfgOb.get("_MYSQL_DB_PASSWORD", sectionName=configName)
+        self.__configName = "site_info_configuration"
+        self.__cfgOb = ConfigUtil(configPath=configPath, defaultSectionName=self.__configName)
+        self.__user = self.__cfgOb.get("_MYSQL_DB_USER_NAME", sectionName=self.__configName)
+        self.__pw = self.__cfgOb.get("_MYSQL_DB_PASSWORD", sectionName=self.__configName)
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
         self.__dirPath = os.path.join(self.__cachePath, "Pharos-targets")
         self.__dataPath = os.path.join(HERE, "test-data")
-        self.__mU = MarshalUtil(workPath=self.__cachePath)
+        #
+        self.__stashUrl = None
+        self.__stashRemotePath = os.path.join(self.__cachePath, "stash-remote")
+        #
         self.__pharosFixture()
 
     def tearDown(self):
         pass
+        #
 
     def __pharosFixture(self):
         try:
@@ -62,6 +66,7 @@ class PharosTargetProviderTests(unittest.TestCase):
                 outPath = os.path.join(dstPath, fn + ".tdd.gz")
                 fU.get(inpPath, outPath)
                 fU.uncompress(outPath, outputDir=dstPath)
+                fU.remove(outPath)
             ok = True
         except Exception as e:
             logger.exception("Failing with %s", str(e))
@@ -96,6 +101,22 @@ class PharosTargetProviderTests(unittest.TestCase):
             fastaPath = self.__cachePath = os.path.join(HERE, "test-output", "pharos-targets.fa")
             taxonPath = self.__cachePath = os.path.join(HERE, "test-output", "pharos-targets-taxon.tdd")
             ok = ptP.exportProteinFasta(fastaPath, taxonPath, addTaxonomy=False)
+            self.assertTrue(ok)
+            #
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+            self.fail()
+
+    def testStashDependencies(self):
+        try:
+            ptP = PharosTargetProvider(cachePath=self.__cachePath, useCache=True, reloadDb=False, fromDb=False)
+            ok = ptP.testCache()
+            self.assertTrue(ok)
+            #
+            ok = ptP.backup(self.__cfgOb, self.__configName)
+            self.assertTrue(ok)
+            #
+            ok = ptP.restore(self.__cfgOb, self.__configName)
             self.assertTrue(ok)
             #
         except Exception as e:

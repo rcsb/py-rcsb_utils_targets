@@ -31,7 +31,8 @@ class ChEMBLTargetProvider:
         #
         self.__cachePath = cachePath
         self.__dirPath = os.path.join(self.__cachePath, "ChEMBL-targets")
-        self.__ok = self.__reload(self.__dirPath, useCache, **kwargs)
+        baseVersion = 28
+        self.__ok = self.__reload(self.__dirPath, baseVersion, useCache, **kwargs)
         #
 
     def testCache(self):
@@ -40,17 +41,17 @@ class ChEMBLTargetProvider:
     def getTargetDataPath(self):
         return os.path.join(self.__dirPath, "chembl-target-data.json")
 
-    def __reload(self, dirPath, useCache, **kwargs):
+    def __reload(self, dirPath, baseVersion, useCache, **kwargs):
         startTime = time.time()
         chemblDbUrl = kwargs.get("ChEMBLDbUrl", "ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/")
         ok = False
         fU = FileUtil()
         fU.mkdir(dirPath)
         #
-        baseVersion = 27
-        # ChEMBL current version 27,...
-        # template:  chembl_27.fa.gz
+        # ChEMBL current version <baseVersion>,...
+        # template:  chembl_<baseVersion>.fa.gz
         #
+
         targetFileName = "chembl_" + str(baseVersion) + ".fa.gz"
         mappingFileName = "chembl_uniprot_mapping.txt"
         #
@@ -63,19 +64,20 @@ class ChEMBLTargetProvider:
         else:
             url = os.path.join(chemblDbUrl, mappingFileName)
             ok = fU.get(url, chemblMappingPath)
-            logger.info("Fetching url %s path %s", url, chemblMappingPath)
+            logger.info("Fetched %r url %s path %s", ok, url, chemblMappingPath)
             #
             for vers in range(baseVersion, baseVersion + 10):
+                logger.info("Now fetching version %r", vers)
                 targetFileName = "chembl_" + str(vers) + ".fa.gz"
                 chemblTargetPath = os.path.join(dirPath, "chembl_targets_raw.fa.gz")
                 url = os.path.join(chemblDbUrl, targetFileName)
                 ok = fU.get(url, chemblTargetPath)
-                logger.info("Fetching url %s path %s", url, chemblTargetPath)
+                logger.info("Fetched %r url %s path %s", ok, url, chemblTargetPath)
                 if ok:
                     break
             #
-            logger.info("Completed fetches at %s (%.4f seconds)", time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
-            #
+        logger.info("Completed reload at %s (%.4f seconds)", time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        #
         return ok
 
     def exportFasta(self, fastaPath, taxonPath, addTaxonomy=False):
@@ -93,6 +95,7 @@ class ChEMBLTargetProvider:
         mU = MarshalUtil(workPath=cachePath)
         # ----
         mapD = {}
+        logger.info("Reading ChEMBL mapping file path %s", mappingFilePath)
         rowL = mU.doImport(mappingFilePath, fmt="tdd", rowFormat="list")
         for row in rowL:
             mapD.setdefault(row[0], []).append((row[1], row[3]))
@@ -167,9 +170,7 @@ class ChEMBLTargetProvider:
                 act = new_client.activity  # pylint: disable=no-member
                 act.set_format("json")
                 actDL = (
-                    act.filter(target_chembl_id__in=targetChEMBLIdList[ii : ii + chunkSize])
-                    .filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"])
-                    .filter(standard_value__isnull=False)
+                    act.filter(target_chembl_id__in=targetChEMBLIdList[ii : ii + chunkSize]).filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"]).filter(standard_value__isnull=False)
                 )
                 if actDL:
                     logger.info("actDL (%d)", len(actDL))

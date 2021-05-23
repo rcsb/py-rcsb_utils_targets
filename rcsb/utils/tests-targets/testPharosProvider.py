@@ -24,7 +24,6 @@ import unittest
 from rcsb.utils.config.ConfigUtil import ConfigUtil
 from rcsb.utils.targets.PharosTargetProvider import PharosTargetProvider
 from rcsb.utils.io.FileUtil import FileUtil
-from rcsb.utils.io.MarshalUtil import MarshalUtil
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 TOPDIR = os.path.dirname(os.path.dirname(HERE))

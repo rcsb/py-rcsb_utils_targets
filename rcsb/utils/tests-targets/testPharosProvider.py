@@ -106,6 +106,7 @@ class PharosTargetProviderTests(unittest.TestCase):
             logger.exception("Failing with %s", str(e))
             self.fail()
 
+    @unittest.skipIf(skipFull, "Internal test")
     def testStashDependencies(self):
         try:
             ptP = PharosTargetProvider(cachePath=self.__cachePath, useCache=True, reloadDb=False, fromDb=False)

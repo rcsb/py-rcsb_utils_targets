@@ -6,7 +6,7 @@
 #
 ##
 """
-Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data mappings
+Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data.
 """
 
 import logging
@@ -20,15 +20,16 @@ logger = logging.getLogger(__name__)
 
 
 class SAbDabTargetProvider(object):
-    """Accessors for SAbDab target assignments."""
+    """Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data."""
 
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
         self.__dirPath = os.path.join(self.__cachePath, "SAbDab-targets")
         #
+        self.__assignVersion = None
         self.__mU = MarshalUtil(workPath=self.__dirPath)
-        self.__oD, self.__dumpPath = self.__reload(self.__dirPath, **kwargs)
+        self.__oD, self.__dumpPath, self.__assignVersion = self.__reload(self.__dirPath, **kwargs)
         #
 
     def testCache(self, minCount=590):
@@ -37,6 +38,21 @@ class SAbDabTargetProvider(object):
             return True
         else:
             return False
+
+    def getFeatures(self, therapeuticName, featureKey):
+        fL = []
+        try:
+            fS = self.__oD[therapeuticName][featureKey]
+            if ";" in fS:
+                fL = fS.split(";")
+            else:
+                fL = [fS]
+        except Exception:
+            fL = []
+        return fL
+
+    def getAssignmentVersion(self):
+        return self.__assignVersion
 
     def __reload(self, dirPath, **kwargs):
         startTime = time.time()
@@ -61,8 +77,9 @@ class SAbDabTargetProvider(object):
             #
             rDL = self.__mU.doImport(dumpPath, fmt="csv", rowFormat="dict")
             logger.debug("rD keys %r", list(rDL[0].keys()))
+            tD = {}
             for rD in rDL:
-                oD[rD["Therapeutic"]] = {
+                tD[rD["Therapeutic"]] = {
                     kTup[1]: rD[kTup[0]] if rD[kTup[0]] not in ["na", "na;na"] else None
                     for kTup in [
                         ("Therapeutic", "antibodyName"),
@@ -71,15 +88,20 @@ class SAbDabTargetProvider(object):
                         ("VD LC", "VD_LC"),
                         ("Highest_Clin_Trial (Jan '20)", "maxClinicalPhase"),
                         ("Est. Status", "status"),
+                        ("Target", "target"),
+                        ("Conditions Approved", "conditionsApproved"),
+                        ("Conditions Active", "conditionsActive"),
                     ]
                 }
-
+            tS = time.strftime("%Y %m %d %H:%M:%S", time.localtime())
+            vS = time.strftime("%Y-%m-%d", time.localtime())
+            oD = {"version": vS, "created": tS, "identifiers": tD}
             ok = self.__mU.doExport(dataPath, oD, fmt="json", indent=3)
-            logger.info("Exporting SAbDab %d data records in %r status %r", len(oD), dataPath, ok)
+            logger.info("Exporting SAbDab %d data records in %r status %r", len(oD["identifiers"]), dataPath, ok)
 
         # ---
         logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
-        return oD, dumpPath
+        return oD["identifiers"], dumpPath, oD["version"]
 
     def exportFasta(self, fastaPath):
         ok = self.__convertDumpToFasta(dumpPath=self.__dumpPath, fastaPath=fastaPath)

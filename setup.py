@@ -15,6 +15,13 @@ thisPackage = "rcsb.utils.targets"
 with open("rcsb/utils/targets/__init__.py", "r") as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE).group(1)
 
+# Load packages from requirements*.txt
+with open("requirements.txt", "r") as ifh:
+    packagesRequired = [ln.strip() for ln in ifh.readlines()]
+
+with open("README.md", "r") as ifh:
+    longDescription = ifh.read()
+
 if not version:
     raise RuntimeError("Cannot find version information")
 
@@ -22,7 +29,8 @@ setup(
     name=thisPackage,
     version=version,
     description="RCSB Python Wrapper Module for Target Utilities",
-    long_description="See:  README.md",
+    long_description_content_type="text/markdown",
+    long_description=longDescription,
     author="John Westbrook",
     author_email="john.westbrook@rcsb.org",
     url="https://github.com/rcsb/py-rcsb_utils_targets",
@@ -41,7 +49,7 @@ setup(
     ),
     entry_points={"console_scripts": []},
     #
-    install_requires=["rcsb.utils.io >= 0.94", "rcsb.utils.config >= 0.35", "rcsb.utils.seq >= 0.48", "chembl-webresource-client >= 0.10.2"],
+    install_requires=packagesRequired,
     packages=find_packages(exclude=["rcsb.mock-data", "rcsb.utils.tests-targets", "rcsb.utils.tests-*", "tests.*"]),
     package_data={
         # If any package contains *.md or *.rst ...  files, include them:

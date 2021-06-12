@@ -38,6 +38,18 @@ class CARDTargetProvider:
         else:
             return False
 
+    def hasFeature(self, modelId):
+        return modelId in self.__oD
+
+    def getFeature(self, modelId, featureKey):
+        try:
+            return self.__oD[modelId][featureKey]
+        except Exception:
+            return None
+
+    def getAssignmentVersion(self):
+        return self.__version
+
     def getTargetDataPath(self):
         return os.path.join(self.__dirPath, "card-target-data.json")
 
@@ -74,7 +86,10 @@ class CARDTargetProvider:
             fU.unbundleTarfile(os.path.join(cardDumpDirPath, cardDumpFileName[:-4]), dirPath=cardDumpDirPath)
             logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
             oD, version = self.__parseCardData(os.path.join(cardDumpDirPath, "card.json"))
-            ok = self.__mU.doExport(cardDataPath, {"version": version, "data": oD}, fmt="json", indent=3)
+            tS = time.strftime("%Y %m %d %H:%M:%S", time.localtime())
+            qD = {"version": version, "created": tS, "data": oD}
+            oD = qD["data"]
+            ok = self.__mU.doExport(cardDataPath, qD, fmt="json", indent=3)
             logger.info("Export CARD data (%d) status %r", len(oD), ok)
         # ---
         return oD, version
@@ -137,7 +152,6 @@ class CARDTargetProvider:
 
         Returns:
             (dict, string): card selected data dictionary, card version string
-
         """
         try:
             oD = {}

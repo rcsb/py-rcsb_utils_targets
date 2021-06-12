@@ -17,19 +17,20 @@ import time
 from rcsb.utils.io.ExecUtils import ExecUtils
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
-from rcsb.utils.io.StashUtil import StashUtil
+from rcsb.utils.io.StashableBase import StashableBase
 from rcsb.utils.seq.UniProtIdMappingProvider import UniProtIdMappingProvider
 
 logger = logging.getLogger(__name__)
 
 
-class PharosTargetProvider:
+class PharosTargetProvider(StashableBase):
     """Accessors for Pharos target assignments."""
 
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
         self.__dirName = "Pharos-targets"
+        super(PharosTargetProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
@@ -228,84 +229,3 @@ class PharosTargetProvider:
         except Exception as e:
             logger.exception("Failing with %r %s", qD, str(e))
         return targetD
-
-    def restore(self, cfgOb, configName):
-        ok = False
-        try:
-            startTime = time.time()
-            url = cfgOb.get("STASH_SERVER_URL", sectionName=configName)
-            userName = cfgOb.get("_STASH_AUTH_USERNAME", sectionName=configName)
-            password = cfgOb.get("_STASH_AUTH_PASSWORD", sectionName=configName)
-            basePath = cfgOb.get("_STASH_SERVER_BASE_PATH", sectionName=configName)
-            ok = self.__fromStash(url, basePath, userName=userName, password=password)
-            logger.info("Recovered Pharos data file from stash (%r)", ok)
-            if not ok:
-                urlFallBack = cfgOb.get("STASH_SERVER_FALLBACK_URL", sectionName=configName)
-                ok = self.__fromStash(urlFallBack, basePath, userName=userName, password=password)
-                logger.info("Recovered Pharos data file from fallback stash (%r)", ok)
-            #
-            logger.info("Completed recovery (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-        #
-        return ok
-
-    def backup(self, cfgOb, configName):
-        ok1 = ok2 = False
-        try:
-            startTime = time.time()
-            userName = cfgOb.get("_STASH_AUTH_USERNAME", sectionName=configName)
-            password = cfgOb.get("_STASH_AUTH_PASSWORD", sectionName=configName)
-            basePath = cfgOb.get("_STASH_SERVER_BASE_PATH", sectionName=configName)
-            url = cfgOb.get("STASH_SERVER_URL", sectionName=configName)
-            urlFallBack = cfgOb.get("STASH_SERVER_FALLBACK_URL", sectionName=configName)
-            ok1 = self.__toStash(url, basePath, userName=userName, password=password)
-            ok2 = self.__toStash(urlFallBack, basePath, userName=userName, password=password)
-            logger.info("Completed Pharos backup (%r/%r) at %s (%.4f seconds)", ok1, ok2, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-        return ok1 & ok2
-
-    def __toStash(self, url, stashRemoteDirPath, userName=None, password=None, remoteStashPrefix=None):
-        """Copy tar and gzipped bundled cache data to remote server/location.
-
-        Args:
-            url (str): server URL (e.g. sftp://hostname.domain) None for local host
-            stashRemoteDirPath (str): path to target directory on remote server
-            userName (str, optional): server username. Defaults to None.
-            password (str, optional): server password. Defaults to None.
-            remoteStashPrefix (str, optional): channel prefix. Defaults to None.
-
-        Returns:
-            (bool): True for success or False otherwise
-        """
-        ok = False
-        try:
-            stU = StashUtil(os.path.join(self.__cachePath, "stash"), self.__dirName)
-            ok = stU.makeBundle(self.__cachePath, [self.__dirName])
-            if ok:
-                ok = stU.storeBundle(url, stashRemoteDirPath, remoteStashPrefix=remoteStashPrefix, userName=userName, password=password)
-        except Exception as e:
-            logger.error("Failing with url %r stashDirPath %r: %s", url, stashRemoteDirPath, str(e))
-        return ok
-
-    def __fromStash(self, url, stashRemoteDirPath, userName=None, password=None, remoteStashPrefix=None):
-        """Restore local cache from a tar and gzipped bundle to fetched from a remote server/location.
-
-        Args:
-            url (str): server URL (e.g. sftp://hostname.domain) None for local host
-            stashRemoteDirPath (str): path to target directory on remote server
-            userName (str, optional): server username. Defaults to None.
-            password (str, optional): server password. Defaults to None.
-            remoteStashPrefix (str, optional): channel prefix. Defaults to None.
-
-        Returns:
-            (bool): True for success or False otherwise
-        """
-        ok = False
-        try:
-            stU = StashUtil(os.path.join(self.__cachePath, "stash"), self.__dirName)
-            ok = stU.fetchBundle(self.__cachePath, url, stashRemoteDirPath, remoteStashPrefix=remoteStashPrefix, userName=userName, password=password)
-        except Exception as e:
-            logger.error("Failing with url %r stashDirPath %r: %s", url, stashRemoteDirPath, str(e))
-        return ok

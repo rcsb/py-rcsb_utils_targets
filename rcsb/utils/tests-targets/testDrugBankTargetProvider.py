@@ -13,7 +13,7 @@ Tests for utilities managing DrugBank target data.
 
 """
 
-__docformat__ = "restructuredtext en"
+__docformat__ = "google en"
 __author__ = "John Westbrook"
 __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Apache 2.0"

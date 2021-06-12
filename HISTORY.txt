@@ -10,3 +10,5 @@
   13-Dec-2020  - V0.19 Make Pharos sql restore a shell process.
   14-Dec-2020  - V0.20 Suppress stderr in the export of mysql table data.
   13-May-2021  - V0.21 Additional caching and stashing functions for all providers
+  12-Jun-2021  - V0.22 Adding SAbDabTargetFeatureProvider() and CARDTargetFeatureProvider() modules
+

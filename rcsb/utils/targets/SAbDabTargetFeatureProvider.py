@@ -29,7 +29,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
-        self.__dirName = "SAbDab-targets"
+        self.__dirName = "SAbDab-features"
         super(SAbDabTargetFeatureProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #

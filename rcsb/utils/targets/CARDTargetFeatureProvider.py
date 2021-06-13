@@ -27,7 +27,7 @@ class CARDTargetFeatureProvider(StashableBase):
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
-        self.__dirName = "CARD-targets"
+        self.__dirName = "CARD-features"
         super(CARDTargetFeatureProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #

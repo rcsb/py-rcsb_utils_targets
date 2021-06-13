@@ -100,10 +100,12 @@ class CARDTargetFeatureProvider(StashableBase):
                 entityId = tL[0].split("_")[1]
                 nm = cardP.getFeature(modelId, "modelName")
                 descr = cardP.getFeature(modelId, "descr")
+                featureId = cardP.getFeature(modelId, "id")
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
                     "type": "CARD_MODEL",
+                    "feature_id": featureId,
                     "name": nm,
                     "description": descr,
                     "provenance_source": provenanceSource,

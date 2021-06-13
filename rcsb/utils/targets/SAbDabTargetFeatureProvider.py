@@ -108,11 +108,12 @@ class SAbDabTargetFeatureProvider(StashableBase):
                     fVL = stP.getFeatures(thName, fKy)
                     if not fVL:
                         continue
-                    for fV in fVL:
+                    for ii, fV in enumerate(fVL):
                         rD = {
                             "entry_id": entryId,
                             "entity_id": entityId,
                             "type": fType,
+                            "feature_id": "SAbDab" + "_" + str(ii + 1),
                             "name": fV,
                             "provenance_source": provenanceSource,
                             "reference_scheme": refScheme,

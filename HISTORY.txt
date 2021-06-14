@@ -13,4 +13,5 @@
   12-Jun-2021  - V0.22 Adding SAbDabTargetFeatureProvider() and CARDTargetFeatureProvider() modules
   13-Jun-2021  - V0.23 Move features to separate paths in CARDTargetFeatureProvider() and SAbDabTargetFeatureProvider()
   13-Jun-2021  - V0.24 Add feature identifiers to the outputs of CARDTargetFeatureProvider() and SAbDabTargetFeatureProvider()
+  14-Jun-2021  - V0.25 Standardized version and timestamp in CARDTargetFeatureProvider() and SAbDabTargetFeatureProvider()
 

@@ -9,6 +9,7 @@
 Accessors for CARD target features.
 """
 
+import datetime
 import logging
 import os.path
 import time
@@ -121,7 +122,7 @@ class CARDTargetFeatureProvider(StashableBase):
             eId = rD["entry_id"] + "_" + rD["entity_id"]
             qD.setdefault(eId, []).append(rD)
         fp = self.__getFeatureDataPath()
-        tS = time.strftime("%Y %m %d %H:%M:%S", time.localtime())
-        vS = time.strftime("%Y-%m-%d", time.localtime())
+        tS = datetime.datetime.now().isoformat()
+        vS = datetime.datetime.now().strftime("%Y-%m-%d")
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": qD}, fmt="json", indent=3)
         return ok

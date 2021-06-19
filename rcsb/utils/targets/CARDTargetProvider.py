@@ -10,6 +10,7 @@ Accessors for CARD target assignments.
 
 """
 
+import datetime
 import logging
 import os.path
 import time
@@ -86,7 +87,7 @@ class CARDTargetProvider:
             fU.unbundleTarfile(os.path.join(cardDumpDirPath, cardDumpFileName[:-4]), dirPath=cardDumpDirPath)
             logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
             oD, version = self.__parseCardData(os.path.join(cardDumpDirPath, "card.json"))
-            tS = time.strftime("%Y %m %d %H:%M:%S", time.localtime())
+            tS = datetime.datetime.now().isoformat()
             qD = {"version": version, "created": tS, "data": oD}
             oD = qD["data"]
             ok = self.__mU.doExport(cardDataPath, qD, fmt="json", indent=3)

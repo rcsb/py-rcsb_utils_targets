@@ -1,13 +1,12 @@
 ##
 #  File:           PharosTargetProvider.py
-#  Date:           9-Nov-2020 jdw
+#  Date:           11-Jun-2021 jdw
 #
 #  Updated:
 #
 ##
 """
 Accessors for Pharos target assignments.
-
 """
 
 import logging
@@ -158,25 +157,6 @@ class PharosTargetProvider(StashableBase):
             logger.exception("Failing with %s", str(e))
         return ok
 
-    def exportCofactors(self, cofactorDataPath, fmt="json"):
-        targetD = {}
-        cofactorFilePath = os.path.join(self.__dirPath, "drug_activity.tdd")
-        cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
-        targetD = self.__extactCofactorData(cfDL)
-        #
-        cofactorFilePath = os.path.join(self.__dirPath, "cmpd_activity.tdd")
-        cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
-        targetD.update(self.__extactCofactorData(cfDL))
-        #
-        tD = self.__getTargetDetails()
-        for tId in targetD:
-            if tId in tD:
-                for k, v in tD[tId].items():
-                    targetD[tId][k] = v
-        #
-        ok = self.__mU.doExport(cofactorDataPath, targetD, fmt=fmt)
-        return ok
-
     def __getTargetDetails(self):
         # protein.tdd
         # id	name	description	uniprot	up_version	geneid	sym	family	chr	seq	dtoid	stringid	dtoclass
@@ -195,37 +175,3 @@ class PharosTargetProvider(StashableBase):
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return rD
-
-    def __extactCofactorData(self, cfDL):
-        """Extra ids, activity and moa data for drugs and cofactors.
-
-        Args:
-            cfDL (list): list of dictionaries of containing pharos exported db data.
-
-        Returns:
-            dict: dictionary of extract cofactor data
-        """
-        try:
-            qD = {}
-            targetD = {}
-            for cfD in cfDL:
-                tId = cfD["target_id"]
-                qD = {}
-                qD["smiles"] = cfD["smiles"] if "smiles" in cfD and cfD["smiles"] != "N" else None
-                qD["chemblId"] = cfD["cmpd_chemblid"] if "cmpd_chemblid" in cfD else None
-                qD["chemblId"] = cfD["cmpd_id_in_src"] if "catype" in cfD and cfD["catype"].upper() == "CHEMBL" else qD["chemblId"]
-                qD["pubChemId"] = cfD["cmpd_pubchem_cid"] if "cmpd_pubchem_cid" in cfD else None
-                #
-                qD["activity"] = cfD["act_value"] if "act_value" in cfD and cfD["act_value"] != "NULL" else None
-                qD["activityType"] = cfD["act_type"] if "act_type" in cfD and cfD["act_type"] != "NULL" else None
-                if qD["activity"] is not None:
-                    qD["activity"] = float(qD["activity"])
-                #
-                qD["moa"] = cfD["action"] if "action" in cfD and cfD["moa"] == "1" else None
-                qD["name"] = cfD["drug"] if "drug" in cfD else None
-                qD["name"] = cfD["cmpd_name_in_src"] if "cmpd_name_in_src" in cfD and cfD["cmpd_name_in_src"] != "NULL" else qD["name"]
-                targetD[tId] = {ky: qD[ky] for ky in qD if qD[ky] is not None}
-            #
-        except Exception as e:
-            logger.exception("Failing with %r %s", qD, str(e))
-        return targetD

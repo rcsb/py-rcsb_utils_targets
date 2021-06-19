@@ -33,11 +33,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
-class CARDTargetProviderTests(unittest.TestCase):
+class CARDTargetFeatureProviderTests(unittest.TestCase):
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
         #
-        self.__seqMatchResultsPath = os.path.join(HERE, "test-data", "pdb-card-results.json")
+        self.__seqMatchResultsPath = os.path.join(HERE, "test-data", "card-vs-pdbprent-filtered-results.json.gz")
         self.__startTime = time.time()
         logger.info("Starting %s at %s", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
 
@@ -57,15 +57,15 @@ class CARDTargetProviderTests(unittest.TestCase):
         stfP = CARDTargetFeatureProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasFeatures("3g7e_1")
+        ok = stfP.hasFeatures("5f64_1")
         self.assertTrue(ok)
-        fL = stfP.getFeatures("3g7e_1")
-        self.assertGreaterEqual(len(fL), 2)
+        fL = stfP.getFeatures("5f64_1")
+        self.assertGreaterEqual(len(fL), 1)
 
 
 def buildCARDFeaturesTargets():
     suiteSelect = unittest.TestSuite()
-    suiteSelect.addTest(CARDTargetProviderTests("testBuildCARDTargetsFeatures"))
+    suiteSelect.addTest(CARDTargetFeatureProviderTests("testBuildCARDTargetsFeatures"))
     return suiteSelect
 
 

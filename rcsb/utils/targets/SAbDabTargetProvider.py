@@ -1,6 +1,6 @@
 ##
 #  File:           SAbDabTargetProvider.py
-#  Date:           30-Nov-2020 jdw
+#  Date:           18-Jun-2021 jdw
 #
 #  Updated:
 #
@@ -9,6 +9,7 @@
 Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data.
 """
 
+import datetime
 import logging
 import os.path
 import time
@@ -25,7 +26,7 @@ class SAbDabTargetProvider(object):
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
-        self.__dirPath = os.path.join(self.__cachePath, "SAbDab-targets")
+        self.__dirPath = os.path.join(self.__cachePath, "SAbDab-features")
         #
         self.__assignVersion = None
         self.__mU = MarshalUtil(workPath=self.__dirPath)
@@ -66,7 +67,7 @@ class SAbDabTargetProvider(object):
         #
         fU.mkdir(dirPath)
         dumpPath = os.path.join(dirPath, dumpFileName)
-        dataPath = os.path.join(dirPath, "SAbDab-data.json")
+        dataPath = os.path.join(dirPath, "sabdab-data.json")
         #
         logger.info("useCache %r sabdabDumpPath %r", useCache, dumpPath)
         if useCache and self.__mU.exists(dataPath):
@@ -93,8 +94,8 @@ class SAbDabTargetProvider(object):
                         ("Conditions Active", "conditionsActive"),
                     ]
                 }
-            tS = time.strftime("%Y %m %d %H:%M:%S", time.localtime())
-            vS = time.strftime("%Y-%m-%d", time.localtime())
+            tS = datetime.datetime.now().isoformat()
+            vS = datetime.datetime.now().strftime("%Y-%m-%d")
             oD = {"version": vS, "created": tS, "identifiers": tD}
             ok = self.__mU.doExport(dataPath, oD, fmt="json", indent=3)
             logger.info("Exporting SAbDab %d data records in %r status %r", len(oD["identifiers"]), dataPath, ok)
@@ -116,9 +117,20 @@ class SAbDabTargetProvider(object):
             sD = {}
             for rD in rDL:
                 hSeq = rD["Heavy Sequence"] if rD["Heavy Sequence"] != "na" else None
-                lSeq = rD["Light Sequence"] if rD["Light Sequence"] != "na" else None
                 if hSeq:
                     cD = {"sequence": hSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "heavy"}
+                seqId = ""
+                cL = []
+                for k, v in cD.items():
+                    if k in ["sequence"]:
+                        continue
+                    cL.append(str(v))
+                    cL.append(str(k))
+                #
+                seqId = "|".join(cL)
+                sD[seqId] = cD
+            for rD in rDL:
+                lSeq = rD["Light Sequence"] if rD["Light Sequence"] != "na" else None
                 if lSeq:
                     cD = {"sequence": lSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "light"}
                 seqId = ""
@@ -128,6 +140,7 @@ class SAbDabTargetProvider(object):
                         continue
                     cL.append(str(v))
                     cL.append(str(k))
+                #
                 seqId = "|".join(cL)
                 sD[seqId] = cD
                 #

@@ -9,7 +9,7 @@
 #
 ##
 """
-Tests for utilities managing SAbDab target data.
+Tests for utilities managing SAbDab target feature data.
 """
 
 __docformat__ = "google en"
@@ -33,11 +33,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
-class SAbDabTargetProviderTests(unittest.TestCase):
+class SAbDabTargetFeatureProviderTests(unittest.TestCase):
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
         #
-        self.__seqMatchResultsPath = os.path.join(HERE, "test-data", "pdb-sabdab-results.json")
+        self.__seqMatchResultsPath = os.path.join(HERE, "test-data", "sabdab-vs-pdbprent-filtered-results.json.gz")
         self.__startTime = time.time()
         logger.info("Starting %s at %s", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
 
@@ -65,7 +65,7 @@ class SAbDabTargetProviderTests(unittest.TestCase):
 
 def buildSAbDabFeaturesTargets():
     suiteSelect = unittest.TestSuite()
-    suiteSelect.addTest(SAbDabTargetProviderTests("testBuildSAbDabTargetsFeatures"))
+    suiteSelect.addTest(SAbDabTargetFeatureProviderTests("testBuildSAbDabTargetsFeatures"))
     return suiteSelect
 
 

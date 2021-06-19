@@ -68,12 +68,10 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
             ok = ctP.testCache()
             self.assertTrue(ok)
             # P43088|CHEMBL1987|9606
-            # P43093|CHEMBL6179|294748
-            tL = ["CHEMBL1987", "CHEMBL6179"]
-            targetD, molD = ctP.getActivityData(tL)
-            logger.info("keys: %r", list(molD.keys()))
+            # P08243|uniprotId|CHEMBL3120|chemblId|9606|taxId
+            tL = ["CHEMBL1987", "CHEMBL3120"]
+            targetD = ctP.getActivityData(tL)
             ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-target-activity.json"), targetD, fmt="json", indent=3)
-            ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-molecule-activity.json"), molD, fmt="json", indent=3)
             self.assertTrue(ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
@@ -87,8 +85,8 @@ class ChEMBLTargetProviderTests(unittest.TestCase):
             ok = ctP.testCache()
             self.assertTrue(ok)
             # P43088|CHEMBL1987|9606
-            # P43093|CHEMBL6179|294748
-            tL = ["CHEMBL1987", "CHEMBL6179"]
+            # P08243|uniprotId|CHEMBL3120|chemblId|9606|taxId
+            tL = ["CHEMBL1987", "CHEMBL3120"]
             oD.update(ctP.getMechanismData(tL))
             #
             ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-target-mechanism.json"), oD, fmt="json", indent=3)

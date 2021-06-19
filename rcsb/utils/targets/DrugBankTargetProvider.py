@@ -15,7 +15,7 @@ __author__ = "John Westbrook"
 __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Apache 2.0"
 
-
+import datetime
 import logging
 import os
 import time
@@ -39,8 +39,10 @@ class DrugBankTargetProvider(object):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
         self.__dirPath = os.path.join(self.__cachePath, "DrugBank-targets")
-        self.__fastaPathList = self.__reload(self.__dirPath, **kwargs)
         self.__version = None
+        self.__cfD = None
+        self.__fastaPathList = self.__reloadFasta(self.__dirPath, **kwargs)
+        self.__mU = MarshalUtil(workPath=self.__dirPath)
 
     def testCache(self):
         try:
@@ -49,10 +51,10 @@ class DrugBankTargetProvider(object):
             logger.debug("Failing with %s", str(e))
         return False
 
-    def getVersion(self):
-        return None
+    def getAssignmentVersion(self):
+        return self.__version if self.__version else datetime.datetime.now().strftime("%Y-%m-%d")
 
-    def __reload(self, dirPath, **kwargs):
+    def __reloadFasta(self, dirPath, **kwargs):
         """Reload DrugBank target FASTA data files.
 
         Args:
@@ -76,7 +78,9 @@ class DrugBankTargetProvider(object):
         username = kwargs.get("username", None)
         password = kwargs.get("password", None)
         #
-
+        if not username or not password:
+            return retFilePathList
+        #
         fU = FileUtil()
         fU.mkdir(dirPath)
         #
@@ -130,14 +134,13 @@ class DrugBankTargetProvider(object):
         return retFilePathList
 
     def exportFasta(self, fastaPath, taxonPath, addTaxonomy=False):
-        ok = self.__consolidateFasta(fastaPath, taxonPath, self.__dirPath, self.__fastaPathList, addTaxonomy=addTaxonomy)
+        ok = self.__consolidateFasta(fastaPath, taxonPath, self.__fastaPathList, addTaxonomy=addTaxonomy)
         return ok
 
-    def __consolidateFasta(self, fastaPath, taxonPath, dirPath, inpPathList, addTaxonomy=False):
+    def __consolidateFasta(self, fastaPath, taxonPath, inpPathList, addTaxonomy=False):
         #
-        drugBankTargetMapPath = os.path.join(dirPath, "drugbank_target_drug_map.json")
+        drugBankTargetMapPath = self.__getTargetDrugMapPath()
         #
-        mU = MarshalUtil(workPath=dirPath)
         oD = {}
         uD = {}
         taxonL = []
@@ -147,7 +150,7 @@ class DrugBankTargetProvider(object):
                 umP.reload(useCache=True)
             #
             for fp in inpPathList:
-                fD = mU.doImport(fp, fmt="fasta", commentStyle="default")
+                fD = self.__mU.doImport(fp, fmt="fasta", commentStyle="default")
                 for seqId, sD in fD.items():
                     tL = seqId[seqId.find("(") + 1 : seqId.find(")")]
                     dbIdL = [v.strip() for v in tL.split(";")]
@@ -172,13 +175,43 @@ class DrugBankTargetProvider(object):
                         taxonL.append("%s\t%s" % (seqId, taxId))
                     uD.setdefault(unpId, []).extend(dbIdL)
 
-            ok1 = mU.doExport(fastaPath, oD, fmt="fasta", makeComment=True)
-            ok2 = mU.doExport(drugBankTargetMapPath, uD, fmt="json")
+            ok1 = self.__mU.doExport(fastaPath, oD, fmt="fasta", makeComment=True)
+            tS = datetime.datetime.now().isoformat()
+            vS = datetime.datetime.now().strftime("%Y-%m-%d")
+            ok2 = self.__mU.doExport(drugBankTargetMapPath, {"version": vS, "created": tS, "cofactors": uD}, fmt="json")
             ok3 = True
             if addTaxonomy:
-                ok3 = mU.doExport(taxonPath, taxonL, fmt="list")
+                ok3 = self.__mU.doExport(taxonPath, taxonL, fmt="list")
             return ok1 & ok2 & ok3
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         #
         return False
+
+    def __getTargetDrugMapPath(self):
+        return os.path.join(self.__dirPath, "drugbank_target_drug_map.json")
+
+    def hasCofactor(self, unpId):
+        if not self.__cfD:
+            self.__cfD = self.__reloadCofactors()
+        try:
+            return unpId in self.__cfD
+        except Exception:
+            return False
+
+    def getCofactors(self, unpId):
+        if not self.__cfD:
+            self.__cfD = self.__reloadCofactors()
+        try:
+            return self.__cfD[unpId]
+        except Exception:
+            return []
+
+    def __reloadCofactors(self):
+        try:
+            qD = self.__mU.doImport(self.__getTargetDrugMapPath(), fmt="json")
+            self.__version = qD["version"]
+            return qD["cofactors"]
+        except Exception as e:
+            logger.error("Failing with %s", str(e))
+        return {}

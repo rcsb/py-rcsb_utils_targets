@@ -30,15 +30,16 @@ class SAbDabTargetFeatureProvider(StashableBase):
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
+        useCache = kwargs.get("useCache", True)
         self.__dirName = "SAbDab-features"
         super(SAbDabTargetFeatureProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
-        self.__fD = self.__reload(self.__dirPath, **kwargs)
+        self.__fD = self.__reload(self.__dirPath, useCache)
         #
 
-    def testCache(self, minCount=590):
+    def testCache(self, minCount=300):
         logger.info("SAbDab feature count %d", len(self.__fD["features"]) if "features" in self.__fD else 0)
         if self.__fD and "features" in self.__fD and len(self.__fD["features"]) > minCount:
             return True
@@ -55,12 +56,16 @@ class SAbDabTargetFeatureProvider(StashableBase):
             return None
 
     def __getFeatureDataPath(self):
-        return os.path.join(self.__dirPath, "SAbDab-feature-data.json")
+        return os.path.join(self.__dirPath, "sabdab-feature-data.json")
 
-    def __reload(self, dirPath, **kwargs):
+    def reload(self):
+        self.__fD = self.__reload(self.__dirPath, True)
+        return True
+
+    def __reload(self, dirPath, useCache):
         startTime = time.time()
         fD = {}
-        useCache = kwargs.get("useCache", True)
+
         ok = False
         featurePath = self.__getFeatureDataPath()
         #
@@ -91,14 +96,45 @@ class SAbDabTargetFeatureProvider(StashableBase):
         provenanceSource = "SAbDab"
         refScheme = "PDB entity"
         assignVersion = stP.getAssignmentVersion()
+        #
+        # - sort out if we match light and heavy chains
+        #
+        iD = {}
+        fullMatchD = {}
         for queryId, matchDL in mD.items():
-            thName = queryId.split("|")[0]
+            qL = queryId.split("|")
+            thName = qL[0]
+            chainType = qL[2]
+            for matchD in matchDL:
+                tL = matchD["target"].split("|")
+                entryId = tL[0].split("_")[0]
+                entityId = tL[0].split("_")[1]
+                iD[(thName, chainType, entryId)] = entityId
+        logger.info("Match index length (%d)", len(iD))
+        for (thName, chainType, entryId), entityId in iD.items():
+            if chainType == "light":
+                continue
+            if (thName, "light", entryId) in iD:
+                fullMatchD[(thName, "heavy", entryId, entityId)] = True
+                lEntityId = iD[(thName, "light", entryId)]
+                fullMatchD[(thName, "light", entryId, lEntityId)] = True
+        logger.info("Antibody entity match length (%d)", len(fullMatchD))
+        #
+        # - Add features for full matches -
+        for queryId, matchDL in mD.items():
+            qL = queryId.split("|")
+            thName = qL[0]
+            chainType = qL[2]
+            #
             for matchD in matchDL:
                 begSeqId = matchD["targetStart"]
                 endSeqId = matchD["targetEnd"]
                 tL = matchD["target"].split("|")
                 entryId = tL[0].split("_")[0]
                 entityId = tL[0].split("_")[1]
+                if (thName, chainType, entryId, entityId) not in fullMatchD:
+                    continue
+                ii = 1
                 for fType, fKy in [
                     ("Antibody_Name", "antibodyName"),
                     ("Antibody_Format", "antibodyFormat"),
@@ -106,15 +142,17 @@ class SAbDabTargetFeatureProvider(StashableBase):
                     ("Antibody_Light_Chain_Type", "VD_LC"),
                     ("Antibody_Target", "target"),
                 ]:
+                    if fType == "Antibody_Light_Chain_Type" and chainType == "heavy":
+                        continue
                     fVL = stP.getFeatures(thName, fKy)
                     if not fVL:
                         continue
-                    for ii, fV in enumerate(fVL):
+                    for fV in fVL:
                         rD = {
                             "entry_id": entryId,
                             "entity_id": entityId,
                             "type": fType,
-                            "feature_id": "SAbDab" + "_" + str(ii + 1),
+                            "feature_id": thName + "_" + chainType + "_" + str(ii),
                             "name": fV,
                             "provenance_source": provenanceSource,
                             "reference_scheme": refScheme,
@@ -123,11 +161,15 @@ class SAbDabTargetFeatureProvider(StashableBase):
                             "feature_positions_end_seq_id": endSeqId,
                         }
                         rDL.append(rD)
+                        ii += 1
         #
         qD = {}
         for rD in rDL:
             eId = rD["entry_id"] + "_" + rD["entity_id"]
             qD.setdefault(eId, []).append(rD)
+        #
+        logger.info("Antibody matches (%d)", len(qD))
+        #
         fp = self.__getFeatureDataPath()
         tS = datetime.datetime.now().isoformat()
         vS = datetime.datetime.now().strftime("%Y-%m-%d")

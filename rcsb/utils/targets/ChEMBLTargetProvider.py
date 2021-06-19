@@ -32,11 +32,15 @@ class ChEMBLTargetProvider:
         self.__cachePath = cachePath
         self.__dirPath = os.path.join(self.__cachePath, "ChEMBL-targets")
         baseVersion = 28
+        self.__version = baseVersion
         self.__ok = self.__reload(self.__dirPath, baseVersion, useCache, **kwargs)
         #
 
     def testCache(self):
         return self.__ok
+
+    def getAssignmentVersion(self):
+        return self.__version
 
     def getTargetDataPath(self):
         return os.path.join(self.__dirPath, "chembl-target-data.json")
@@ -68,6 +72,7 @@ class ChEMBLTargetProvider:
             #
             for vers in range(baseVersion, baseVersion + 10):
                 logger.info("Now fetching version %r", vers)
+                self.__version = vers
                 targetFileName = "chembl_" + str(vers) + ".fa.gz"
                 chemblTargetPath = os.path.join(dirPath, "chembl_targets_raw.fa.gz")
                 url = os.path.join(chemblDbUrl, targetFileName)
@@ -75,7 +80,7 @@ class ChEMBLTargetProvider:
                 logger.info("Fetched %r url %s path %s", ok, url, chemblTargetPath)
                 if ok:
                     break
-            #
+        #
         logger.info("Completed reload at %s (%.4f seconds)", time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         #
         return ok
@@ -162,27 +167,41 @@ class ChEMBLTargetProvider:
 
         """
         targetD = {}
-        molD = {}
         chunkSize = 50
+        numTargets = len(targetChEMBLIdList)
         try:
             for ii in range(0, len(targetChEMBLIdList), chunkSize):
-                # for targetChEMBLId in targetChEMBLIdList:
+                logger.info("Begin chunk ii %d/%d", ii, numTargets)
                 act = new_client.activity  # pylint: disable=no-member
                 act.set_format("json")
                 actDL = (
                     act.filter(target_chembl_id__in=targetChEMBLIdList[ii : ii + chunkSize]).filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"]).filter(standard_value__isnull=False)
                 )
                 if actDL:
-                    logger.info("actDL (%d)", len(actDL))
                     for actD in actDL:
-                        targetD.setdefault(actD["target_chembl_id"], []).append(actD)
-                        if "molecule_chembl_id" in actD:
-                            molD.setdefault(actD["molecule_chembl_id"], []).append(actD)
-                        if "parent_molecule_chembl_id" in actD and actD["molecule_chembl_id"] != actD["parent_molecule_chembl_id"]:
-                            molD.setdefault(actD["parent_molecule_chembl_id"], []).append(actD)
+                        targetD.setdefault(actD["target_chembl_id"], []).append(self.__activitySelect(actD))
+                logger.info("End chunk completed (%d)", ii)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
-        return targetD, molD
+        return targetD
+
+    def __activitySelect(self, aD):
+        atL = [
+            "assay_chembl_id",
+            "assay_description",
+            "assay_type",
+            "canonical_smiles",
+            "ligand_efficiency",
+            "molecule_chembl_id",
+            "parent_molecule_chembl_id",
+            "pchembl_value",
+            "standard_relation",
+            "standard_type",
+            "standard_units",
+            "standard_value",
+            "target_chembl_id",
+        ]
+        return {at: aD[at] if at in aD else None for at in atL}
 
     def getMechanismData(self, targetChEMBLIdList):
         """Get mechanism data for the input ChEMBL target list.

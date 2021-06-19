@@ -14,4 +14,5 @@
   13-Jun-2021  - V0.23 Move features to separate paths in CARDTargetFeatureProvider() and SAbDabTargetFeatureProvider()
   13-Jun-2021  - V0.24 Add feature identifiers to the outputs of CARDTargetFeatureProvider() and SAbDabTargetFeatureProvider()
   14-Jun-2021  - V0.25 Standardized version and timestamp in CARDTargetFeatureProvider() and SAbDabTargetFeatureProvider()
+  19-Jun-2021  - V0.26 Add cofactor and activity provider modules for ChEMBL, DrugBank, and Pharos and associated tests.
 

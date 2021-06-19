@@ -25,6 +25,7 @@ import resource
 import time
 import unittest
 
+from rcsb.utils.targets.DrugBankTargetCofactorProvider import DrugBankTargetCofactorProvider
 from rcsb.utils.targets.DrugBankTargetProvider import DrugBankTargetProvider
 from rcsb.utils.config.ConfigUtil import ConfigUtil
 
@@ -48,6 +49,7 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         self.__fastaPath = os.path.join(HERE, "test-output", "drugbank-targets.fa")
         self.__taxonPath = os.path.join(HERE, "test-output", "drugbank-targets-taxon.tdd")
         #
+        self.__seqMatchResultsPath = os.path.join(HERE, "test-data", "drugbank-vs-pdbprent-filtered-results.json.gz")
         self.__startTime = time.time()
         logger.info("Starting %s at %s", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
 
@@ -58,7 +60,7 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         endTime = time.time()
         logger.info("Completed %s at %s (%.4f seconds)", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - self.__startTime)
 
-    def testFetchDrugBankTargets(self):
+    def testAAFetchDrugBankTargets(self):
         dbtP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=False, username=self.__user, password=self.__pw)
         ok = dbtP.testCache()
         self.assertTrue(ok)
@@ -66,18 +68,33 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         self.assertTrue(ok)
 
     @unittest.skipIf(skipFull, "Very long test")
-    def testFetchDrugBankTargetsWithTaxonomy(self):
+    def testBBFetchDrugBankTargetsWithTaxonomy(self):
         dbtP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=False, username=self.__user, password=self.__pw, addTaxonomy=True)
         ok = dbtP.testCache()
         self.assertTrue(ok)
         ok = dbtP.exportFasta(self.__fastaPath, self.__taxonPath, addTaxonomy=True)
         self.assertTrue(ok)
 
+    def testQQBuildDrugBankTargetsFeatures(self):
+        stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=False)
+        ok = stfP.testCache()
+        self.assertFalse(ok)
+        ok = stfP.buildCofactorList(self.__seqMatchResultsPath)
+        self.assertTrue(ok)
+        stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
+        ok = stfP.testCache()
+        self.assertTrue(ok)
+        ok = stfP.hasCofactor("5vbn_2")
+        self.assertTrue(ok)
+        fL = stfP.getCofactors("5vbn_2")
+        self.assertGreaterEqual(len(fL), 1)
+
 
 def fetchDrugBankTargets():
     suiteSelect = unittest.TestSuite()
-    suiteSelect.addTest(DrugBankTargetProviderTests("testFetchDrugBankTargets"))
-    suiteSelect.addTest(DrugBankTargetProviderTests("testFetchDrugBankTargetsWithTaxonomy"))
+    suiteSelect.addTest(DrugBankTargetProviderTests("testAAFetchDrugBankTargets"))
+    suiteSelect.addTest(DrugBankTargetProviderTests("testBBFetchDrugBankTargetsWithTaxonomy"))
+    suiteSelect.addTest(DrugBankTargetProviderTests("testQQBuildDrugBankTargetsFeatures"))
     return suiteSelect
 
 

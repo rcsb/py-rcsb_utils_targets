@@ -86,14 +86,16 @@ class ChEMBLTargetMechanismProvider(StashableBase):
         except Exception:
             return False
 
-    def fetchMechanismData(self, targetChEMBLIdList, skipExisting=True, chunkSize=50):
+    def fetchTargetMechanismData(self, targetChEMBLIdList, skipExisting=True, chunkSize=50):
         """Get cofactor mechanism data for the input ChEMBL target list.
 
         Args:
             targetChEMBLIdList (list): list of ChEMBL target identifiers
+            skipExisting (bool, optional): reuse any existing cached data (default: True)
+            chunkSize(int, optional): ChEMBL API batch size for fetches (default: 50)
 
         Returns:
-          (dict, dict):  {targetChEMBId: {mechanism data}}, {moleculeChEMBId: {mechanism data}}
+          bool:  True for success or False otherwise
 
         """
         atL = [
@@ -134,7 +136,7 @@ class ChEMBLTargetMechanismProvider(StashableBase):
                 logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
-        return targetD
+        return ok
 
     def __mechanismSelect(self, atL, aD):
         return {at: aD[at] if at in aD else None for at in atL}

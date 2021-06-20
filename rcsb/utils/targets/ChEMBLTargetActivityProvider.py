@@ -11,6 +11,7 @@ Accessors for ChEMBL target activity data.
 """
 
 import datetime
+from difflib import SequenceMatcher
 import logging
 import os.path
 import time
@@ -21,6 +22,7 @@ from chembl_webresource_client.settings import Settings
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
+from yaml import SequenceEndEvent
 
 Settings.Instance().TIMEOUT = 10  # pylint: disable=no-member
 Settings.Instance().MAX_LIMIT = 50  # pylint: disable=no-member
@@ -86,14 +88,32 @@ class ChEMBLTargetActivityProvider(StashableBase):
         except Exception:
             return False
 
-    def fetchActivityData(self, targetChEMBLIdList, skipExisting=True, chunkSize=50):
+    def getTargetIdList(self, sequenceMatchFilePath):
+        chemblIdList = []
+        try:
+            mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
+            # --- cofactor list
+            chemblIdList = []
+            for queryId in mD:
+                tS = queryId.split("|")[2]
+                tL = tS.split(",")
+                chemblIdList.extend(tL)
+            chemblIdList = list(set(chemblIdList))
+            logger.info("Total matched targets (%d)", len(chemblIdList))
+        except Exception as e:
+            logger.exception("Failing for %r with %s", sequenceMatchFilePath, str(e))
+        return chemblIdList
+
+    def fetchTargetActivityData(self, targetChEMBLIdList, skipExisting=True, chunkSize=50):
         """Get cofactor activity data for the input ChEMBL target list.
 
         Args:
             targetChEMBLIdList (list): list of ChEMBL target identifiers
+            skipExisting (bool, optional): reuse any existing cached data (default: True)
+            chunkSize(int, optional): ChEMBL API batch size for fetches (default: 50)
 
         Returns:
-          (dict, dict):  {targetChEMBId: {activity data}}, {moleculeChEMBId: {activity data}}
+          bool:  True for success or False otherwise
 
         """
         atL = [
@@ -111,6 +131,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
             "standard_value",
             "target_chembl_id",
         ]
+        ok = False
         targetD = self.__aD if self.__aD else {}
         idList = []
         if skipExisting:
@@ -142,33 +163,8 @@ class ChEMBLTargetActivityProvider(StashableBase):
                 logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
-        return targetD
+        return ok
 
     def __activitySelect(self, atL, aD):
 
         return {at: aD[at] if at in aD else None for at in atL}
-
-    def getMechanismData(self, targetChEMBLIdList):
-        """Get mechanism data for the input ChEMBL target list.
-
-        Args:
-            targetChEMBLIdList (list): list of ChEMBL target identifiers
-
-        Returns:
-          (dict):  dictionary  {ChEMBId: {mechanism data}}
-
-        """
-        oD = {}
-        chunkSize = 50
-        try:
-            for ii in range(0, len(targetChEMBLIdList), chunkSize):
-                mch = new_client.mechanism  # pylint: disable=no-member
-                mch.set_format("json")
-                mDL = mch.filter(target_chembl_id__in=targetChEMBLIdList[ii : ii + chunkSize])
-                if mDL:
-                    logger.info("mDL (%d)", len(mDL))
-                    for mD in mDL:
-                        oD.setdefault(mD["target_chembl_id"], []).append(mD)
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-        return oD

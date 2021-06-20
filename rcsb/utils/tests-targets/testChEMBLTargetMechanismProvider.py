@@ -47,8 +47,8 @@ class ChEMBLTargetMechanismProviderTests(unittest.TestCase):
             self.assertTrue(ok)
             #
             tL = ["CHEMBL1987", "CHEMBL3243"]
-            targetD = ctP.fetchMechanismData(tL)
-            logger.info("keys: %r", list(targetD.keys()))
+            ok = ctP.fetchTargetMechanismData(tL)
+            self.assertTrue(ok)
 
         except Exception as e:
             logger.exception("Failing with %s", str(e))

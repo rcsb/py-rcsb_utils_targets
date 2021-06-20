@@ -47,24 +47,9 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
             self.assertTrue(ok)
             #
             tL = ["CHEMBL1987", "CHEMBL3243"]
-            targetD = ctP.fetchActivityData(tL)
-            logger.info("keys: %r", list(targetD.keys()))
-
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-            self.fail()
-
-    def testFetchMechanismData(self):
-        oD = {}
-        try:
-            ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
-            ok = ctP.testCache()
+            ok = ctP.fetchTargetActivityData(tL)
             self.assertTrue(ok)
-            tL = ["CHEMBL1987", "CHEMBL3243"]
-            oD.update(ctP.getMechanismData(tL))
-            #
-            ok = self.__mU.doExport(os.path.join(self.__cachePath, "ChEMBL-targets", "chembl-target-mechanism.json"), oD, fmt="json", indent=3)
-            self.assertTrue(ok)
+
         except Exception as e:
             logger.exception("Failing with %s", str(e))
             self.fail()

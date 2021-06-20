@@ -213,7 +213,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
         return {at: aD[at] if at in aD else None for at in atL}
 
     def fetchTargetActivityDataMulti(self, targetChEMBLIdList, skipExisting=True, chunkSize=50, numProc=4):
-        """Get cofactor activity data for the input ChEMBL target list.
+        """Get cofactor activity data for the input ChEMBL target list (multiprocessing mode).
 
         Args:
             targetChEMBLIdList (list): list of ChEMBL target identifiers

@@ -11,7 +11,6 @@ Accessors for ChEMBL target activity data.
 """
 
 import datetime
-from difflib import SequenceMatcher
 import logging
 import os.path
 import time
@@ -22,7 +21,6 @@ from chembl_webresource_client.settings import Settings
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
-from yaml import SequenceEndEvent
 
 Settings.Instance().TIMEOUT = 10  # pylint: disable=no-member
 Settings.Instance().MAX_LIMIT = 50  # pylint: disable=no-member

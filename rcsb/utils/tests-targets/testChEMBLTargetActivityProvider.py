@@ -54,6 +54,20 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
             logger.exception("Failing with %s", str(e))
             self.fail()
 
+    def testFetchActivityDataMulti(self):
+        try:
+            ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
+            ok = ctP.testCache()
+            self.assertTrue(ok)
+            #
+            tL = ["CHEMBL1987", "CHEMBL3243"]
+            ok = ctP.fetchTargetActivityDataMulti(tL, numProc=2)
+            self.assertTrue(ok)
+
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+            self.fail()
+
 
 def targetActivitySuite():
     suiteSelect = unittest.TestSuite()

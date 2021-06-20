@@ -16,11 +16,15 @@ import os.path
 import time
 
 from chembl_webresource_client.new_client import new_client
+from chembl_webresource_client.settings import Settings
 
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
 
+Settings.Instance().TIMEOUT = 10  # pylint: disable=no-member
+Settings.Instance().MAX_LIMIT = 50  # pylint: disable=no-member
+Settings.MAX_LIMIT = 50
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +41,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
         self.__mU = MarshalUtil(workPath=self.__cachePath)
         baseVersion = 28
         self.__version = baseVersion
+        logger.info("ChEMBL API MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
         self.__aD = self.__reload(self.__dirPath, useCache)
 
     def testCache(self, minCount=0):

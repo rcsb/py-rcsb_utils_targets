@@ -20,18 +20,11 @@ import logging
 import os
 import unittest
 
-from chembl_webresource_client.settings import Settings
-
 from rcsb.utils.targets.ChEMBLTargetMechanismProvider import ChEMBLTargetMechanismProvider
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 TOPDIR = os.path.dirname(os.path.dirname(HERE))
-
-Settings.Instance().TIMEOUT = 10  # pylint: disable=no-member
-Settings.Instance().MAX_LIMIT = 50  # pylint: disable=no-member
-Settings.MAX_LIMIT = 50
-
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s]-%(module)s.%(funcName)s: %(message)s")
 logger = logging.getLogger()
@@ -49,7 +42,6 @@ class ChEMBLTargetMechanismProviderTests(unittest.TestCase):
 
     def testFetchMechanismData(self):
         try:
-            logger.info("MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
             ctP = ChEMBLTargetMechanismProvider(cachePath=self.__cachePath, useCache=True)
             ok = ctP.testCache()
             self.assertTrue(ok)

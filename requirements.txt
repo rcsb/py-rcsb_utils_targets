@@ -1,4 +1,5 @@
 rcsb.utils.io >= 1.13
 rcsb.utils.config >= 0.35
 rcsb.utils.seq >= 0.48
+rcsb.utils.multiproc >= 0.18
 chembl-webresource-client >= 0.10.2

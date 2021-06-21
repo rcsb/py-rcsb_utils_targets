@@ -154,15 +154,19 @@ class ChEMBLTargetCofactorProvider(StashableBase):
                     for taD in taDL:
                         if taD["assay_type"] in ["B", "F"]:
                             if taD["standard_units"] == "nM":
-                                pV = -math.log10(float(taD["standard_value"]) * 10.0e-9)
-                                actD = {
-                                    "cofactor_id": taD["molecule_chembl_id"],
-                                    "assay_id": taD["assay_chembl_id"],
-                                    "assay_description": taD["assay_description"],
-                                    "measurement_type": "p" + taD["standard_type"],
-                                    "measurement_value": round(pV, 2),
-                                }
-                                actL.append(actD)
+                                try:
+                                    pV = -math.log10(float(taD["standard_value"]) * 10.0e-9)
+                                    actD = {
+                                        "cofactor_id": taD["molecule_chembl_id"],
+                                        "assay_id": taD["assay_chembl_id"],
+                                        "assay_description": taD["assay_description"],
+                                        "measurement_type": "p" + taD["standard_type"],
+                                        "measurement_value": round(pV, 2),
+                                    }
+                                    actL.append(actD)
+                                except Exception as e:
+                                    logger.exception("Failing for tAD %r with %s", taD, str(e))
+
                     # ---
                     actL = self.__activityListSelect(actL, crmpObj, maxActivity=maxActivity)
                     # ---

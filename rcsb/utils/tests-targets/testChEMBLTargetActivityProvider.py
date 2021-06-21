@@ -42,7 +42,7 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
 
     def testFetchActivityData(self):
         try:
-            ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
+            ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
             ok = ctP.testCache()
             self.assertTrue(ok)
             #

@@ -72,6 +72,19 @@ class PharosTargetProviderTests(unittest.TestCase):
             ok = False
         return ok
 
+    @unittest.skip("Bootstrap test")
+    def testBootstrap(self):
+        try:
+            ptP = PharosTargetProvider(cachePath=self.__cachePath, useCache=False, reloadDb=False)
+            configPath = os.path.join(TOPDIR, "rcsb", "mock-data", "config", "dbload-setup-example.yml")
+            configName = "site_info_remote_configuration"
+            cfgOb = ConfigUtil(configPath=configPath, defaultSectionName=configName)
+            ok = ptP.backup(cfgOb, configName)
+            self.assertTrue(ok)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+            self.fail()
+
     @unittest.skipIf(skipFull, "Very long test")
     def testFetchAndLoadPharosTargets(self):
         try:

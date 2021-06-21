@@ -49,18 +49,26 @@ class ChEMBLTargetActivityWorker(object):
         try:
             chunkSize = optionsD.get("chunkSize", 50)
             atL = optionsD.get("attributeList", [])
+            maxActivity = optionsD.get("maxActivity", None)
 
             for ii in range(0, len(dataList), chunkSize):
                 logger.info("Begin chunk at ii %d/%d", ii, len(dataList))
-                act = new_client.activity  # pylint: disable=no-member
-                act.set_format("json")
-                actDL = (
-                    act.filter(target_chembl_id__in=dataList[ii : ii + chunkSize]).filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"]).filter(standard_value__isnull=False).only(atL)
-                )
-                logger.info("Results (%d)", len(actDL))
-                if actDL:
-                    for actD in actDL:
-                        retList.append((actD["target_chembl_id"], self.__activitySelect(atL, actD)))
+                try:
+                    act = new_client.activity  # pylint: disable=no-member
+                    act.set_format("json")
+                    actDL = (
+                        act.filter(target_chembl_id__in=dataList[ii : ii + chunkSize])
+                        .filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"])
+                        .filter(standard_value__isnull=False)
+                        .order_by("-standard_value")
+                        .only(atL)
+                    )
+                    logger.info("Results (%d)", len(actDL))
+                    if actDL:
+                        for actD in actDL[:maxActivity] if maxActivity else actDL:
+                            retList.append((actD["target_chembl_id"], self.__activitySelect(atL, actD)))
+                except Exception as e:
+                    logger.exception("Failing for chunk starting at %d with %s", ii, str(e)[:200])
             successList = sorted(set(dataList) - set(failList))
             if failList:
                 logger.info("%s returns %d definitions with failures: %r", procName, len(failList), failList)
@@ -148,13 +156,14 @@ class ChEMBLTargetActivityProvider(StashableBase):
             logger.exception("Failing for %r with %s", sequenceMatchFilePath, str(e))
         return chemblIdList
 
-    def fetchTargetActivityData(self, targetChEMBLIdList, skipExisting=True, chunkSize=50):
+    def fetchTargetActivityData(self, targetChEMBLIdList, maxActivity=10, skipExisting=True, chunkSize=50):
         """Get cofactor activity data for the input ChEMBL target list.
 
         Args:
             targetChEMBLIdList (list): list of ChEMBL target identifiers
             skipExisting (bool, optional): reuse any existing cached data (default: True)
-            chunkSize(int, optional): ChEMBL API batch size for fetches (default: 50)
+            chunkSize (int, optional): ChEMBL API batch size for fetches (default: 50)
+            maxActivity (int, optional): maximum number of activity records to return per target (default: 10)
 
         Returns:
           bool:  True for success or False otherwise
@@ -190,16 +199,24 @@ class ChEMBLTargetActivityProvider(StashableBase):
         try:
             for ii in range(0, len(idList), chunkSize):
                 logger.info("Begin chunk at ii %d/%d", ii, numToProcess)
-                act = new_client.activity  # pylint: disable=no-member
-                act.set_format("json")
-                actDL = (
-                    act.filter(target_chembl_id__in=idList[ii : ii + chunkSize]).filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"]).filter(standard_value__isnull=False).only(atL)
-                )
-                logger.info("Results (%d)", len(actDL))
-                if actDL:
-                    for actD in actDL:
-                        targetD.setdefault(actD["target_chembl_id"], []).append(self.__activitySelect(atL, actD))
-                #
+                try:
+                    act = new_client.activity  # pylint: disable=no-member
+                    act.set_format("json")
+                    actDL = (
+                        act.filter(target_chembl_id__in=idList[ii : ii + chunkSize])
+                        .filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"])
+                        .filter(standard_value__isnull=False)
+                        .order_by("-standard_value")
+                        .only(atL)
+                    )
+                    logger.info("Results for index %d (%d)", ii, len(actDL))
+                    if actDL:
+                        for actD in actDL[:maxActivity] if maxActivity else actDL:
+                            targetD.setdefault(actD["target_chembl_id"], []).append(self.__activitySelect(atL, actD))
+                    #
+                except Exception as e:
+                    logger.exception("Failing with chunk at index %d with %s", ii, str(e)[:200])
+
                 logger.info("Completed chunk starting at (%d)", ii)
                 tS = datetime.datetime.now().isoformat()
                 vS = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -212,7 +229,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
     def __activitySelect(self, atL, aD):
         return {at: aD[at] if at in aD else None for at in atL}
 
-    def fetchTargetActivityDataMulti(self, targetChEMBLIdList, skipExisting=True, chunkSize=50, numProc=4):
+    def fetchTargetActivityDataMulti(self, targetChEMBLIdList, skipExisting=True, maxActivity=10, chunkSize=50, numProc=4):
         """Get cofactor activity data for the input ChEMBL target list (multiprocessing mode).
 
         Args:
@@ -220,6 +237,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
             skipExisting (bool, optional): reuse any existing cached data (default: True)
             chunkSize(int, optional): ChEMBL API outer batch size for fetches (default: 50)
             numProc (int, optional): number processes to invoke. (default: 4)
+            maxActivity (int, optional): number of activity records to return per target. (default: 10)
 
         Returns:
           bool:  True for success or False otherwise
@@ -257,7 +275,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
                 logger.info("Begin chunk at ii %d/%d", ii, numToProcess)
                 tIdList = idList[ii : ii + chunkSize]
                 #
-                tD = self.__getActivityMulti(tIdList, atL, numProc=numProc, chunkSize=5)
+                tD = self.__getActivityMulti(tIdList, atL, maxActivity=maxActivity, numProc=numProc, chunkSize=5)
                 targetD.update(tD)
                 #
                 logger.info("Completed chunk starting at (%d)", ii)
@@ -269,12 +287,12 @@ class ChEMBLTargetActivityProvider(StashableBase):
             logger.exception("Failing with %s", str(e))
         return ok
 
-    def __getActivityMulti(self, idList, atL, numProc=2, chunkSize=5):
+    def __getActivityMulti(self, idList, atL, maxActivity=None, numProc=2, chunkSize=5):
         """ """
         rD = {}
         ctaW = ChEMBLTargetActivityWorker()
         mpu = MultiProcUtil(verbose=True)
-        optD = {"attributeList": atL, "chunkSize": chunkSize}
+        optD = {"attributeList": atL, "chunkSize": chunkSize, "maxActivity": maxActivity}
         mpu.setOptions(optD)
         mpu.set(workerObj=ctaW, workerMethod="fetchActivity")
         ok, failList, resultList, _ = mpu.runMulti(dataList=idList, numProc=numProc, numResults=1, chunkSize=chunkSize)

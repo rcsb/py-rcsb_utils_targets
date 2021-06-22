@@ -76,9 +76,8 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         self.assertTrue(ok)
 
     def testQQBuildDrugBankTargetsFeatures(self):
-        stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=False)
-        ok = stfP.testCache()
-        self.assertFalse(ok)
+        #
+        stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.buildCofactorList(self.__seqMatchResultsPath)
         self.assertTrue(ok)
         stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)

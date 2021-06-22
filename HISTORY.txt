@@ -19,5 +19,5 @@
   20-Jun-2021  - V0.28 Add method getTargetIdList() in ChEMBLTargetActivityProvider module and standardize some method prototypes
   20-Jun-2021  - V0.29 Add multiprocessing class to ChEMBLTargetActivityProvider and standardize cofactor attribute names
   21-Jun-2021  - V0.30 Make ChEMBL activity query more selective and focus error handling more specifically on return issues.
-
-
+  22-Jun-2021  - V0.31 Add name and mechanism queries in the ChEMBLTargetActivityProvider workflow. Use DrugBankProvider is a
+                       data source in DrugBankTargetProvider() rather than FASTA downloads.

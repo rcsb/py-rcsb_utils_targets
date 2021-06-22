@@ -147,18 +147,20 @@ class PharosTargetCofactorProvider(StashableBase):
                     if taD["chemblId"] in chD:
                         chD[taD["chemblId"]] = True
                         continue
-                    # JDW leaving this in place but this is too large to include
+                    #
                     cfD = {"cofactor_id": taD["chemblId"]}
                     cfDL.append(self.__addLocalIds(cfD, crmpObj))
 
                     actD = {
                         "cofactor_id": taD["chemblId"],
-                        "cofactor_name": taD["name"] if "name" in taD else None,
-                        "assay_description": None,
+                        "cofactor_name": taD["molecule_name"] if "name" in taD else None,
                         "measurement_type": "p" + taD["activityType"],
                         "measurement_value": taD["activity"],
-                        "pubmed_id": taD["pubmedId"] if "pubmedId" in taD else None,
-                        "patent_no": taD["patent"] if "patent" in taD else None,
+                        "pubmed_ids": [taD["pubmedId"]] if "pubmedId" in taD else None,
+                        "patent_nos": taD["patents"] if "patents" in taD else None,
+                        "smiles": taD["smiles"] if "smiles" in taD else None,
+                        "action": taD["action"] if "action" in taD else None,
+                        "pharmacology": taD["pharmacology"] if "pharmacology" in taD else None,
                     }
                     actL.append(actD)
                 #

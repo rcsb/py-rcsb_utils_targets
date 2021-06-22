@@ -162,7 +162,14 @@ class ChEMBLTargetCofactorProvider(StashableBase):
                                         "assay_description": taD["assay_description"],
                                         "measurement_type": "p" + taD["standard_type"],
                                         "measurement_value": round(pV, 2),
+                                        "smiles": taD["canonical_smiles"],
+                                        "molecule_name": taD["molecule_name"],
+                                        "inchi_key": taD["inchi_key"],
+                                        "action": taD["action"],
+                                        "moa": taD["moa"],
+                                        "max_phase": taD["max_phase"],
                                     }
+
                                     actL.append(actD)
                                 except Exception as e:
                                     logger.exception("Failing for tAD %r with %s", taD, str(e))

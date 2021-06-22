@@ -120,17 +120,18 @@ class PharosTargetActivityProvider(StashableBase):
                 qD["activityType"] = cfD["act_type"] if "act_type" in cfD and cfD["act_type"] != "NULL" else None
                 if qD["activity"] is not None:
                     qD["activity"] = float(qD["activity"])
-                    qD["activityUnits"] = "nM"
+                    # qD["activityUnits"] = "nM"
                 #
-                qD["moa"] = cfD["action"] if "action" in cfD and cfD["moa"] == "1" else None
+                qD["action"] = cfD["action"] if "action" in cfD and cfD["moa"] == "1" else None
+                qD["pharmacology"] = cfD["nlm_drug_info"] if "nlm_drug_info" in cfD else None
                 tS = cfD["drug"] if "drug" in cfD else None
                 tS = cfD["cmpd_name_in_src"] if "cmpd_name_in_src" in cfD and cfD["cmpd_name_in_src"] != "NULL" else tS
                 #
                 if tS and tS.startswith("US"):
-                    tS = tS.split(",")[0].strip()
-                    qD["patent"] = tS
+                    tSL = tS.split(",")
+                    qD["patents"] = tSL
                 else:
-                    qD["name"] = tS
+                    qD["molecule_name"] = tS
                 #
                 pmId = None
                 tS = cfD["reference"] if "reference" in cfD else None

@@ -66,7 +66,10 @@ class ChEMBLTargetActivityWorker(object):
                     logger.info("Results (%d)", len(actDL))
                     if actDL:
                         for actD in actDL[:maxActivity] if maxActivity else actDL:
-                            retList.append((actD["target_chembl_id"], self.__activitySelect(atL, actD)))
+                            actD = self.__activitySelect(atL, actD)
+                            actD["molecule_name"], actD["inchi_key"], _ = self.__getMoleculeDetails(actD["molecule_chembl_id"])
+                            actD["action"], actD["moa"], actD["max_phase"] = self.__getMechanismDetails(actD["molecule_chembl_id"])
+                            retList.append((actD["target_chembl_id"], actD))
                 except Exception as e:
                     logger.exception("Failing for chunk starting at %d with %s", ii, str(e)[:200])
             successList = sorted(set(dataList) - set(failList))
@@ -81,6 +84,34 @@ class ChEMBLTargetActivityWorker(object):
 
     def __activitySelect(self, atL, aD):
         return {at: aD[at] if at in aD else None for at in atL}
+
+    def __getMoleculeDetails(self, chemblId):
+        name = inchiKey = smiles = None
+        try:
+            atL = ["pref_name", "molecule_structures"]
+            molecule = new_client.molecule  # pylint: disable=no-member
+            molecule.set_format("json")
+            tD = molecule.filter(molecule_chembl_id__exact=chemblId).only(atL)[0]
+            name = tD["pref_name"]
+            smiles = tD["molecule_structures"]["canonical_smiles"]
+            inchiKey = tD["molecule_structures"]["standard_inchi_key"]
+        except Exception as e:
+            logger.exception("Failing for %s with %s", chemblId, str(e))
+        return name, inchiKey, smiles
+
+    def __getMechanismDetails(self, chemblId):
+        actionType = moa = maxPhase = None
+        try:
+            atL = ["action_type", "mechanism_of_action", "max_phase"]
+            mechanism = new_client.mechanism  # pylint: disable=no-member
+            mechanism.set_format("json")
+            tD = mechanism.filter(molecule_chembl_id__exact=chemblId).only(atL)[0]
+            actionType = tD["action_type"] if tD and "action_type" in tD else None
+            moa = tD["mechanism_of_action"] if tD and "mechanism_of_action" in tD else None
+            maxPhase = tD["max_phase"] if tD and "max_phase" in tD else None
+        except Exception as e:
+            logger.exception("Failing for %s with %s", chemblId, str(e))
+        return actionType, moa, maxPhase
 
 
 class ChEMBLTargetActivityProvider(StashableBase):
@@ -212,7 +243,10 @@ class ChEMBLTargetActivityProvider(StashableBase):
                     logger.info("Results for index %d (%d)", ii, len(actDL))
                     if actDL:
                         for actD in actDL[:maxActivity] if maxActivity else actDL:
-                            targetD.setdefault(actD["target_chembl_id"], []).append(self.__activitySelect(atL, actD))
+                            actD = self.__activitySelect(atL, actD)
+                            actD["molecule_name"], actD["inchi_key"], _ = self.getMoleculeDetails(actD["molecule_chembl_id"])
+                            actD["action_type"], actD["moa"], actD["max_phase"] = self.getMechanismDetails(actD["molecule_chembl_id"])
+                            targetD.setdefault(actD["target_chembl_id"], []).append(actD)
                     #
                 except Exception as e:
                     logger.exception("Failing with chunk at index %d with %s", ii, str(e)[:200])
@@ -228,6 +262,34 @@ class ChEMBLTargetActivityProvider(StashableBase):
 
     def __activitySelect(self, atL, aD):
         return {at: aD[at] if at in aD else None for at in atL}
+
+    def getMoleculeDetails(self, chemblId):
+        name = inchiKey = smiles = None
+        try:
+            atL = ["pref_name", "molecule_structures"]
+            molecule = new_client.molecule  # pylint: disable=no-member
+            molecule.set_format("json")
+            tD = molecule.filter(molecule_chembl_id__exact=chemblId).only(atL)[0]
+            name = tD["pref_name"]
+            smiles = tD["molecule_structures"]["canonical_smiles"]
+            inchiKey = tD["molecule_structures"]["standard_inchi_key"]
+        except Exception as e:
+            logger.exception("Failing for %s with %s", chemblId, str(e))
+        return name, inchiKey, smiles
+
+    def getMechanismDetails(self, chemblId):
+        actionType = moa = maxPhase = None
+        try:
+            atL = ["action_type", "mechanism_of_action", "max_phase"]
+            mechanism = new_client.mechanism  # pylint: disable=no-member
+            mechanism.set_format("json")
+            tD = mechanism.filter(molecule_chembl_id__exact=chemblId).only(atL)[0]
+            actionType = tD["action_type"] if tD and "action_type" in tD else None
+            moa = tD["mechanism_of_action"] if tD and "mechanism_of_action" in tD else None
+            maxPhase = tD["max_phase"] if tD and "max_phase" in tD else None
+        except Exception as e:
+            logger.exception("Failing for %s with %s", chemblId, str(e))
+        return actionType, moa, maxPhase
 
     def fetchTargetActivityDataMulti(self, targetChEMBLIdList, skipExisting=True, maxActivity=10, chunkSize=50, numProc=4):
         """Get cofactor activity data for the input ChEMBL target list (multiprocessing mode).

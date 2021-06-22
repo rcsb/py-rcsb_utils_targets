@@ -47,7 +47,7 @@ class ChEMBLTargetMechanismProviderTests(unittest.TestCase):
             self.assertTrue(ok)
             #
             tL = ["CHEMBL1987", "CHEMBL3243"]
-            ok = ctP.fetchTargetMechanismData(tL)
+            ok = ctP.fetchTargetMechanismData(tL, skipExisting=False)
             self.assertTrue(ok)
 
         except Exception as e:

@@ -117,6 +117,8 @@ class ChEMBLTargetMechanismProvider(StashableBase):
             idList = targetChEMBLIdList
 
         numToProcess = len(idList)
+        logger.info("Fetching mechanism data for (%d/%d)", numToProcess, len(targetChEMBLIdList))
+        ok = False
         try:
             for ii in range(0, len(idList), chunkSize):
                 logger.info("Begin chunk at ii %d/%d", ii, numToProcess)

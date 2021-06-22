@@ -40,16 +40,15 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testFetchActivityData(self):
+    def testFetchMoleculeData(self):
         try:
             ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
             ok = ctP.testCache()
             self.assertTrue(ok)
-            #
-            tL = ["CHEMBL1987", "CHEMBL3243"]
-            ok = ctP.fetchTargetActivityData(tL)
-            self.assertTrue(ok)
-
+            chemblId = "CHEMBL1421"
+            name, inchiKey, _ = ctP.getMoleculeDetails(chemblId)
+            self.assertEqual(name, "DASATINIB")
+            self.assertEqual(inchiKey, "ZBNZXTGUTAYRHI-UHFFFAOYSA-N")
         except Exception as e:
             logger.exception("Failing with %s", str(e))
             self.fail()
@@ -68,10 +67,31 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
             logger.exception("Failing with %s", str(e))
             self.fail()
 
+    def testFetchActivityData(self):
+        try:
+            ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
+            ok = ctP.testCache()
+            self.assertTrue(ok)
+
+            mL = ["CHEMBL200117"]
+            for chemblId in mL:
+                molD = ctP.getMoleculeDetails(chemblId)
+                logger.info("%s molD %r", chemblId, molD)
+            #
+            tL = ["CHEMBL1987", "CHEMBL3243"]
+            ok = ctP.fetchTargetActivityData(tL)
+            self.assertTrue(ok)
+
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+            self.fail()
+
 
 def targetActivitySuite():
     suiteSelect = unittest.TestSuite()
+    suiteSelect.addTest(ChEMBLTargetActivityProviderTests("testFetchMoleculeData"))
     suiteSelect.addTest(ChEMBLTargetActivityProviderTests("testFetchActivityData"))
+    suiteSelect.addTest(ChEMBLTargetActivityProviderTests("testFetchActivityDataMulti"))
     return suiteSelect
 
 

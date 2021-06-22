@@ -6,7 +6,8 @@
 # Manage access to DrugBank target data.
 #
 # Update:
-#
+#  22-Jun-2021 jdw replaced the download of FASTA files with processing the main DrugBank download data file.
+#                  Leaving the deprecated FASTA code for now -
 #
 ##
 
@@ -20,6 +21,7 @@ import logging
 import os
 import time
 
+from rcsb.utils.chemref.DrugBankProvider import DrugBankProvider
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.seq.UniProtIdMappingProvider import UniProtIdMappingProvider
@@ -30,7 +32,7 @@ logger = logging.getLogger(__name__)
 class DrugBankTargetProvider(object):
     """Utilities to manage DrugBank target FASTA data.
 
-    UniProt mapping URL template:
+    Note: UniProt mapping URL template:
 
         https://go.drugbank.com/polypeptides/P23458
     """
@@ -41,18 +43,23 @@ class DrugBankTargetProvider(object):
         self.__dirPath = os.path.join(self.__cachePath, "DrugBank-targets")
         self.__version = None
         self.__cfD = None
-        self.__fastaPathList = self.__reloadFasta(self.__dirPath, **kwargs)
+        # self.__fastaPathList = self.__reloadFasta(self.__dirPath, **kwargs)
+        self.__dbP = self.__reloadDrugBankProvider(**kwargs)
         self.__mU = MarshalUtil(workPath=self.__dirPath)
 
     def testCache(self):
         try:
-            return len(self.__fastaPathList) >= 4
+            # return len(self.__fastaPathList) >= 4
+            return self.__dbP is not None
         except Exception as e:
             logger.debug("Failing with %s", str(e))
         return False
 
     def getAssignmentVersion(self):
         return self.__version if self.__version else datetime.datetime.now().strftime("%Y-%m-%d")
+
+    def getFastaPath(self):
+        return os.path.join(self.__cachePath, "FASTA", "drugbank")
 
     def __reloadFasta(self, dirPath, **kwargs):
         """Reload DrugBank target FASTA data files.
@@ -134,7 +141,8 @@ class DrugBankTargetProvider(object):
         return retFilePathList
 
     def exportFasta(self, fastaPath, taxonPath, addTaxonomy=False):
-        ok = self.__consolidateFasta(fastaPath, taxonPath, self.__fastaPathList, addTaxonomy=addTaxonomy)
+        # ok = self.__consolidateFasta(fastaPath, taxonPath, self.__fastaPathList, addTaxonomy=addTaxonomy)
+        ok = self.__buildResourceFiles(fastaPath, taxonPath, addTaxonomy=addTaxonomy)
         return ok
 
     def __consolidateFasta(self, fastaPath, taxonPath, inpPathList, addTaxonomy=False):
@@ -215,3 +223,79 @@ class DrugBankTargetProvider(object):
         except Exception as e:
             logger.error("Failing with %s", str(e))
         return {}
+
+    def __reloadDrugBankProvider(self, **kwargs):
+        useCache = kwargs.get("useCache", True)
+        un = kwargs.get("username", None)
+        pw = kwargs.get("password", None)
+        return DrugBankProvider(cachePath=self.__cachePath, useCache=useCache, username=un, password=pw)
+
+    def __buildResourceFiles(self, fastaPath, taxonPath, addTaxonomy=False):
+        """Build DrugBank FASTA and resource files from the full DrugBank XML data download."""
+        #
+        try:
+            drugBankTargetMapPath = self.__getTargetDrugMapPath()
+            self.__version = self.__dbP.getVersion()
+            #
+            if addTaxonomy:
+                umP = UniProtIdMappingProvider(self.__cachePath)
+                umP.reload(useCache=True)
+            #
+            oD = {}
+            uD = {}
+            taxonD = {}
+            #
+            dbIdL = self.__dbP.getDrugbankIds()
+            logger.info("Building resource file for (%d) DrugBank entries", len(dbIdL))
+            for dbId in dbIdL:
+                tiDL = self.__dbP.getFeature(dbId, "target_interactions")
+                for tiD in tiDL:
+                    dD = {}
+                    dD["drugbank_id"] = dbId
+                    dD["name"] = self.__dbP.getFeature(dbId, "name")
+                    dD["description"] = self.__dbP.getFeature(dbId, "description")
+                    dD["moa"] = self.__dbP.getFeature(dbId, "mechanism-of-action")
+                    dD["pharmacology"] = self.__dbP.getFeature(dbId, "pharmacodynamics")
+                    dD["inchi_key"] = self.__dbP.getFeature(dbId, "inchikey")
+                    dD["smiles"] = self.__dbP.getFeature(dbId, "smiles")
+                    dD["pubmed_ids"] = tiD["articles"]
+                    tS = tiD["amino-acid-sequence"]
+                    if not tS:
+                        logger.debug("Skipping entry target %r", tiD)
+                        continue
+                    sequence = "".join(tS.split("\n")[1:])
+                    unpId = tiD["uniprot_ids"]
+                    if "," in unpId or ";" in unpId or isinstance(unpId, list):
+                        logger.warning("Bad uniprot id %r", unpId)
+                    # targetName = tiD["name"]
+                    cD = {"sequence": sequence, "uniprotId": unpId}
+                    if addTaxonomy:
+                        taxId = umP.getMappedId(unpId, mapName="NCBI-taxon")
+                        cD["taxId"] = taxId if taxId else -1
+                    #
+                    seqId = ""
+                    cL = []
+                    for k, v in cD.items():
+                        if k in ["sequence"]:
+                            continue
+                        cL.append(str(v))
+                        cL.append(str(k))
+                    seqId = "|".join(cL)
+                    oD[seqId] = cD
+                    if addTaxonomy:
+                        taxonD["%s\t%s" % (seqId, taxId)] = True
+                    #
+                    logger.debug("%r dD %r", dbId, dD)
+                    uD.setdefault(unpId, []).append(dD)
+
+            ok1 = self.__mU.doExport(fastaPath, oD, fmt="fasta", makeComment=True)
+            tS = datetime.datetime.now().isoformat()
+            vS = self.__version
+            ok2 = self.__mU.doExport(drugBankTargetMapPath, {"version": vS, "created": tS, "cofactors": uD}, fmt="json", indent=3)
+            ok3 = True
+            if addTaxonomy:
+                ok3 = self.__mU.doExport(taxonPath, list(taxonD.keys()), fmt="list")
+            return ok1 & ok2 & ok3
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        return False

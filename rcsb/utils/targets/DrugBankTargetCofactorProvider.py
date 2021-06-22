@@ -103,12 +103,20 @@ class DrugBankTargetCofactorProvider(StashableBase):
                 tL = matchD["target"].split("|")
                 entryId = tL[0].split("_")[0]
                 entityId = tL[0].split("_")[1]
-                #
-                dbIdL = dbP.getCofactors(unpId)
+                # --
+                dbDL = dbP.getCofactors(unpId)
                 # --
                 cfDL = []
-                for dbId in dbIdL:
-                    cfD = {"cofactor_id": dbId}
+                for dbD in dbDL:
+                    cfD = {}
+                    cfD["cofactor_id"] = dbD["drugbank_id"]
+                    cfD["molecule_name"] = dbD["name"]
+                    cfD["description"] = dbD["description"]
+                    cfD["moa"] = dbD["moa"]
+                    cfD["pharmacology"] = dbD["pharmacology"]
+                    cfD["inchi_key"] = dbD["inchi_key"]
+                    cfD["smiles"] = dbD["smiles"]
+                    cfD["pubmed_ids"] = dbD["pubmed_ids"]
                     cfDL.append(self.__addLocalIds(cfD, crmpObj))
                 # --
                 rD = {

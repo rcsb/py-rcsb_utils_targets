@@ -82,11 +82,11 @@ class PharosTargetActivityProvider(StashableBase):
 
     def fetchTargetActivityData(self):
         targetD = {}
-        cofactorFilePath = os.path.join(self.__dirPath, "drug_activity.tdd")
+        cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "drug_activity.tdd")
         cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
         targetD = self.__extactCofactorData(cfDL)
         #
-        cofactorFilePath = os.path.join(self.__dirPath, "cmpd_activity.tdd")
+        cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "cmpd_activity.tdd")
         cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
         targetD.update(self.__extactCofactorData(cfDL))
         #

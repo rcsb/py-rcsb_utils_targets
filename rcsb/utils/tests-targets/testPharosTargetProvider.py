@@ -85,10 +85,11 @@ class PharosTargetProviderTests(unittest.TestCase):
             logger.exception("Failing with %s", str(e))
             self.fail()
 
-    @unittest.skipIf(skipFull, "Very long test")
+    @unittest.skipIf(skipFull, "Database dependency")
     def testFetchAndLoadPharosTargets(self):
         try:
-            ptP = PharosTargetProvider(cachePath=self.__cachePath, useCache=False, reloadDb=True, mysqlUser=self.__user, mysqlPassword=self.__pw)
+            # Now about 630s on macos
+            ptP = PharosTargetProvider(cachePath=self.__cachePath, useCache=False, reloadDb=True, fromDb=True, mysqlUser=self.__user, mysqlPassword=self.__pw)
             ok = ptP.testCache()
             self.assertTrue(ok)
         except Exception as e:

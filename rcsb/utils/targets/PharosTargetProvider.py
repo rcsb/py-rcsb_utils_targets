@@ -35,28 +35,31 @@ class PharosTargetProvider(StashableBase):
         self.__mU = MarshalUtil(workPath=self.__dirPath)
         reloadDb = kwargs.get("reloadDb", False)
         fromDb = kwargs.get("fromDb", False)
+        useCache = kwargs.get("useCache", False)
+        pharosDumpUrl = kwargs.get("pharosDumpUrl", None)
+        mysqlUser = kwargs.get("mysqlUser", None)
+        mysqlPassword = kwargs.get("mysqlPassword", None)
         if reloadDb or fromDb:
-            self.__reload(self.__dirPath, reloadDb=reloadDb, fromDb=fromDb, **kwargs)
+            self.__reload(self.__dirPath, reloadDb=reloadDb, fromDb=fromDb, useCache=useCache, pharosDumpUrl=pharosDumpUrl, mysqlUser=mysqlUser, mysqlPassword=mysqlPassword)
         #
 
     def testCache(self):
         return True
 
-    def __reload(self, dirPath, reloadDb=False, fromDb=False, **kwargs):
+    def __reload(self, dirPath, reloadDb=False, fromDb=False, useCache=False, pharosDumpUrl=None, mysqlUser=None, mysqlPassword=None):
         startTime = time.time()
-        useCache = kwargs.get("useCache", True)
-        pharosDumpUrl = kwargs.get("pharosDumpUrl", "http://juniper.health.unm.edu/tcrd/download/latest.sql.gz")
-
+        pharosSelectedTables = ["drug_activity", "cmpd_activity", "target", "protein", "t2tc"]
+        pharosDumpUrl = pharosDumpUrl if pharosDumpUrl else "http://juniper.health.unm.edu/tcrd/download/latest.sql.gz"
         ok = False
         fU = FileUtil()
         pharosDumpFileName = fU.getFileName(pharosDumpUrl)
         pharosDumpPath = os.path.join(dirPath, pharosDumpFileName)
+        pharosUpdatePath = os.path.join(dirPath, "pharos-update.sql")
         logPath = os.path.join(dirPath, "pharosLoad.log")
         #
         fU.mkdir(dirPath)
         #
-        mysqlUser = kwargs.get("mysqlUser", None)
-        mysqlPassword = kwargs.get("mysqlPassword", None)
+
         exU = ExecUtils()
         #
         if reloadDb:
@@ -68,9 +71,20 @@ class PharosTargetProvider(StashableBase):
                 ok = fU.get(pharosDumpUrl, pharosDumpPath)
                 logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
             # ---
+            logger.info("Filtering SQL dump %r for selected tables %r", pharosDumpFileName, pharosSelectedTables)
+            doWrite = True
+            # Note: the pharos dump file latest.sql.gz is not gzipped
+            with open(pharosDumpPath, "r") as ifh, open(pharosUpdatePath, "w") as ofh:
+                for line in ifh:
+                    if line.startswith("-- Table structure for table"):
+                        tN = line.split(" ")[-1][1:-2]
+                        doWrite = True if tN in pharosSelectedTables else False
+                    if doWrite:
+                        ofh.write(line)
+            # ---
             ok = exU.run(
                 "mysql",
-                execArgList=["-v", "-u", mysqlUser, "--password=%s" % mysqlPassword, "-e", "drop database if exists tcrd6; create database tcrd6;"],
+                execArgList=["-v", "-u", mysqlUser, "--password=%s" % mysqlPassword, "-e", "create database if not exists tcrd6;"],
                 outPath=logPath,
                 outAppend=False,
                 timeOut=None,
@@ -83,7 +97,7 @@ class PharosTargetProvider(StashableBase):
             #     outAppend=True,
             #     timeOut=None,
             # )
-            shellCmd = 'trap "" SIGHUP SIGINT SIGTERM; nohup mysql -u %s --password=%s tcrd6 < %s >& %s' % (mysqlUser, mysqlPassword, pharosDumpPath, logPath)
+            shellCmd = 'trap "" SIGHUP SIGINT SIGTERM; nohup mysql -u %s --password=%s tcrd6 < %s >& %s' % (mysqlUser, mysqlPassword, pharosUpdatePath, logPath)
             ok = exU.runShell(
                 shellCmd,
                 outPath=None,
@@ -93,7 +107,7 @@ class PharosTargetProvider(StashableBase):
             )
         # --
         if fromDb:
-            for tbl in ["drug_activity", "cmpd_activity", "target", "protein", "t2tc"]:
+            for tbl in pharosSelectedTables:
                 outPath = os.path.join(dirPath, "%s.tdd" % tbl)
                 if useCache and self.__mU.exists(outPath):
                     continue

@@ -50,7 +50,7 @@ class PharosTargetActivityProviderTests(unittest.TestCase):
             ok = False
             fU = FileUtil()
             srcPath = os.path.join(self.__dataPath, "Pharos")
-            dstPath = self.__dirPath
+            dstPath = os.path.join(self.__cachePath, "Pharos-targets")
             for fn in ["drug_activity", "cmpd_activity"]:
                 inpPath = os.path.join(srcPath, fn + ".tdd.gz")
                 outPath = os.path.join(dstPath, fn + ".tdd.gz")

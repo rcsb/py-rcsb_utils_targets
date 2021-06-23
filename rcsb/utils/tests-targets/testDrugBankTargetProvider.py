@@ -60,6 +60,7 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         endTime = time.time()
         logger.info("Completed %s at %s (%.4f seconds)", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - self.__startTime)
 
+    @unittest.skipIf(skipFull, "Very long test")
     def testAAFetchDrugBankTargets(self):
         dbtP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=False, username=self.__user, password=self.__pw)
         ok = dbtP.testCache()
@@ -75,7 +76,8 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         ok = dbtP.exportFasta(self.__fastaPath, self.__taxonPath, addTaxonomy=True)
         self.assertTrue(ok)
 
-    def testQQBuildDrugBankTargetsFeatures(self):
+    @unittest.skipIf(skipFull, "Very long test")
+     def testQQBuildDrugBankTargetsFeatures(self):
         #
         stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.buildCofactorList(self.__seqMatchResultsPath)

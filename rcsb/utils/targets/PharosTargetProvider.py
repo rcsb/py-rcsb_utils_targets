@@ -47,6 +47,9 @@ class PharosTargetProvider(StashableBase):
     def testCache(self):
         return True
 
+    def getVersion(self):
+        return self.__version
+
     def __reload(self, dirPath, reloadDb=False, fromDb=False, useCache=False, pharosDumpUrl=None, mysqlUser=None, mysqlPassword=None):
         startTime = time.time()
         pharosSelectedTables = ["drug_activity", "cmpd_activity", "target", "protein", "t2tc"]
@@ -126,7 +129,7 @@ class PharosTargetProvider(StashableBase):
                     timeOut=None,
                     suppressStderr=True,
                 )
-        return True
+        return ok
 
     def exportProteinFasta(self, fastaPath, taxonPath, addTaxonomy=False):
         try:

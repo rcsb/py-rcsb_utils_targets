@@ -41,10 +41,10 @@ class DrugBankTargetProvider(object):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
         self.__dirPath = os.path.join(self.__cachePath, "DrugBank-targets")
-        self.__version = None
         self.__cfD = None
         # self.__fastaPathList = self.__reloadFasta(self.__dirPath, **kwargs)
         self.__dbP = self.__reloadDrugBankProvider(**kwargs)
+        self.__version = self.__dbP.getVersion() if self.__dbP else None
         self.__mU = MarshalUtil(workPath=self.__dirPath)
 
     def testCache(self):

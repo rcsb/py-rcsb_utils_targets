@@ -22,3 +22,4 @@
   22-Jun-2021  - V0.31 Add name and mechanism queries in the ChEMBLTargetActivityProvider workflow. Use DrugBankProvider is a
                        data source in DrugBankTargetProvider() rather than FASTA downloads.
   23-Jun-2021  - V0.32 Add preprocessing filter to Pharos SQL dump input and handle missing ChEMBL API results more gracefully
+  24-Jun-2021  - V0.33 Get release versions from data source for ChEMBL, DrugBank and Pharos and propagate these in all resource files

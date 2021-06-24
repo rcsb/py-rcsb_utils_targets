@@ -22,6 +22,7 @@ from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
+from rcsb.utils.io.UrlRequestUtil import UrlRequestUtil
 
 Settings.Instance().TIMEOUT = 10  # pylint: disable=no-member
 Settings.Instance().MAX_LIMIT = 50  # pylint: disable=no-member
@@ -276,6 +277,22 @@ class ChEMBLTargetActivityProvider(StashableBase):
         except Exception as e:
             logger.exception("Failing for %s with %s", chemblId, str(e))
         return name, inchiKey, smiles
+
+    def getStatusDetails(self):
+        try:
+            baseUrl = "https://www.ebi.ac.uk"
+            endPoint = "chembl/api/data/status.json"
+            hL = []
+            pD = {}
+            ureq = UrlRequestUtil()
+            ret, retCode = ureq.get(baseUrl, endPoint, pD, headers=hL, returnContentType="JSON")
+            logger.info("retCode %r ret %r", retCode, ret)
+            tS = ret["chembl_db_version"] if "chembl_db_version" in ret else None
+            version = tS.split("_")[1] if tS and tS.split("_")[1] else None
+            releaseDateString = ret["chembl_release_date"] if "chembl_release_date" in ret else None
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        return version, releaseDateString
 
     def getMechanismDetails(self, chemblId):
         actionType = moa = maxPhase = None

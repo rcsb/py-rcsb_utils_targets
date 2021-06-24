@@ -34,9 +34,7 @@ class PharosTargetActivityProvider(StashableBase):
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         self.__mU = MarshalUtil(workPath=self.__cachePath)
         #
-        baseVersion = "6"
-        self.__version = baseVersion
-        self.__aD = self.__reload(self.__dirPath, useCache)
+        self.__aD, self.__version = self.__reload(self.__dirPath, useCache)
 
     def testCache(self, minCount=0):
         if minCount == 0:
@@ -55,6 +53,7 @@ class PharosTargetActivityProvider(StashableBase):
     def __reload(self, dirPath, useCache):
         startTime = time.time()
         aD = {}
+        version = None
         fU = FileUtil()
         fU.mkdir(dirPath)
         targetActivityFilePath = self.getTargetActivityDataPath()
@@ -63,10 +62,11 @@ class PharosTargetActivityProvider(StashableBase):
             logger.info("useCache %r using %r", useCache, targetActivityFilePath)
             qD = self.__mU.doImport(targetActivityFilePath, fmt="json")
             aD = qD["activity"] if "activity" in qD else {}
+            version = qD["version"] if "version" in qD else None
         #
         logger.info("Completed reload of (%d) at %s (%.4f seconds)", len(aD), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         #
-        return aD
+        return aD, version
 
     def getTargetActivity(self, pharosTargetId):
         try:
@@ -90,8 +90,13 @@ class PharosTargetActivityProvider(StashableBase):
         cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
         targetD.update(self.__extactCofactorData(cfDL))
         #
+        pharosReadmePath = os.path.join(self.__cachePath, "Pharos-targets", "pharos-readme.txt")
+        readmeLines = self.__mU.doImport(pharosReadmePath, fmt="list")
+        self.__version = readmeLines[0].split(" ")[1][1:] if readmeLines else "6"
+        #
         tS = datetime.datetime.now().isoformat()
-        vS = datetime.datetime.now().strftime("%Y-%m-%d")
+        # vS = datetime.datetime.now().strftime("%Y-%m-%d")
+        vS = self.__version
         ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD}, fmt="json", indent=3)
         return ok
 

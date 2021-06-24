@@ -195,7 +195,8 @@ class PharosTargetCofactorProvider(StashableBase):
         #
         fp = self.__getCofactorDataPath()
         tS = datetime.datetime.now().isoformat()
-        vS = datetime.datetime.now().strftime("%Y-%m-%d")
+        # vS = datetime.datetime.now().strftime("%Y-%m-%d")
+        vS = assignVersion
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "cofactors": qD}, fmt="json", indent=3)
         return ok
 

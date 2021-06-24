@@ -66,6 +66,7 @@ class PharosTargetProviderTests(unittest.TestCase):
                 fU.get(inpPath, outPath)
                 fU.uncompress(outPath, outputDir=dstPath)
                 fU.remove(outPath)
+            fU.put(os.path.join(srcPath, "pharos-readme.txt"), os.path.join(dstPath, "pharos-readme.txt"))
             ok = True
         except Exception as e:
             logger.exception("Failing with %s", str(e))

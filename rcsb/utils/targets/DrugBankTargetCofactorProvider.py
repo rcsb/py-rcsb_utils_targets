@@ -87,12 +87,12 @@ class DrugBankTargetCofactorProvider(StashableBase):
             bool: True for success or False otherwise
         """
         rDL = []
-        dbP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=False)
+        dbP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=True)
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         provenanceSource = "Drugbank"
         refScheme = "PDB entity"
-        assignVersion = dbP.getAssignmentVersion()
+        assignVersion = str(dbP.getAssignmentVersion())
         for queryId, matchDL in mD.items():
             unpId = queryId.split("|")[0]
             queryTaxId = queryId.split("|")[2].strip()
@@ -147,7 +147,8 @@ class DrugBankTargetCofactorProvider(StashableBase):
             qD.setdefault(eId, []).append(rD)
         fp = self.__getCofactorDataPath()
         tS = datetime.datetime.now().isoformat()
-        vS = datetime.datetime.now().strftime("%Y-%m-%d")
+        # vS = datetime.datetime.now().strftime("%Y-%m-%d")
+        vS = assignVersion
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "cofactors": qD}, fmt="json", indent=3)
         return ok
 

@@ -39,6 +39,7 @@ class PharosTargetProvider(StashableBase):
         pharosDumpUrl = kwargs.get("pharosDumpUrl", None)
         mysqlUser = kwargs.get("mysqlUser", None)
         mysqlPassword = kwargs.get("mysqlPassword", None)
+        self.__version = None
         if reloadDb or fromDb:
             self.__reload(self.__dirPath, reloadDb=reloadDb, fromDb=fromDb, useCache=useCache, pharosDumpUrl=pharosDumpUrl, mysqlUser=mysqlUser, mysqlPassword=mysqlPassword)
         #
@@ -50,11 +51,13 @@ class PharosTargetProvider(StashableBase):
         startTime = time.time()
         pharosSelectedTables = ["drug_activity", "cmpd_activity", "target", "protein", "t2tc"]
         pharosDumpUrl = pharosDumpUrl if pharosDumpUrl else "http://juniper.health.unm.edu/tcrd/download/latest.sql.gz"
+        pharosReadmeUrl = "http://juniper.health.unm.edu/tcrd/download/latest.README"
         ok = False
         fU = FileUtil()
         pharosDumpFileName = fU.getFileName(pharosDumpUrl)
         pharosDumpPath = os.path.join(dirPath, pharosDumpFileName)
         pharosUpdatePath = os.path.join(dirPath, "pharos-update.sql")
+        pharosReadmePath = os.path.join(dirPath, "pharos-readme.txt")
         logPath = os.path.join(dirPath, "pharosLoad.log")
         #
         fU.mkdir(dirPath)
@@ -68,8 +71,12 @@ class PharosTargetProvider(StashableBase):
                 ok = True
             else:
                 logger.info("Fetching url %s path %s", pharosDumpUrl, pharosDumpPath)
-                ok = fU.get(pharosDumpUrl, pharosDumpPath)
-                logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+                ok1 = fU.get(pharosDumpUrl, pharosDumpPath)
+                ok2 = fU.get(pharosReadmeUrl, pharosReadmePath)
+                logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok1 and ok2, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+            # ---
+            readmeLines = self.__mU.doImport(pharosReadmePath, fmt="list")
+            self.__version = readmeLines[0].split(" ")[1][1:] if readmeLines else "6"
             # ---
             logger.info("Filtering SQL dump %r for selected tables %r", pharosDumpFileName, pharosSelectedTables)
             doWrite = True

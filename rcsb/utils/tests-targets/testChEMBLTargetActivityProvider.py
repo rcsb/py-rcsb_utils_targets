@@ -40,6 +40,18 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def testFetchStatus(self):
+        try:
+            ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
+            ok = ctP.testCache()
+            self.assertTrue(ok)
+            version, releaseDateString = ctP.getStatusDetails()
+            self.assertGreaterEqual(int(version), 28)
+            self.assertTrue(releaseDateString is not None)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+            self.fail()
+
     def testFetchMoleculeData(self):
         try:
             ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)

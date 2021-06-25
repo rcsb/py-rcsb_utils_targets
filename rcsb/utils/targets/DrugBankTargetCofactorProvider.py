@@ -107,9 +107,9 @@ class DrugBankTargetCofactorProvider(StashableBase):
                     cfD = {}
                     cfD["cofactor_id"] = dbD["drugbank_id"]
                     cfD["molecule_name"] = dbD["name"]
-                    cfD["description"] = dbD["description"]
+                    # cfD["description"] = dbD["description"]
                     cfD["moa"] = dbD["moa"]
-                    cfD["pharmacology"] = dbD["pharmacology"]
+                    # cfD["pharmacology"] = dbD["pharmacology"]
                     cfD["inchi_key"] = dbD["inchi_key"]
                     cfD["smiles"] = dbD["smiles"]
                     cfD["pubmed_ids"] = dbD["pubmed_ids"]

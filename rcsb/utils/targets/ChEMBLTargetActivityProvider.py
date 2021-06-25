@@ -128,7 +128,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
         baseVersion = 28
         self.__version = baseVersion
         logger.info("ChEMBL API MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
-        self.__aD = self.__reload(self.__dirPath, useCache)
+        self.__aD, self.__allIdD = self.__reload(self.__dirPath, useCache)
 
     def testCache(self, minCount=0):
         if minCount == 0:
@@ -147,6 +147,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
     def __reload(self, dirPath, useCache):
         startTime = time.time()
         aD = {}
+        allIdD = {}
         fU = FileUtil()
         fU.mkdir(dirPath)
         targetActivityFilePath = self.getTargetActivityDataPath()
@@ -155,10 +156,12 @@ class ChEMBLTargetActivityProvider(StashableBase):
             logger.info("useCache %r using %r", useCache, targetActivityFilePath)
             qD = self.__mU.doImport(targetActivityFilePath, fmt="json")
             aD = qD["activity"] if "activity" in qD else {}
+            idL = qD["all_ids"] if "all_ids" in qD else []
+            allIdD = {k: k in aD for k in idL}
         #
         logger.info("Completed reload of (%d) at %s (%.4f seconds)", len(aD), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         #
-        return aD
+        return aD, allIdD
 
     def getTargetActivity(self, targetChEMBLId):
         try:
@@ -188,12 +191,12 @@ class ChEMBLTargetActivityProvider(StashableBase):
             logger.exception("Failing for %r with %s", sequenceMatchFilePath, str(e))
         return chemblIdList
 
-    def fetchTargetActivityData(self, targetChEMBLIdList, maxActivity=10, skipExisting=True, chunkSize=50):
+    def fetchTargetActivityData(self, targetChEMBLIdList, maxActivity=10, skip="none", chunkSize=50):
         """Get cofactor activity data for the input ChEMBL target list.
 
         Args:
             targetChEMBLIdList (list): list of ChEMBL target identifiers
-            skipExisting (bool, optional): reuse any existing cached data (default: True)
+            skip (str, optional): Skip searching identifiers previously tried|matched|none (default: none)
             chunkSize (int, optional): ChEMBL API batch size for fetches (default: 50)
             maxActivity (int, optional): maximum number of activity records to return per target (default: 10)
 
@@ -219,9 +222,14 @@ class ChEMBLTargetActivityProvider(StashableBase):
         ok = False
         targetD = self.__aD if self.__aD else {}
         idList = []
-        if skipExisting:
+        if skip == "matched":
             for tId in targetChEMBLIdList:
                 if tId in self.__aD:
+                    continue
+                idList.append(tId)
+        elif skip == "tried":
+            for tId in targetChEMBLIdList:
+                if tId in self.__allIdD:
                     continue
                 idList.append(tId)
         else:
@@ -255,7 +263,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
                 logger.info("Completed chunk starting at (%d)", ii)
                 tS = datetime.datetime.now().isoformat()
                 vS = datetime.datetime.now().strftime("%Y-%m-%d")
-                ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD}, fmt="json", indent=3)
+                ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": idList}, fmt="json", indent=3)
                 logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
@@ -308,12 +316,12 @@ class ChEMBLTargetActivityProvider(StashableBase):
             logger.exception("Failing for %s with %s", chemblId, str(e))
         return actionType, moa, maxPhase
 
-    def fetchTargetActivityDataMulti(self, targetChEMBLIdList, skipExisting=True, maxActivity=10, chunkSize=50, numProc=4):
+    def fetchTargetActivityDataMulti(self, targetChEMBLIdList, skip="none", maxActivity=10, chunkSize=50, numProc=4):
         """Get cofactor activity data for the input ChEMBL target list (multiprocessing mode).
 
         Args:
             targetChEMBLIdList (list): list of ChEMBL target identifiers
-            skipExisting (bool, optional): reuse any existing cached data (default: True)
+            skip (str, optional): Skip searching identifiers previously tried|matched|none (default: none)
             chunkSize(int, optional): ChEMBL API outer batch size for fetches (default: 50)
             numProc (int, optional): number processes to invoke. (default: 4)
             maxActivity (int, optional): number of activity records to return per target. (default: 10)
@@ -340,15 +348,21 @@ class ChEMBLTargetActivityProvider(StashableBase):
         ok = False
         targetD = self.__aD if self.__aD else {}
         idList = []
-        if skipExisting:
+        if skip == "matched":
             for tId in targetChEMBLIdList:
                 if tId in self.__aD:
+                    continue
+                idList.append(tId)
+        elif skip == "tried":
+            for tId in targetChEMBLIdList:
+                if tId in self.__allIdD:
                     continue
                 idList.append(tId)
         else:
             idList = targetChEMBLIdList
 
         numToProcess = len(idList)
+        allIdL = []
         try:
             for ii in range(0, len(idList), chunkSize):
                 logger.info("Begin chunk at ii %d/%d", ii, numToProcess)
@@ -357,10 +371,12 @@ class ChEMBLTargetActivityProvider(StashableBase):
                 tD = self.__getActivityMulti(tIdList, atL, maxActivity=maxActivity, numProc=numProc, chunkSize=5)
                 targetD.update(tD)
                 #
+                allIdL.extend(tIdList)
+                #
                 logger.info("Completed chunk starting at (%d)", ii)
                 tS = datetime.datetime.now().isoformat()
                 vS = datetime.datetime.now().strftime("%Y-%m-%d")
-                ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD}, fmt="json", indent=3)
+                ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": allIdL}, fmt="json", indent=3)
                 logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))

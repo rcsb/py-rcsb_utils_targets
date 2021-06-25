@@ -25,3 +25,4 @@
   24-Jun-2021  - V0.33 Get release versions from data source for ChEMBL, DrugBank and Pharos and propagate these in all resource files
   24-Jun-2021  - V0.34 Add getVersion() method in PharosTargetProvider() module
   25-Jun-2021  - V0.35 Add a target_name attributed to Pharos, DrugBank and ChEMBL cofactor data.
+  25-Jun-2021  - V0.36 Update method prototype skipExisting -> skip in ChEMBLTargetActivityProvider().

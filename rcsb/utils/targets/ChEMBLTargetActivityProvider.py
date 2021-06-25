@@ -191,7 +191,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
             logger.exception("Failing for %r with %s", sequenceMatchFilePath, str(e))
         return chemblIdList
 
-    def fetchTargetActivityData(self, targetChEMBLIdList, maxActivity=10, skip="none", chunkSize=50):
+    def fetchTargetActivityData(self, targetChEMBLIdList, skip="none", maxActivity=10, chunkSize=50):
         """Get cofactor activity data for the input ChEMBL target list.
 
         Args:

@@ -33,20 +33,33 @@ class ChEMBLTargetProvider:
         self.__dirPath = os.path.join(self.__cachePath, "ChEMBL-targets")
         baseVersion = 28
         self.__version = baseVersion
-        self.__ok = self.__reload(self.__dirPath, baseVersion, useCache, **kwargs)
+        self.__mapD = self.__reload(self.__dirPath, baseVersion, useCache, **kwargs)
         #
 
-    def testCache(self):
-        return self.__ok
+    def testCache(self, minCount=0):
+        return self.__mapD and len(self.__mapD) > minCount
 
     def getAssignmentVersion(self):
         return self.__version
+
+    def getTargetDescription(self, unpId):
+        try:
+            return self.__mapD[unpId][1]
+        except Exception:
+            return None
+
+    def getTargetChEMBLId(self, unpId):
+        try:
+            return self.__mapD[unpId][0]
+        except Exception:
+            return None
 
     def getTargetDataPath(self):
         return os.path.join(self.__dirPath, "chembl-target-data.json")
 
     def __reload(self, dirPath, baseVersion, useCache, **kwargs):
         startTime = time.time()
+        mU = MarshalUtil(workPath=dirPath)
         chemblDbUrl = kwargs.get("ChEMBLDbUrl", "ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/")
         ok = False
         fU = FileUtil()
@@ -55,21 +68,30 @@ class ChEMBLTargetProvider:
         # ChEMBL current version <baseVersion>,...
         # template:  chembl_<baseVersion>.fa.gz
         #
-
         targetFileName = "chembl_" + str(baseVersion) + ".fa.gz"
         mappingFileName = "chembl_uniprot_mapping.txt"
         #
         chemblTargetPath = os.path.join(dirPath, targetFileName)
         chemblMappingPath = os.path.join(dirPath, mappingFileName)
+        mappingFilePath = os.path.join(dirPath, "chembl_uniprot_mapping.json")
         #
-        if useCache and fU.exists(chemblMappingPath):
-            logger.info("useCache %r using %r and %r", useCache, chemblTargetPath, chemblMappingPath)
-            ok = True
+        mapD = {}
+        if useCache and fU.exists(mappingFilePath):
+            logger.info("useCache %r using %r and %r and %r", useCache, chemblTargetPath, chemblMappingPath, mappingFilePath)
+            mapD = mU.doImport(mappingFilePath, fmt="json")
         else:
+            # Get the ChEMBL UniProt mapping file
             url = os.path.join(chemblDbUrl, mappingFileName)
             ok = fU.get(url, chemblMappingPath)
             logger.info("Fetched %r url %s path %s", ok, url, chemblMappingPath)
+            logger.info("Reading ChEMBL mapping file path %s", mappingFilePath)
+            rowL = mU.doImport(chemblMappingPath, fmt="tdd", rowFormat="list")
+            for row in rowL:
+                mapD.setdefault(row[0], []).append((row[1], row[2], row[3]))
+            ok = mU.doExport(mappingFilePath, mapD, fmt="json")
+            logger.info("Processed mapping path %s (%d) %r", mappingFilePath, len(mapD), ok)
             #
+            # Get the target FASTA files --
             for vers in range(baseVersion, baseVersion + 10):
                 logger.info("Now fetching version %r", vers)
                 self.__version = vers
@@ -83,7 +105,7 @@ class ChEMBLTargetProvider:
         #
         logger.info("Completed reload at %s (%.4f seconds)", time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         #
-        return ok
+        return mapD
 
     def exportFasta(self, fastaPath, taxonPath, addTaxonomy=False):
         ok = self.__parseFasta(fastaPath, taxonPath, self.__cachePath, self.__dirPath, addTaxonomy=addTaxonomy)
@@ -92,21 +114,7 @@ class ChEMBLTargetProvider:
     def __parseFasta(self, fastaPath, taxonPath, cachePath, dirPath, addTaxonomy=False):
         # input paths
         chemblTargetRawPath = os.path.join(dirPath, "chembl_targets_raw.fa.gz")
-        mappingFilePath = os.path.join(dirPath, "chembl_uniprot_mapping.txt")
-        # output paths
-        chemblTargetUniprotMapPath = os.path.join(dirPath, "chembl_uniprot_target_mapping.json")
-        chemblTargetUniprotRawMap = os.path.join(dirPath, "chembl_uniprot_target_mapping_raw.json")
-        #
         mU = MarshalUtil(workPath=cachePath)
-        # ----
-        mapD = {}
-        logger.info("Reading ChEMBL mapping file path %s", mappingFilePath)
-        rowL = mU.doImport(mappingFilePath, fmt="tdd", rowFormat="list")
-        for row in rowL:
-            mapD.setdefault(row[0], []).append((row[1], row[3]))
-        ok = mU.doExport(chemblTargetUniprotRawMap, mapD, fmt="json")
-        logger.info("ChEMBL Raw mapping path %s (%d) %r", chemblTargetUniprotRawMap, len(mapD), ok)
-        #
         oD = {}
         uD = {}
         missTax = 0
@@ -147,10 +155,7 @@ class ChEMBLTargetProvider:
             ok3 = True
             if addTaxonomy:
                 ok3 = mU.doExport(taxonPath, taxonL, fmt="list")
-            #
-            ok2 = mU.doExport(chemblTargetUniprotMapPath, uD, fmt="json")
-            logger.info("ChEMBL mapping path %s (%d) missing taxonomy count (%d)", chemblTargetUniprotMapPath, len(uD), missTax)
-            return ok1 & ok2 & ok3
+            return ok1 & ok3
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         #

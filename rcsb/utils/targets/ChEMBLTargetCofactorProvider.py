@@ -136,7 +136,7 @@ class ChEMBLTargetCofactorProvider(StashableBase):
             if queryTaxId == "-1":
                 logger.info("Skipping target %r (%r)", unpId, chemblIdL)
                 continue
-
+            queryName = chP.getTargetDescription(unpId)
             for chemblId in chemblIdL:
                 if not chaP.hasTargetActivity(chemblId):
                     logger.debug("Skipping target %r (%r)", unpId, chemblId)
@@ -183,6 +183,7 @@ class ChEMBLTargetCofactorProvider(StashableBase):
                         "query_uniprot_id": unpId,
                         "query_id": chemblId,
                         "query_id_type": "ChEMBL",
+                        "query_name": queryName,
                         "provenance_source": provenanceSource,
                         "reference_scheme": refScheme,
                         "assignment_version": assignVersion,

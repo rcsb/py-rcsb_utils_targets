@@ -267,7 +267,7 @@ class DrugBankTargetProvider(object):
                     unpId = tiD["uniprot_ids"]
                     if "," in unpId or ";" in unpId or isinstance(unpId, list):
                         logger.warning("Bad uniprot id %r", unpId)
-                    # targetName = tiD["name"]
+                    dD["target_name"] = tiD["name"]
                     cD = {"sequence": sequence, "uniprotId": unpId}
                     if addTaxonomy:
                         taxId = umP.getMappedId(unpId, mapName="NCBI-taxon")

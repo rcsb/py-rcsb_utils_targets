@@ -28,7 +28,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
-        self.__dirName = "Drugbank-cofactors"
+        self.__dirName = "DrugBank-cofactors"
         super(DrugBankTargetCofactorProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
@@ -37,7 +37,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         #
 
     def testCache(self, minCount=590):
-        logger.info("Drugbank feature count %d", len(self.__fD["cofactors"]) if "cofactors" in self.__fD else 0)
+        logger.info("DrugBank feature count %d", len(self.__fD["cofactors"]) if "cofactors" in self.__fD else 0)
         if self.__fD and "cofactors" in self.__fD and len(self.__fD["cofactors"]) > minCount:
             return True
         else:
@@ -72,11 +72,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         return fD
 
-    def buildCofactorList(
-        self,
-        sequenceMatchFilePath,
-        crmpObj=None,
-    ):
+    def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None):
         """Build target cofactor list for the matching entities in the input sequence match file.
 
         Args:
@@ -90,7 +86,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         dbP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=True)
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
-        provenanceSource = "Drugbank"
+        provenanceSource = "DrugBank"
         refScheme = "PDB entity"
         assignVersion = str(dbP.getAssignmentVersion())
         for queryId, matchDL in mD.items():
@@ -119,12 +115,15 @@ class DrugBankTargetCofactorProvider(StashableBase):
                     cfD["pubmed_ids"] = dbD["pubmed_ids"]
                     cfDL.append(self.__addLocalIds(cfD, crmpObj))
                 # --
+                query_name = cfDL[0]["target_name"] if cfDL and "target_name" in cfDL[0] else None
+                # --
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
                     "query_uniprot_id": unpId,
                     "query_id": unpId,
                     "query_id_type": "DrugBank",
+                    "query_name": query_name,
                     "provenance_source": provenanceSource,
                     "reference_scheme": refScheme,
                     "assignment_version": assignVersion,

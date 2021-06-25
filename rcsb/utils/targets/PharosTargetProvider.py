@@ -180,22 +180,3 @@ class PharosTargetProvider(StashableBase):
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return ok
-
-    def __getTargetDetails(self):
-        # protein.tdd
-        # id	name	description	uniprot	up_version	geneid	sym	family	chr	seq	dtoid	stringid	dtoclass
-        rD = {}
-        try:
-            proteinFilePath = os.path.join(self.__dirPath, "protein.tdd")
-            pDL = self.__mU.doImport(proteinFilePath, fmt="tdd", rowFormat="dict")
-            for pD in pDL:
-                proteinId = pD["id"]
-                unpId = pD["uniprot"] if "uniprot" in pD and pD["uniprot"] != "NULL" else None
-                descr = pD["description"] if "description" in pD and pD["description"] != "NULL" else None
-                geneId = pD["geneid"] if "geneid" in pD and pD["geneid"] != "NULL" else None
-                dtoId = pD["dtoid"] if "dtoid" in pD and pD["dtoid"] != "NULL" else None
-                dtoClass = pD["dtoclass"] if "dtoclass" in pD and pD["dtoclass"] != "NULL" else None
-                rD[proteinId] = {"unpId": unpId, "name": descr, "geneId": geneId, "dtoId": dtoId, "dtoClass": dtoClass}
-        except Exception as e:
-            logger.exception("Failing with %s", str(e))
-        return rD

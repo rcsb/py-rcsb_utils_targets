@@ -34,7 +34,7 @@ class PharosTargetActivityProvider(StashableBase):
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         self.__mU = MarshalUtil(workPath=self.__cachePath)
         #
-        self.__aD, self.__version = self.__reload(self.__dirPath, useCache)
+        self.__aD, self.__tD, self.__version = self.__reload(self.__dirPath, useCache)
 
     def testCache(self, minCount=0):
         if minCount == 0:
@@ -62,11 +62,12 @@ class PharosTargetActivityProvider(StashableBase):
             logger.info("useCache %r using %r", useCache, targetActivityFilePath)
             qD = self.__mU.doImport(targetActivityFilePath, fmt="json")
             aD = qD["activity"] if "activity" in qD else {}
+            tD = qD["targets"] if "targets" in qD else {}
             version = qD["version"] if "version" in qD else None
         #
         logger.info("Completed reload of (%d) at %s (%.4f seconds)", len(aD), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         #
-        return aD, version
+        return aD, tD, version
 
     def getTargetActivity(self, pharosTargetId):
         try:
@@ -80,6 +81,18 @@ class PharosTargetActivityProvider(StashableBase):
         except Exception:
             return False
 
+    def hasTargetInfo(self, pharosTargetId):
+        try:
+            return pharosTargetId in self.__tD
+        except Exception:
+            return False
+
+    def getTargetInfo(self, pharosTargetId, ky):
+        try:
+            return self.__tD[pharosTargetId][ky]
+        except Exception:
+            return None
+
     def fetchTargetActivityData(self):
         targetD = {}
         cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "drug_activity.tdd")
@@ -90,6 +103,10 @@ class PharosTargetActivityProvider(StashableBase):
         cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
         targetD.update(self.__extactCofactorData(cfDL))
         #
+        targetFilePath = os.path.join(self.__cachePath, "Pharos-targets", "protein.tdd")
+        tDL = self.__mU.doImport(targetFilePath, fmt="tdd", rowFormat="dict")
+        targetDetailsD = self.__getTargetDetails(tDL)
+        #
         pharosReadmePath = os.path.join(self.__cachePath, "Pharos-targets", "pharos-readme.txt")
         readmeLines = self.__mU.doImport(pharosReadmePath, fmt="list")
         self.__version = readmeLines[0].split(" ")[1][1:] if readmeLines else "6"
@@ -97,7 +114,7 @@ class PharosTargetActivityProvider(StashableBase):
         tS = datetime.datetime.now().isoformat()
         # vS = datetime.datetime.now().strftime("%Y-%m-%d")
         vS = self.__version
-        ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD}, fmt="json", indent=3)
+        ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "targets": targetDetailsD}, fmt="json", indent=3)
         return ok
 
     def __extactCofactorData(self, cfDL):
@@ -152,3 +169,20 @@ class PharosTargetActivityProvider(StashableBase):
         except Exception as e:
             logger.exception("Failing with %r %s", qD, str(e))
         return targetD
+
+    def __getTargetDetails(self, targetDL):
+        # Pharos protein target - protein.tdd
+        # id	name	description	uniprot	up_version	geneid	sym	family	chr	seq	dtoid	stringid	dtoclass
+        rD = {}
+        try:
+            for targetD in targetDL:
+                proteinId = targetD["id"]
+                unpId = targetD["uniprot"] if "uniprot" in targetD and targetD["uniprot"] != "NULL" else None
+                descr = targetD["description"] if "description" in targetD and targetD["description"] != "NULL" else None
+                geneId = targetD["geneid"] if "geneid" in targetD and targetD["geneid"] != "NULL" else None
+                dtoId = targetD["dtoid"] if "dtoid" in targetD and targetD["dtoid"] != "NULL" else None
+                dtoClass = targetD["dtoclass"] if "dtoclass" in targetD and targetD["dtoclass"] != "NULL" else None
+                rD[proteinId] = {"unpId": unpId, "name": descr, "geneId": geneId, "dtoId": dtoId, "dtoClass": dtoClass}
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        return rD

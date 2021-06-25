@@ -53,6 +53,7 @@ class PharosTargetActivityProvider(StashableBase):
     def __reload(self, dirPath, useCache):
         startTime = time.time()
         aD = {}
+        tD = {}
         version = None
         fU = FileUtil()
         fU.mkdir(dirPath)

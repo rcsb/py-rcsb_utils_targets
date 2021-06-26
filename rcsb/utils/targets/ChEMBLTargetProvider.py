@@ -46,6 +46,7 @@ class ChEMBLTargetProvider:
         try:
             return self.__mapD[unpId][1]
         except Exception:
+            logger.error("Missing description for %r", unpId)
             return None
 
     def getTargetChEMBLId(self, unpId):
@@ -87,7 +88,7 @@ class ChEMBLTargetProvider:
             logger.info("Reading ChEMBL mapping file path %s", mappingFilePath)
             rowL = mU.doImport(chemblMappingPath, fmt="tdd", rowFormat="list")
             for row in rowL:
-                mapD.setdefault(row[0], []).append((row[1], row[2], row[3]))
+                mapD[row[0]] = (row[1], row[2], row[3])
             ok = mU.doExport(mappingFilePath, mapD, fmt="json")
             logger.info("Processed mapping path %s (%d) %r", mappingFilePath, len(mapD), ok)
             #

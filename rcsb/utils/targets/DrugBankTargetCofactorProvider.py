@@ -28,12 +28,14 @@ class DrugBankTargetCofactorProvider(StashableBase):
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
+        self.__useCache = kwargs.get("useCache", True)
+        self.__fmt = kwargs.get("fmt", "pickle")
         self.__dirName = "DrugBank-cofactors"
         super(DrugBankTargetCofactorProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
-        self.__fD = self.__reload(self.__dirPath, **kwargs)
+        self.__fD = self.__reload(self.__dirPath, self.__useCache, self.__fmt)
         #
 
     def testCache(self, minCount=590):
@@ -52,19 +54,20 @@ class DrugBankTargetCofactorProvider(StashableBase):
         except Exception:
             return None
 
-    def __getCofactorDataPath(self):
-        return os.path.join(self.__dirPath, "DrugBank-cofactor-data.json")
+    def __getCofactorDataPath(self, fmt="json"):
+        fExt = "json" if fmt == "json" else "pic"
+        return os.path.join(self.__dirPath, "drugbank-cofactor-data.%s" % fExt)
 
-    def __reload(self, dirPath, **kwargs):
+    def __reload(self, dirPath, useCache, fmt, **kwargs):
         startTime = time.time()
         fD = {}
-        useCache = kwargs.get("useCache", True)
+
         ok = False
-        cofactorPath = self.__getCofactorDataPath()
+        cofactorPath = self.__getCofactorDataPath(fmt=fmt)
         #
         logger.info("useCache %r featurePath %r", useCache, cofactorPath)
         if useCache and self.__mU.exists(cofactorPath):
-            fD = self.__mU.doImport(cofactorPath, fmt="json")
+            fD = self.__mU.doImport(cofactorPath, fmt=fmt)
         else:
             fU = FileUtil()
             fU.mkdir(dirPath)
@@ -107,6 +110,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
                     cfD = {}
                     cfD["cofactor_id"] = dbD["drugbank_id"]
                     cfD["molecule_name"] = dbD["name"]
+                    cfD["target_name"] = dbD["target_name"]
                     # cfD["description"] = dbD["description"]
                     cfD["moa"] = dbD["moa"]
                     # cfD["pharmacology"] = dbD["pharmacology"]
@@ -144,11 +148,11 @@ class DrugBankTargetCofactorProvider(StashableBase):
         for rD in rDL:
             eId = rD["entry_id"] + "_" + rD["entity_id"]
             qD.setdefault(eId, []).append(rD)
-        fp = self.__getCofactorDataPath()
+        fp = self.__getCofactorDataPath(fmt=self.__fmt)
         tS = datetime.datetime.now().isoformat()
         # vS = datetime.datetime.now().strftime("%Y-%m-%d")
         vS = assignVersion
-        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "cofactors": qD}, fmt="json", indent=3)
+        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "cofactors": qD}, fmt=self.__fmt, indent=3)
         return ok
 
     def __addLocalIds(self, cfD, crmpOb=None):

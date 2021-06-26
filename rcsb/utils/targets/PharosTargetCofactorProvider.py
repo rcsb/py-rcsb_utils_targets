@@ -133,7 +133,7 @@ class PharosTargetCofactorProvider(StashableBase):
                 logger.debug("Skipping target %r (%r)", unpId, pharosId)
                 continue
             # --
-            description = chaP.getTargetInfo(pharosId, "description")
+            queryName = chaP.getTargetInfo(pharosId, "name")
             # --
             for matchD in matchDL:
                 tL = matchD["target"].split("|")
@@ -174,7 +174,7 @@ class PharosTargetCofactorProvider(StashableBase):
                     "query_uniprot_id": unpId,
                     "query_id": pharosId,
                     "query_id_type": "Pharos",
-                    "query_name": description,
+                    "query_name": queryName,
                     "provenance_source": provenanceSource,
                     "reference_scheme": refScheme,
                     "assignment_version": assignVersion,

@@ -130,7 +130,7 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         refScheme = "PDB entity"
         assignVersion = chP.getAssignmentVersion()
         for queryId, matchDL in mD.items():
-            unpId = queryId.split("|")[0]
+            unpId = queryId.split("|")[0].strip()
             queryTaxId = queryId.split("|")[4]
             chemblIdL = queryId.split("|")[2].split(",")
             if queryTaxId == "-1":

@@ -79,10 +79,10 @@ class DrugBankTargetProviderTests(unittest.TestCase):
     @unittest.skipIf(skipFull, "Very long test")
     def testQQBuildDrugBankTargetsFeatures(self):
         #
-        stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
+        stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True, fmt="json")
         ok = stfP.buildCofactorList(self.__seqMatchResultsPath)
         self.assertTrue(ok)
-        stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
+        stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True, fmt="json")
         ok = stfP.testCache()
         self.assertTrue(ok)
         ok = stfP.hasCofactor("5vbn_2")

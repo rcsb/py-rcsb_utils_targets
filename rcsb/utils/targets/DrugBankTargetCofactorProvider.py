@@ -58,7 +58,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         fExt = "json" if fmt == "json" else "pic"
         return os.path.join(self.__dirPath, "drugbank-cofactor-data.%s" % fExt)
 
-    def __reload(self, dirPath, useCache, fmt, **kwargs):
+    def __reload(self, dirPath, useCache, fmt):
         startTime = time.time()
         fD = {}
 

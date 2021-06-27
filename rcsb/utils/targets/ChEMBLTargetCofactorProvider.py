@@ -134,13 +134,13 @@ class ChEMBLTargetCofactorProvider(StashableBase):
             queryTaxId = queryId.split("|")[4]
             chemblIdL = queryId.split("|")[2].split(",")
             if queryTaxId == "-1":
-                logger.info("Skipping target %r (%r)", unpId, chemblIdL)
+                logger.info("Skipping target with missing taxonomy %r (%r)", unpId, chemblIdL)
                 continue
             queryName = chP.getTargetDescription(unpId)
             for chemblId in chemblIdL:
                 if not chaP.hasTargetActivity(chemblId):
                     logger.debug("Skipping target %r (%r)", unpId, chemblId)
-                    continue
+                    # continue
                 #
                 for matchD in matchDL:
                     tL = matchD["target"].split("|")
@@ -176,6 +176,8 @@ class ChEMBLTargetCofactorProvider(StashableBase):
 
                     # ---
                     actL = self.__activityListSelect(actL, crmpObj, maxActivity=maxActivity)
+                    if not actL:
+                        logger.debug("No ChEMBL cofactors for %s %s", chemblId, unpId)
                     # ---
                     rD = {
                         "entry_id": entryId,
@@ -238,4 +240,6 @@ class ChEMBLTargetCofactorProvider(StashableBase):
             retL = mappedL
             retL.extend(unmappedL[:numLeft])
             retL = sorted(retL, key=lambda k: k["measurement_value"], reverse=True)
+        else:
+            logger.info("Mapped cofactors (%d) excluded unmapped (%d)", len(mappedL), len(unmappedL))
         return retL

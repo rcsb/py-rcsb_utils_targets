@@ -126,12 +126,12 @@ class PharosTargetCofactorProvider(StashableBase):
             queryTaxId = queryId.split("|")[4]
             pharosId = queryId.split("|")[2]
             if queryTaxId == "-1":
-                logger.info("Skipping target with missing taxonomy %r (%r)", unpId, pharosId)
+                logger.debug("Skipping target with missing taxonomy %r (%r)", unpId, pharosId)
                 continue
             #
             if not chaP.hasTargetActivity(pharosId):
-                logger.info("Skipping target with no activities %r (%r)", unpId, pharosId)
-                continue
+                logger.debug("Skipping target with no activities %r (%r)", unpId, pharosId)
+                # continue
             # --
             queryName = chaP.getTargetInfo(pharosId, "name")
             # --
@@ -168,7 +168,7 @@ class PharosTargetCofactorProvider(StashableBase):
                 #
                 actL = self.__activityListSelect(actL, crmpObj, maxActivity=maxActivity)
                 if not actL:
-                    logger.info("No cofactors for %s %s", pharosId, unpId)
+                    logger.debug("No Pharos cofactors for %s %s", pharosId, unpId)
                 # ---
                 rD = {
                     "entry_id": entryId,
@@ -253,4 +253,6 @@ class PharosTargetCofactorProvider(StashableBase):
             retL = mappedL
             retL.extend(unmappedL[:numLeft])
             retL = sorted(retL, key=lambda k: k["measurement_value"], reverse=True)
+        else:
+            logger.info("Mapped cofactors (%d) excluded unmapped (%d)", len(mappedL), len(unmappedL))
         return retL

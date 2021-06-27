@@ -94,8 +94,9 @@ class ChEMBLTargetActivityWorker(object):
             molecule.set_format("json")
             tD = molecule.filter(molecule_chembl_id__exact=chemblId).only(atL)[0]
             name = tD["pref_name"] if tD and "pref_name" in tD else None
-            smiles = tD["molecule_structures"]["canonical_smiles"] if tD and "molecule_structures" in tD and "canonical_smiles" in tD["molecule_structures"] else None
-            inchiKey = tD["molecule_structures"]["standard_inchi_key"] if tD and "molecule_structures" in tD and "standard_inchi_key" in tD["molecule_structures"] else None
+            if tD and "molecule_structures" in tD and tD["molecule_structures"]:
+                smiles = tD["molecule_structures"]["canonical_smiles"] if tD and "molecule_structures" in tD and "canonical_smiles" in tD["molecule_structures"] else None
+                inchiKey = tD["molecule_structures"]["standard_inchi_key"] if tD and "molecule_structures" in tD and "standard_inchi_key" in tD["molecule_structures"] else None
         except Exception as e:
             logger.exception("Failing for %s with %s", chemblId, str(e))
         return name, inchiKey, smiles
@@ -280,8 +281,9 @@ class ChEMBLTargetActivityProvider(StashableBase):
             molecule.set_format("json")
             tD = molecule.filter(molecule_chembl_id__exact=chemblId).only(atL)[0]
             name = tD["pref_name"] if tD and "pref_name" in tD else None
-            smiles = tD["molecule_structures"]["canonical_smiles"] if tD and "molecule_structures" in tD and "canonical_smiles" in tD["molecule_structures"] else None
-            inchiKey = tD["molecule_structures"]["standard_inchi_key"] if tD and "molecule_structures" in tD and "standard_inchi_key" in tD["molecule_structures"] else None
+            if tD and "molecule_structures" in tD and tD["molecule_structures"]:
+                smiles = tD["molecule_structures"]["canonical_smiles"] if tD and "molecule_structures" in tD and "canonical_smiles" in tD["molecule_structures"] else None
+                inchiKey = tD["molecule_structures"]["standard_inchi_key"] if tD and "molecule_structures" in tD and "standard_inchi_key" in tD["molecule_structures"] else None
         except Exception as e:
             logger.exception("Failing for %s with %s", chemblId, str(e))
         return name, inchiKey, smiles

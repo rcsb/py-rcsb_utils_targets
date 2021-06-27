@@ -27,3 +27,4 @@
   25-Jun-2021  - V0.35 Add a target_name attributed to Pharos, DrugBank and ChEMBL cofactor data.
   25-Jun-2021  - V0.36 Update method prototype skipExisting -> skip in ChEMBLTargetActivityProvider().
   26-Jun-2021  - V0.37 Serialize DrugBank cofactors in pickle - resolve missing target names -
+  26-Jun-2021  - V0.38 Make chemical component and BIRD definitions singular.

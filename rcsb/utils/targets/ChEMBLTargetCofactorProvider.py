@@ -225,9 +225,9 @@ class ChEMBLTargetCofactorProvider(StashableBase):
                     # add the local identifiers
                     for localId in localIdL:
                         if localId.startswith("PRD_"):
-                            activityD.setdefault("prd_id", []).append(localId)
+                            activityD["prd_id"] = localId
                         else:
-                            activityD.setdefault("chem_comp_id", []).append(localId)
+                            activityD["chem_comp_id"] = localId
                     mappedL.append(activityD)
                 else:
                     unmappedL.append(activityD)

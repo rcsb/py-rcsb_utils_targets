@@ -70,7 +70,7 @@ class PharosTargetCofactorProvider(StashableBase):
             fU = FileUtil()
             fU.mkdir(dirPath)
         # ---
-        logger.info("Completed reload with status (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        logger.info("Completed reload of (%d) with status (%r) at %s (%.4f seconds)", len(fD), ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         return fD
 
     def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, maxActivity=5):
@@ -126,11 +126,11 @@ class PharosTargetCofactorProvider(StashableBase):
             queryTaxId = queryId.split("|")[4]
             pharosId = queryId.split("|")[2]
             if queryTaxId == "-1":
-                logger.debug("Skipping target %r (%r)", unpId, pharosId)
+                logger.info("Skipping target with missing taxonomy %r (%r)", unpId, pharosId)
                 continue
             #
             if not chaP.hasTargetActivity(pharosId):
-                logger.debug("Skipping target %r (%r)", unpId, pharosId)
+                logger.info("Skipping target with no activities %r (%r)", unpId, pharosId)
                 continue
             # --
             queryName = chaP.getTargetInfo(pharosId, "name")
@@ -167,6 +167,8 @@ class PharosTargetCofactorProvider(StashableBase):
                     actL.append(actD)
                 #
                 actL = self.__activityListSelect(actL, crmpObj, maxActivity=maxActivity)
+                if not actL:
+                    logger.info("No cofactors for %s %s", pharosId, unpId)
                 # ---
                 rD = {
                     "entry_id": entryId,

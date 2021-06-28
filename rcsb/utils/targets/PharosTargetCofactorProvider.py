@@ -37,7 +37,7 @@ class PharosTargetCofactorProvider(StashableBase):
         #
 
     def testCache(self, minCount=1):
-        logger.info("Pharos cofactor count %d", len(self.__fD["cofactors"]) if "cofactors" in self.__fD else 0)
+        logger.info("Pharos cached cofactor count %d", len(self.__fD["cofactors"]) if "cofactors" in self.__fD else 0)
         if self.__fD and "cofactors" in self.__fD and len(self.__fD["cofactors"]) > minCount:
             return True
         else:
@@ -70,7 +70,10 @@ class PharosTargetCofactorProvider(StashableBase):
             fU = FileUtil()
             fU.mkdir(dirPath)
         # ---
-        logger.info("Completed reload of (%d) with status (%r) at %s (%.4f seconds)", len(fD), ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        numCofactors = len(fD["cofactors"]) if fD and "cofactors" in fD else 0
+        logger.info(
+            "Completed reload of (%d) cofactors with status (%r) at %s (%.4f seconds)", numCofactors, ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime
+        )
         return fD
 
     def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, maxActivity=5):
@@ -116,7 +119,7 @@ class PharosTargetCofactorProvider(StashableBase):
             qCmtD = self.__decodeComment(queryId)
             unpId = qCmtD["uniprotId"]
             queryTaxId = qCmtD["taxId"] if "taxId" in qCmtD else None
-            pharosId = qCmtD["pharosId"]
+            pharosId = qCmtD["proteinId"]
             if queryTaxId == "-1":
                 logger.debug("Skipping target with missing taxonomy %r (%r)", unpId, pharosId)
                 continue

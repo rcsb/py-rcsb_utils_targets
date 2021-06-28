@@ -40,7 +40,7 @@ class PharosTargetActivityProvider(StashableBase):
         if minCount == 0:
             return True
         if self.__aD and (len(self.__aD) > minCount):
-            logger.info("Activity data for (%d) targets", len(self.__aD))
+            logger.info("Cached Pharos activity data for (%d) targets", len(self.__aD))
             return True
         return False
 
@@ -66,7 +66,7 @@ class PharosTargetActivityProvider(StashableBase):
             tD = qD["targets"] if "targets" in qD else {}
             version = qD["version"] if "version" in qD else None
         #
-        logger.info("Completed reload of (%d) at %s (%.4f seconds)", len(aD), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        logger.info("Completed reload of (%d) activity records at %s (%.4f seconds)", len(aD), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         #
         return aD, tD, version
 

@@ -51,7 +51,7 @@ class PharosTargetActivityProviderTests(unittest.TestCase):
             fU = FileUtil()
             srcPath = os.path.join(self.__dataPath, "Pharos")
             dstPath = os.path.join(self.__cachePath, "Pharos-targets")
-            for fn in ["drug_activity", "cmpd_activity"]:
+            for fn in ["drug_activity", "cmpd_activity", "protein"]:
                 inpPath = os.path.join(srcPath, fn + ".tdd.gz")
                 outPath = os.path.join(dstPath, fn + ".tdd.gz")
                 fU.get(inpPath, outPath)

@@ -117,22 +117,23 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         # --- cofactor list
         chemblIdList = []
         for queryId, matchDL in mD.items():
-            tS = queryId.split("|")[2]
+            qCmtD = self.__decodeComment(queryId)
+            tS = qCmtD["chemblId"]
             tL = tS.split(",")
             chemblIdList.extend(tL)
         chemblIdList = list(set(chemblIdList))
         logger.info("Total cofactors for matched targets (%d)", len(chemblIdList))
         # ---
-        #
         chaP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
         #
         provenanceSource = "ChEMBL"
         refScheme = "PDB entity"
         assignVersion = chP.getAssignmentVersion()
         for queryId, matchDL in mD.items():
-            unpId = queryId.split("|")[0].strip()
-            queryTaxId = queryId.split("|")[4]
-            chemblIdL = queryId.split("|")[2].split(",")
+            qCmtD = self.__decodeComment(queryId)
+            unpId = qCmtD["uniprotId"]
+            queryTaxId = qCmtD["taxId"] if "taxId" in qCmtD else None
+            chemblIdL = qCmtD["chemblId"].split(",")
             if queryTaxId == "-1":
                 logger.info("Skipping target with missing taxonomy %r (%r)", unpId, chemblIdL)
                 continue
@@ -143,9 +144,9 @@ class ChEMBLTargetCofactorProvider(StashableBase):
                     # continue
                 #
                 for matchD in matchDL:
-                    tL = matchD["target"].split("|")
-                    entryId = tL[0].split("_")[0]
-                    entityId = tL[0].split("_")[1]
+                    tCmtD = self.__decodeComment(matchD["target"])
+                    entryId = tCmtD["entityId"].split("_")[0]
+                    entityId = tCmtD["entityId"].split("_")[1]
                     #
                     taDL = chaP.getTargetActivity(chemblId)
                     logger.debug("Target %r has (%d) activity records", chemblId, len(taDL))
@@ -189,8 +190,8 @@ class ChEMBLTargetCofactorProvider(StashableBase):
                         "provenance_source": provenanceSource,
                         "reference_scheme": refScheme,
                         "assignment_version": assignVersion,
-                        "query_taxonomy_id": int(queryTaxId),
-                        "target_taxonomy_id": int(matchD["targetTaxId"]),
+                        "query_taxonomy_id": int(queryTaxId) if queryTaxId else None,
+                        "target_taxonomy_id": int(matchD["targetTaxId"]) if "targetTaxId" in matchD else None,
                         "target_beg_seq_id": matchD["targetStart"],
                         "query_beg_seq_id": matchD["queryStart"],
                         "align_length": matchD["alignLen"],
@@ -243,3 +244,12 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         else:
             logger.info("Mapped cofactors (%d) excluded unmapped (%d)", len(mappedL), len(unmappedL))
         return retL
+
+    def __decodeComment(self, comment, separator="|"):
+        dD = {}
+        try:
+            ti = iter(comment.split(separator))
+            dD = {tup[1]: tup[0] for tup in zip(ti, ti)}
+        except Exception:
+            pass
+        return dD

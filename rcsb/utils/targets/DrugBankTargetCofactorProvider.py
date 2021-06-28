@@ -93,15 +93,16 @@ class DrugBankTargetCofactorProvider(StashableBase):
         refScheme = "PDB entity"
         assignVersion = str(dbP.getAssignmentVersion())
         for queryId, matchDL in mD.items():
-            unpId = queryId.split("|")[0]
-            queryTaxId = queryId.split("|")[2].strip()
+            qCmtD = self.__decodeComment(queryId)
+            unpId = qCmtD["uniprotId"]
+            queryTaxId = qCmtD["taxId"] if "taxId" in qCmtD else None
             if not dbP.hasCofactor(unpId) or queryTaxId == "-1":
                 logger.info("Skipping target %r", unpId)
                 continue
             for matchD in matchDL:
-                tL = matchD["target"].split("|")
-                entryId = tL[0].split("_")[0]
-                entityId = tL[0].split("_")[1]
+                tCmtD = self.__decodeComment(matchD["target"])
+                entryId = tCmtD["entityId"].split("_")[0]
+                entityId = tCmtD["entityId"].split("_")[1]
                 # --
                 dbDL = dbP.getCofactors(unpId)
                 # --
@@ -131,8 +132,8 @@ class DrugBankTargetCofactorProvider(StashableBase):
                     "provenance_source": provenanceSource,
                     "reference_scheme": refScheme,
                     "assignment_version": assignVersion,
-                    "query_taxonomy_id": int(queryTaxId),
-                    "target_taxonomy_id": int(matchD["targetTaxId"]),
+                    "query_taxonomy_id": int(queryTaxId) if queryTaxId else None,
+                    "target_taxonomy_id": int(matchD["targetTaxId"]) if "targetTaxId" in matchD else None,
                     "target_beg_seq_id": matchD["targetStart"],
                     "query_beg_seq_id": matchD["queryStart"],
                     "align_length": matchD["alignLen"],
@@ -166,3 +167,12 @@ class DrugBankTargetCofactorProvider(StashableBase):
                 else:
                     cfD["chem_comp_id"] = localId
         return cfD
+
+    def __decodeComment(self, comment, separator="|"):
+        dD = {}
+        try:
+            ti = iter(comment.split(separator))
+            dD = {tup[1]: tup[0] for tup in zip(ti, ti)}
+        except Exception:
+            pass
+        return dD

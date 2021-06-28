@@ -89,16 +89,17 @@ class CARDTargetFeatureProvider(StashableBase):
         refScheme = "PDB entity"
         assignVersion = cardP.getAssignmentVersion()
         for queryId, matchDL in mD.items():
-            modelId = queryId.split("|")[2]
+            qCmtD = self.__decodeComment(queryId)
+            modelId = qCmtD["modelId"]
             if not cardP.hasFeature(modelId):
                 logger.info("Skipping CARD model %r", modelId)
                 continue
             for matchD in matchDL:
                 begSeqId = matchD["targetStart"]
                 endSeqId = matchD["targetEnd"]
-                tL = matchD["target"].split("|")
-                entryId = tL[0].split("_")[0]
-                entityId = tL[0].split("_")[1]
+                tCmtD = self.__decodeComment(matchD["target"])
+                entryId = tCmtD["entityId"].split("_")[0]
+                entityId = tCmtD["entityId"].split("_")[1]
                 nm = cardP.getFeature(modelId, "modelName")
                 descr = cardP.getFeature(modelId, "descr")
                 featureId = cardP.getFeature(modelId, "id")
@@ -126,3 +127,12 @@ class CARDTargetFeatureProvider(StashableBase):
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": qD}, fmt="json", indent=3)
         return ok
+
+    def __decodeComment(self, comment, separator="|"):
+        dD = {}
+        try:
+            ti = iter(comment.split(separator))
+            dD = {tup[1]: tup[0] for tup in zip(ti, ti)}
+        except Exception:
+            pass
+        return dD

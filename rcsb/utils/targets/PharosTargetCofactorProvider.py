@@ -109,7 +109,8 @@ class PharosTargetCofactorProvider(StashableBase):
         # --- cofactor list
         chemblIdList = []
         for queryId, matchDL in mD.items():
-            tS = queryId.split("|")[2]
+            qCmtD = self.__decodeComment(queryId)
+            tS = qCmtD["chemblId"]
             tL = tS.split(",")
             chemblIdList.extend(tL)
         chemblIdList = list(set(chemblIdList))
@@ -122,9 +123,10 @@ class PharosTargetCofactorProvider(StashableBase):
         assignVersion = chaP.getAssignmentVersion()
         for queryId, matchDL in mD.items():
             # "O43508|uniprotId|7987|proteinId|9606|taxId"
-            unpId = queryId.split("|")[0]
-            queryTaxId = queryId.split("|")[4]
-            pharosId = queryId.split("|")[2]
+            qCmtD = self.__decodeComment(queryId)
+            unpId = qCmtD["uniprotId"]
+            queryTaxId = qCmtD["taxId"] if "taxId" in qCmtD else None
+            pharosId = qCmtD["pharosId"]
             if queryTaxId == "-1":
                 logger.debug("Skipping target with missing taxonomy %r (%r)", unpId, pharosId)
                 continue
@@ -136,9 +138,9 @@ class PharosTargetCofactorProvider(StashableBase):
             queryName = chaP.getTargetInfo(pharosId, "name")
             # --
             for matchD in matchDL:
-                tL = matchD["target"].split("|")
-                entryId = tL[0].split("_")[0]
-                entityId = tL[0].split("_")[1]
+                tCmtD = self.__decodeComment(matchD["target"])
+                entryId = tCmtD["entityId"].split("_")[0]
+                entityId = tCmtD["entityId"].split("_")[1]
                 #
                 taDL = chaP.getTargetActivity(pharosId)
                 logger.debug("Target %r has (%d) activity records", pharosId, len(taDL))
@@ -180,8 +182,8 @@ class PharosTargetCofactorProvider(StashableBase):
                     "provenance_source": provenanceSource,
                     "reference_scheme": refScheme,
                     "assignment_version": assignVersion,
-                    "query_taxonomy_id": int(queryTaxId),
-                    "target_taxonomy_id": int(matchD["targetTaxId"]),
+                    "query_taxonomy_id": int(queryTaxId) if queryTaxId else None,
+                    "target_taxonomy_id": int(matchD["targetTaxId"]) if "targetTaxId" in matchD else None,
                     "target_beg_seq_id": matchD["targetStart"],
                     "query_beg_seq_id": matchD["queryStart"],
                     "align_length": matchD["alignLen"],
@@ -256,3 +258,12 @@ class PharosTargetCofactorProvider(StashableBase):
         else:
             logger.info("Mapped cofactors (%d) excluded unmapped (%d)", len(mappedL), len(unmappedL))
         return retL
+
+    def __decodeComment(self, comment, separator="|"):
+        dD = {}
+        try:
+            ti = iter(comment.split(separator))
+            dD = {tup[1]: tup[0] for tup in zip(ti, ti)}
+        except Exception:
+            pass
+        return dD

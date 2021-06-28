@@ -29,3 +29,4 @@
   26-Jun-2021  - V0.37 Serialize DrugBank cofactors in pickle - resolve missing target names -
   26-Jun-2021  - V0.38 Make chemical component and BIRD definitions singular.
   27-Jun-2021  - V0.39 Add diagnostics to capture statistics for ChEMBL and Pharos mapped an unmapped cofactors
+  27-Jun-2021  - V0.40 Refactor FASTA comment parsing strategy and make fewer assumptions about comment content

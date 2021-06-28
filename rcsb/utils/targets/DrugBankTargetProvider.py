@@ -299,3 +299,12 @@ class DrugBankTargetProvider(object):
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return False
+
+    def __decodeComment(self, comment, separator="|"):
+        dD = {}
+        try:
+            ti = iter(comment.split(separator))
+            dD = {tup[1]: tup[0] for tup in zip(ti, ti)}
+        except Exception:
+            pass
+        return dD

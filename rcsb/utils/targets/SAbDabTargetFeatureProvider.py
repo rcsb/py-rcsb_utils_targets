@@ -102,13 +102,14 @@ class SAbDabTargetFeatureProvider(StashableBase):
         iD = {}
         fullMatchD = {}
         for queryId, matchDL in mD.items():
-            qL = queryId.split("|")
-            thName = qL[0]
-            chainType = qL[2]
+            qCmtD = self.__decodeComment(queryId)
+            # Tanezumab|therapeutic|light|chain
+            thName = qCmtD["therapeutic"]
+            chainType = qCmtD["chain"]
             for matchD in matchDL:
-                tL = matchD["target"].split("|")
-                entryId = tL[0].split("_")[0]
-                entityId = tL[0].split("_")[1]
+                tCmtD = self.__decodeComment(matchD["target"])
+                entryId = tCmtD["entityId"].split("_")[0]
+                entityId = tCmtD["entityId"].split("_")[1]
                 iD[(thName, chainType, entryId)] = entityId
         logger.info("Match index length (%d)", len(iD))
         for (thName, chainType, entryId), entityId in iD.items():
@@ -122,16 +123,18 @@ class SAbDabTargetFeatureProvider(StashableBase):
         #
         # - Add features for full matches -
         for queryId, matchDL in mD.items():
-            qL = queryId.split("|")
-            thName = qL[0]
-            chainType = qL[2]
+            qCmtD = self.__decodeComment(queryId)
+            # Tanezumab|therapeutic|light|chain
+            thName = qCmtD["therapeutic"]
+            chainType = qCmtD["chain"]
             #
             for matchD in matchDL:
                 begSeqId = matchD["targetStart"]
                 endSeqId = matchD["targetEnd"]
-                tL = matchD["target"].split("|")
-                entryId = tL[0].split("_")[0]
-                entityId = tL[0].split("_")[1]
+                #
+                tCmtD = self.__decodeComment(matchD["target"])
+                entryId = tCmtD["entityId"].split("_")[0]
+                entityId = tCmtD["entityId"].split("_")[1]
                 if (thName, chainType, entryId, entityId) not in fullMatchD:
                     continue
                 ii = 1
@@ -175,3 +178,12 @@ class SAbDabTargetFeatureProvider(StashableBase):
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": qD}, fmt="json", indent=3)
         return ok
+
+    def __decodeComment(self, comment, separator="|"):
+        dD = {}
+        try:
+            ti = iter(comment.split(separator))
+            dD = {tup[1]: tup[0] for tup in zip(ti, ti)}
+        except Exception:
+            pass
+        return dD

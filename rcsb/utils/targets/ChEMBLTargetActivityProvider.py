@@ -183,7 +183,8 @@ class ChEMBLTargetActivityProvider(StashableBase):
             # --- cofactor list
             chemblIdList = []
             for queryId in mD:
-                tS = queryId.split("|")[2]
+                qCmtD = self.__decodeComment(queryId)
+                tS = qCmtD["chemblId"]
                 tL = tS.split(",")
                 chemblIdList.extend(tL)
             chemblIdList = list(set(chemblIdList))
@@ -401,3 +402,12 @@ class ChEMBLTargetActivityProvider(StashableBase):
         #
         logger.info("Completed with multi-proc status %r failures %r total targets with data (%d)", ok, len(failList), len(rD))
         return rD
+
+    def __decodeComment(self, comment, separator="|"):
+        dD = {}
+        try:
+            ti = iter(comment.split(separator))
+            dD = {tup[1]: tup[0] for tup in zip(ti, ti)}
+        except Exception:
+            pass
+        return dD

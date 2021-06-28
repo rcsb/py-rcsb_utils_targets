@@ -115,20 +115,22 @@ class PharosTargetProvider(StashableBase):
                 outAppend=True,
                 timeOut=None,
             )
+            logger.info("SQL dump restore status %r", ok)
         # --
         if fromDb:
             for tbl in pharosSelectedTables:
                 outPath = os.path.join(dirPath, "%s.tdd" % tbl)
-                if useCache and self.__mU.exists(outPath):
-                    continue
+                # if useCache and self.__mU.exists(outPath):
+                #   continue
                 ok = exU.run(
                     "mysql",
                     execArgList=["-u", mysqlUser, "--password=%s" % mysqlPassword, "-e", "use tcrd6; select * from %s;" % tbl],
-                    outPath=os.path.join(dirPath, "%s.tdd" % tbl),
+                    outPath=outPath,
                     outAppend=False,
                     timeOut=None,
                     suppressStderr=True,
                 )
+                logger.info("SQL table %s export status %r", tbl, ok)
         return ok
 
     def exportProteinFasta(self, fastaPath, taxonPath, addTaxonomy=False):

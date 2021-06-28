@@ -114,15 +114,6 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         chP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False)
-        # --- cofactor list
-        chemblIdList = []
-        for queryId, matchDL in mD.items():
-            qCmtD = self.__decodeComment(queryId)
-            tS = qCmtD["chemblId"]
-            tL = tS.split(",")
-            chemblIdList.extend(tL)
-        chemblIdList = list(set(chemblIdList))
-        logger.info("Total cofactors for matched targets (%d)", len(chemblIdList))
         # ---
         chaP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
         #

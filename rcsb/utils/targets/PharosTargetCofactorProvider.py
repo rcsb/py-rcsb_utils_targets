@@ -105,16 +105,6 @@ class PharosTargetCofactorProvider(StashableBase):
         """
         rDL = []
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
-        #
-        # --- cofactor list
-        chemblIdList = []
-        for queryId, matchDL in mD.items():
-            qCmtD = self.__decodeComment(queryId)
-            tS = qCmtD["chemblId"]
-            tL = tS.split(",")
-            chemblIdList.extend(tL)
-        chemblIdList = list(set(chemblIdList))
-        logger.info("Total cofactors for matched targets (%d)", len(chemblIdList))
         # ---
         chaP = PharosTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
         #

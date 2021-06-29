@@ -130,6 +130,7 @@ class PharosTargetActivityProvider(StashableBase):
         try:
             qD = {}
             targetD = {}
+            dupD = {}
             for cfD in cfDL:
                 tId = cfD["target_id"]
                 qD = {}
@@ -152,9 +153,22 @@ class PharosTargetActivityProvider(StashableBase):
                 #
                 if tS and tS.startswith("US"):
                     tSL = tS.split(",")
-                    qD["patents"] = tSL
+                    qD["patents"] = [t for t in tSL if t.startswith("US")]
                 else:
-                    qD["molecule_name"] = tS
+                    # handle the double colon :: separators
+                    tSL = tS.split("::")
+                    if not tSL:
+                        qD["molecule_name"] = tS
+                    else:
+                        for tS in tSL:
+                            if tS.startswith("CHEMBL"):
+                                continue
+                            elif tS.startswith("US"):
+                                ttL = tS.split(",")
+                                qD.setdefault("patents", []).append(ttL[0])
+                            else:
+                                qD["molecule_name"] = tS
+
                 #
                 pmId = None
                 tS = cfD["reference"] if "reference" in cfD else None
@@ -163,7 +177,8 @@ class PharosTargetActivityProvider(StashableBase):
                 tS = cfD["pubmed_ids"].split(",")[0] if "pubmed_ids" in cfD and cfD["pubmed_ids"] else pmId
                 qD["pubmedId"] = tS if tS and tS not in ["NULL"] else None
                 #
-                if qD["activity"] and qD["chemblId"]:
+                if qD["activity"] and qD["chemblId"] and (qD["chemblId"], qD["activityType"], qD["action"]) not in dupD:
+                    dupD[(qD["chemblId"], qD["activityType"], qD["action"])] = True
                     targetD.setdefault(tId, []).append({ky: qD[ky] for ky in qD if qD[ky] is not None})
 
             #

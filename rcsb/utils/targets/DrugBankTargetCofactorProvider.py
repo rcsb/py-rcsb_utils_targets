@@ -75,12 +75,13 @@ class DrugBankTargetCofactorProvider(StashableBase):
         logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         return fD
 
-    def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None):
+    def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, lnmpObj=None):
         """Build target cofactor list for the matching entities in the input sequence match file.
 
         Args:
             sequenceMatchFilePath (str): sequence match output file path
-            crmpObj (obj, optional): instance of ChemRefMappingProviderObj()
+            crmpObj (obj, optional): instance of ChemRefMappingProviderObj(). Defaults to None
+            lnmpObj (obj, optional): instance of LigandNeighborMappingProviderObj(). Defaults to None.
 
         Returns:
             bool: True for success or False otherwise
@@ -99,6 +100,19 @@ class DrugBankTargetCofactorProvider(StashableBase):
             if not dbP.hasCofactor(unpId) or queryTaxId == "-1":
                 logger.info("Skipping target %r", unpId)
                 continue
+            #
+            # --
+            chemCompNeighborsD = {}
+            if lnmpObj:
+                for matchD in matchDL:
+                    tCmtD = self.__decodeComment(matchD["target"])
+                    entryId = tCmtD["entityId"].split("_")[0]
+                    entityId = tCmtD["entityId"].split("_")[1]
+                    rcsbEntityId = entryId + "_" + entityId
+                    chemCompIdList = lnmpObj.getLigandNeighbors(rcsbEntityId)
+                    chemCompNeighborsD.update({k: True for k in chemCompIdList})
+            # --
+            #
             for matchD in matchDL:
                 tCmtD = self.__decodeComment(matchD["target"])
                 entryId = tCmtD["entityId"].split("_")[0]
@@ -118,7 +132,14 @@ class DrugBankTargetCofactorProvider(StashableBase):
                     cfD["inchi_key"] = dbD["inchi_key"]
                     cfD["smiles"] = dbD["smiles"]
                     cfD["pubmed_ids"] = dbD["pubmed_ids"]
-                    cfDL.append(self.__addLocalIds(cfD, crmpObj))
+                    cfD = self.__addLocalIds(cfD, crmpObj)
+                    #
+                    if "chem_comp_id" in cfD and cfD["chem_comp_id"] in chemCompNeighborsD:
+                        cfD["neighbor_in_pdb"] = "Y"
+                    else:
+                        cfD["neighbor_in_pdb"] = "N"
+                    #
+                    cfDL.append(cfD)
                 # --
                 query_name = cfDL[0]["target_name"] if cfDL and "target_name" in cfDL[0] else None
                 # --

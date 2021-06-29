@@ -76,13 +76,14 @@ class PharosTargetCofactorProvider(StashableBase):
         )
         return fD
 
-    def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, maxActivity=5):
+    def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, lnmpObj=None, maxActivity=5):
         """Build target cofactor list for the matching entities in the input sequence match file.
 
         Args:
             sequenceMatchFilePath (str): sequence match output file path
-            crmpObj (obj, optional): instance of ChemRefMappingProviderObj()
-            maxActivity (int, optional): maximum number of prioritized activity records per target
+            crmpObj (obj, optional): instance of ChemRefMappingProviderObj(). Defaults to None.
+            lnmpObj (obj, optional): instance of LigandNeighborMappingProviderObj(). Defaults to None.
+            maxActivity (int, optional): maximum number of prioritized activity records per target. Defaults to 5.
 
         Returns:
             bool: True for success or False otherwise
@@ -128,25 +129,33 @@ class PharosTargetCofactorProvider(StashableBase):
                 logger.debug("Skipping target with no activities %r (%r)", unpId, pharosId)
                 # continue
             # --
+            chemCompNeighborsD = {}
+            if lnmpObj:
+                for matchD in matchDL:
+                    tCmtD = self.__decodeComment(matchD["target"])
+                    entryId = tCmtD["entityId"].split("_")[0]
+                    entityId = tCmtD["entityId"].split("_")[1]
+                    rcsbEntityId = entryId + "_" + entityId
+                    chemCompIdList = lnmpObj.getLigandNeighbors(rcsbEntityId)
+                    chemCompNeighborsD.update({k: True for k in chemCompIdList})
+            # --
             queryName = chaP.getTargetInfo(pharosId, "name")
             # --
             for matchD in matchDL:
                 tCmtD = self.__decodeComment(matchD["target"])
                 entryId = tCmtD["entityId"].split("_")[0]
                 entityId = tCmtD["entityId"].split("_")[1]
+                rcsbEntityId = entryId + "_" + entityId
                 #
                 taDL = chaP.getTargetActivity(pharosId)
                 logger.debug("Target %r has (%d) activity records", pharosId, len(taDL))
                 actL = []
-                cfDL = []
+                # cfDL = []
                 chD = {}
                 for taD in taDL:
                     if taD["chemblId"] in chD:
                         chD[taD["chemblId"]] = True
                         continue
-                    #
-                    cfD = {"cofactor_id": taD["chemblId"]}
-                    cfDL.append(self.__addLocalIds(cfD, crmpObj))
 
                     actD = {
                         "cofactor_id": taD["chemblId"],
@@ -159,9 +168,10 @@ class PharosTargetCofactorProvider(StashableBase):
                         "action": taD["action"] if "action" in taD else None,
                         "pharmacology": taD["pharmacology"] if "pharmacology" in taD else None,
                     }
+                    actD = self.__addLocalIds(actD, crmpObj=crmpObj)
                     actL.append(actD)
                 #
-                actL = self.__activityListSelect(actL, crmpObj, maxActivity=maxActivity)
+                actL = self.__activityListSelect(actL, chemCompNeighborsD, maxActivity=maxActivity)
                 if not actL:
                     logger.debug("No Pharos cofactors for %s %s", pharosId, unpId)
                 # ---
@@ -200,10 +210,10 @@ class PharosTargetCofactorProvider(StashableBase):
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "cofactors": qD}, fmt="json", indent=3)
         return ok
 
-    def __addLocalIds(self, cfD, crmpOb=None):
+    def __addLocalIds(self, cfD, crmpObj=None):
         #
-        if crmpOb:
-            localIdL = crmpOb.getLocalIds("CHEMBL", cfD["cofactor_id"])
+        if crmpObj:
+            localIdL = crmpObj.getLocalIds("CHEMBL", cfD["cofactor_id"])
             if localIdL:
                 localId = localIdL[0]
                 if localId.startswith("PRD_"):
@@ -212,44 +222,42 @@ class PharosTargetCofactorProvider(StashableBase):
                     cfD["chem_comp_id"] = localId
         return cfD
 
-    def __activityListSelect(self, activityDL, crmpOb=None, maxActivity=5):
-        """Prioritizing the activity data for locally mapped ligands and best binding examples.
+    def __activityListSelect(self, activityDL, chemCompNeighborsD, maxActivity=5):
+        """Prioritizing the activity data for locally mapped neighbor ligands and the best binding examples.
 
         Args:
             activityDL (list): full list of activity objects
-            crmpOb (obj, optional): instance of ChemRefMappingProvider(). Defaults to None.
+            chemCompNeighborsD (dict, optional): index of all chemical components with neighbor interactions to the query target. Defaults {}.
             maxCount (int, optional): maximum number of activity object returned. Defaults to 5.
 
         Returns:
             list: prioritized and trimmed list of activity objects
         """
         retL = []
-        mappedL = []
+        mappedNeighborL = []
         unmappedL = activityDL
-        if crmpOb:
+
+        if chemCompNeighborsD:
             unmappedL = []
-            # Select out the any cases for molecules that map to a local CC or BIRD
+            # Select out the any cases for molecules that map to a neighbor chemical component.
             for activityD in activityDL:
-                localIdL = crmpOb.getLocalIds("CHEMBL", activityD["cofactor_id"])
-                if localIdL:
-                    # add the local identifiers
-                    for localId in localIdL:
-                        if localId.startswith("PRD_"):
-                            activityD.setdefault("prd_id", []).append(localId)
-                        else:
-                            activityD.setdefault("chem_comp_id", []).append(localId)
-                    mappedL.append(activityD)
+                if "chem_comp_id" in activityD and activityD["chem_comp_id"] in chemCompNeighborsD:
+                    activityD["neighbor_in_pdb"] = "Y"
+                    mappedNeighborL.append(activityD)
                 else:
                     unmappedL.append(activityD)
+                    activityD["neighbor_in_pdb"] = "N"
         #
-        numLeft = maxActivity - len(mappedL)
+        numLeft = maxActivity - len(mappedNeighborL)
         if numLeft > 0:
             unmappedL = sorted(unmappedL, key=lambda k: k["measurement_value"], reverse=True)
-            retL = mappedL
+            retL = mappedNeighborL
             retL.extend(unmappedL[:numLeft])
             retL = sorted(retL, key=lambda k: k["measurement_value"], reverse=True)
         else:
-            logger.info("Mapped cofactors (%d) excluded unmapped (%d)", len(mappedL), len(unmappedL))
+            logger.debug("Mapped neighbor cofactors (%d) excluded unmapped (%d)", len(mappedNeighborL), len(unmappedL))
+            retL = sorted(mappedNeighborL, key=lambda k: k["measurement_value"], reverse=True)
+
         return retL
 
     def __decodeComment(self, comment, separator="|"):

@@ -78,7 +78,7 @@ class PharosTargetActivityProviderTests(unittest.TestCase):
             ok = ptP.hasTargetActivity("3707")
             self.assertTrue(ok)
             aL = ptP.getTargetActivity("3707")
-            self.assertGreater(len(aL), 125)
+            self.assertGreater(len(aL), 40)
             #
         except Exception as e:
             logger.exception("Failing with %s", str(e))

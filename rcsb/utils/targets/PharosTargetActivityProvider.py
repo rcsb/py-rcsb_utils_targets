@@ -154,7 +154,7 @@ class PharosTargetActivityProvider(StashableBase):
                 if tS and tS.startswith("US"):
                     tSL = tS.split(",")
                     qD["patents"] = [t for t in tSL if t.startswith("US")]
-                else:
+                elif tS:
                     # handle the double colon :: separators
                     tSL = tS.split("::")
                     if not tSL:

@@ -52,6 +52,10 @@ class CARDTargetFeatureProvider(StashableBase):
         except Exception:
             return None
 
+    def reload(self):
+        self.__fD = self.__reload(self.__dirPath, useCache=True)
+        return True
+
     def __getFeatureDataPath(self):
         return os.path.join(self.__dirPath, "CARD-feature-data.json")
 

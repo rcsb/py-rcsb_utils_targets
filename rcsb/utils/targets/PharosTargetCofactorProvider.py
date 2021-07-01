@@ -55,6 +55,10 @@ class PharosTargetCofactorProvider(StashableBase):
     def __getCofactorDataPath(self):
         return os.path.join(self.__dirPath, "Pharos-cofactor-data.json")
 
+    def reload(self):
+        self.__fD = self.__reload(self.__dirPath, useCache=True)
+        return True
+
     def __reload(self, dirPath, **kwargs):
         startTime = time.time()
         fD = {}

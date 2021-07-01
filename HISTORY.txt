@@ -31,3 +31,4 @@
   27-Jun-2021  - V0.39 Add diagnostics to capture statistics for ChEMBL and Pharos mapped an unmapped cofactors
   27-Jun-2021  - V0.40 Refactor FASTA comment parsing strategy and make fewer assumptions about comment content
   27-Jun-2021  - V0.41 Add annotation of neighbor interactions to cofactor activity selections
+  30-Jun-2021  - V0.42 Add reload() public methods to feature and cofactor provider modules

@@ -58,6 +58,10 @@ class DrugBankTargetCofactorProvider(StashableBase):
         fExt = "json" if fmt == "json" else "pic"
         return os.path.join(self.__dirPath, "drugbank-cofactor-data.%s" % fExt)
 
+    def reload(self):
+        self.__fD = self.__reload(self.__dirPath, useCache=True, fmt=self.__fmt)
+        return True
+
     def __reload(self, dirPath, useCache, fmt):
         startTime = time.time()
         fD = {}
@@ -141,7 +145,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
                     #
                     cfDL.append(cfD)
                 # --
-                query_name = cfDL[0]["target_name"] if cfDL and "target_name" in cfDL[0] else None
+                queryName = cfDL[0]["target_name"] if cfDL and "target_name" in cfDL[0] else None
                 # --
                 rD = {
                     "entry_id": entryId,
@@ -149,7 +153,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
                     "query_uniprot_id": unpId,
                     "query_id": unpId,
                     "query_id_type": "DrugBank",
-                    "query_name": query_name,
+                    "query_name": queryName,
                     "provenance_source": provenanceSource,
                     "reference_scheme": refScheme,
                     "assignment_version": assignVersion,

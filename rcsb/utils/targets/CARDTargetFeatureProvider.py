@@ -112,8 +112,6 @@ class CARDTargetFeatureProvider(StashableBase):
                 nm = cardP.getFeature(modelId, "modelName")
                 descr = cardP.getFeature(modelId, "descr")
                 featureId = cardP.getFeature(modelId, "id")
-                queryTaxName = matchD["queryTaxName"]
-                targetTaxName = matchD["targetTaxName"]
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
@@ -126,10 +124,10 @@ class CARDTargetFeatureProvider(StashableBase):
                     "assignment_version": assignVersion,
                     "feature_positions_beg_seq_id": begSeqId,
                     "feature_positions_end_seq_id": endSeqId,
-                    "query_tax_name": queryTaxName,
-                    "target_tax_name": targetTaxName,
-                    "match_status": matchD["taxonomyMatchStatus"],
-                    "lca_tax_name": matchD["lcaTaxName"],
+                    "query_tax_name": matchD["queryTaxName"] if "queryTaxName" in matchD else None,
+                    "target_tax_name": matchD["targetTaxName"] if "targetTaxName" in matchD else None,
+                    "match_status": matchD["taxonomyMatchStatus"] if "taxonomyMatchStatus" in matchD else None,
+                    "lca_tax_name": matchD["lcaTaxName"] if "lcaTaxName" in matchD else None,
                 }
                 rDL.append(rD)
         #

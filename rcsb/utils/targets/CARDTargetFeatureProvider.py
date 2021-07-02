@@ -6,7 +6,7 @@
 #
 ##
 """
-Accessors for CARD target features.
+Accessors and generators for CARD target feature data.
 """
 
 import datetime
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class CARDTargetFeatureProvider(StashableBase):
-    """Accessors for CARD target features."""
+    """Accessors and generators for CARD target feature data."""
 
     def __init__(self, **kwargs):
         #
@@ -76,14 +76,17 @@ class CARDTargetFeatureProvider(StashableBase):
         logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         return fD
 
-    def buildFeatureList(self, sequenceMatchFilePath):
+    def buildFeatureList(self, sequenceMatchFilePath, useTaxonomy=False):
         """Build polymer entity feature list for the matching entities in the input sequence match file.
 
         Args:
             sequenceMatchFilePath (str): sequence match output file path
+            useTaxonomy (bool): apply taxonomy criteria to filter matches. Defaults to False
 
         Returns:
             bool: True for success or False otherwise
+
+
         """
         rDL = []
         cardP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
@@ -98,7 +101,9 @@ class CARDTargetFeatureProvider(StashableBase):
             if not cardP.hasFeature(modelId):
                 logger.info("Skipping CARD model %r", modelId)
                 continue
+
             for matchD in matchDL:
+                #
                 begSeqId = matchD["targetStart"]
                 endSeqId = matchD["targetEnd"]
                 tCmtD = self.__decodeComment(matchD["target"])
@@ -107,6 +112,8 @@ class CARDTargetFeatureProvider(StashableBase):
                 nm = cardP.getFeature(modelId, "modelName")
                 descr = cardP.getFeature(modelId, "descr")
                 featureId = cardP.getFeature(modelId, "id")
+                queryTaxName = matchD["queryTaxName"]
+                targetTaxName = matchD["targetTaxName"]
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
@@ -119,6 +126,10 @@ class CARDTargetFeatureProvider(StashableBase):
                     "assignment_version": assignVersion,
                     "feature_positions_beg_seq_id": begSeqId,
                     "feature_positions_end_seq_id": endSeqId,
+                    "query_tax_name": queryTaxName,
+                    "target_tax_name": targetTaxName,
+                    "match_status": matchD["taxonomyMatchStatus"],
+                    "lca_tax_name": matchD["lcaTaxName"],
                 }
                 rDL.append(rD)
         #
@@ -126,10 +137,33 @@ class CARDTargetFeatureProvider(StashableBase):
         for rD in rDL:
             eId = rD["entry_id"] + "_" + rD["entity_id"]
             qD.setdefault(eId, []).append(rD)
+        # --
+        if useTaxonomy:
+            fqD = {}
+            for eId, rDL in qD.items():
+                mL = []
+                oL = []
+                for rD in rDL:
+                    if "match_status" not in rD:
+                        continue
+                    if rD["match_status"] in ["matched", "alternate strain", "alternate strain/serotype/isolate/genotype", "query is ancestor", "query is descendant"]:
+                        mL.append(rD)
+                    elif rD["match_status"] == "orthologous match (by lca)":
+                        oL.append(rD)
+                    else:
+                        continue
+                if not mL and not oL:
+                    continue
+                logger.debug("eId %r mL (%d) oL (%d)", eId, len(mL), len(oL))
+                fqD.setdefault(eId, []).extend(mL if mL else oL)
+        else:
+            fqD = qD
+        # --
+
         fp = self.__getFeatureDataPath()
         tS = datetime.datetime.now().isoformat()
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
-        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": qD}, fmt="json", indent=3)
+        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": fqD}, fmt="json", indent=3)
         return ok
 
     def __decodeComment(self, comment, separator="|"):

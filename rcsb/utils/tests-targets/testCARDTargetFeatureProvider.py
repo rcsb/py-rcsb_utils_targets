@@ -52,7 +52,7 @@ class CARDTargetFeatureProviderTests(unittest.TestCase):
         stfP = CARDTargetFeatureProvider(cachePath=self.__cachePath, useCache=False)
         ok = stfP.testCache()
         self.assertFalse(ok)
-        ok = stfP.buildFeatureList(self.__seqMatchResultsPath)
+        ok = stfP.buildFeatureList(self.__seqMatchResultsPath, useTaxonomy=True)
         self.assertTrue(ok)
         stfP = CARDTargetFeatureProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.testCache()

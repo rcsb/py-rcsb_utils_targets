@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class SAbDabTargetProvider(object):
-    """Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data."""
+    """Accessors for SAbDab and Thera-SAbDab(Therapeutic Structural Antibody Database) target data.
+
+       See: Dunbar, J., Krawczyk, K. et al (2014). Nucleic Acids Res. 42. D1140-D1146
+    """
 
     def __init__(self, **kwargs):
         #
@@ -30,7 +33,7 @@ class SAbDabTargetProvider(object):
         #
         self.__assignVersion = None
         self.__mU = MarshalUtil(workPath=self.__dirPath)
-        self.__oD, self.__dumpPath, self.__assignVersion = self.__reload(self.__dirPath, **kwargs)
+        self.__oD, self.__aD, self.__dumpPath, self.__assignVersion = self.__reload(self.__dirPath, **kwargs)
         #
 
     def testCache(self, minCount=590):
@@ -51,6 +54,24 @@ class SAbDabTargetProvider(object):
         except Exception:
             fL = []
         return fL
+
+    def getAssignment(self, instanceId, featureKey):
+        """Return the value of the key feature for the input instance identifier.
+
+        Args:
+            instanceId (str): instance identifier '<pdbId>|<authAsymId>'
+            featureKey (str): assignment feature key: pdb|Hchain|Lchain|model|antigen_chain|antigen_type|
+                              antigen_het_name|antigen_name|heavy_subclass|light_subclass|light_ctype)
+
+        Returns:
+            str:  feature value or None
+        """
+        fVal = None
+        try:
+            fVal = self.__aD[instanceId][featureKey]
+        except Exception:
+            fVal = None
+        return fVal
 
     def getAssignmentVersion(self):
         return self.__assignVersion
@@ -94,15 +115,60 @@ class SAbDabTargetProvider(object):
                         ("Conditions Active", "conditionsActive"),
                     ]
                 }
+            aD = self.__reloadAssignments(dirPath, **kwargs)
+            #
             tS = datetime.datetime.now().isoformat()
             vS = datetime.datetime.now().strftime("%Y-%m-%d")
-            oD = {"version": vS, "created": tS, "identifiers": tD}
+            oD = {"version": vS, "created": tS, "identifiers": tD, "assignments": aD}
             ok = self.__mU.doExport(dataPath, oD, fmt="json", indent=3)
-            logger.info("Exporting SAbDab %d data records in %r status %r", len(oD["identifiers"]), dataPath, ok)
+            logger.info("Exporting (%d) Thera-SAbDab data records and (%d) SAbDab assignments in %r status %r", len(oD["identifiers"]), len(oD["assignments"]), dataPath, ok)
 
         # ---
         logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
-        return oD["identifiers"], dumpPath, oD["version"]
+        return oD["identifiers"], oD["assignments"], dumpPath, oD["version"]
+
+    def __reloadAssignments(self, dirPath, **kwargs):
+        """Fetch and read
+
+        Args:
+            dirPath ([type]): [description]
+
+        Returns:
+            [type]: [description]
+
+        """
+        startTime = time.time()
+        aD = {}
+        try:
+            targetUrl = kwargs.get("assignmentUrl", "http://opig.stats.ox.ac.uk/webapps/newsabdab/sabdab/summary/all")
+            fU = FileUtil()
+            dumpFileName = "sabdab_summary_all.tsv"
+            #
+            fU.mkdir(dirPath)
+            dumpPath = os.path.join(dirPath, dumpFileName)
+            logger.info("Fetching url %s path %s", targetUrl, dumpPath)
+            ok = fU.get(targetUrl, dumpPath)
+            rDL = self.__mU.doImport(dumpPath, fmt="tdd", rowFormat="dict")
+            logger.info("SAbDab raw records (%d)", len(rDL))
+            logger.debug("rD keys %r", list(rDL[0].keys()))
+            kyL = ["pdb", "Hchain", "Lchain", "model", "antigen_chain", "antigen_type", "antigen_het_name", "antigen_name", "heavy_subclass", "light_subclass", "light_ctype"]
+
+            for rD in rDL:
+                pdbId = rD["pdb"] if rD["pdb"] and rD["pdb"] != "NA" else None
+                authAsymIdH = rD["Hchain"] if rD["Hchain"] and rD["Hchain"] != "NA" else None
+                authAsymIdL = rD["Lchain"] if rD["Lchain"] and rD["Lchain"] != "NA" else None
+                if pdbId and authAsymIdH:
+                    aD[pdbId + "|" + authAsymIdH] = {k: v for k, v in rD.items() if v and v != "NA" and k in kyL}
+                if pdbId and authAsymIdL:
+                    aD[pdbId + "|" + authAsymIdL] = {k: v for k, v in rD.items() if v and v != "NA" and k in kyL}
+
+            logger.info("Fetched (%d) SAbDab assignment records.", len(aD))
+            #
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+
+        logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        return aD
 
     def exportFasta(self, fastaPath):
         ok = self.__convertDumpToFasta(dumpPath=self.__dumpPath, fastaPath=fastaPath)

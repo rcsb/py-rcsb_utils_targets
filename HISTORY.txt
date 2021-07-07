@@ -35,3 +35,4 @@
    1-Jul-2021  - V0.43 Adjustment linting rules to preserve unreferenced internal methods
    2-Jul-2021  - V0.44 Add the remaining subset of the antibody data from SAbDab and add taxonomy filtering for CARD features
    2-Jul-2021  - V0.45 Handle to testing case lacking taxonomy in CARDTargetFeatureProvider()
+   7-Jul-2021  - V0.46 Add IMGTTargetProvider() and IMGTTargetFeatureProvider() modules and associated tests

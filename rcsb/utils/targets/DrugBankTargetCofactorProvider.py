@@ -147,6 +147,15 @@ class DrugBankTargetCofactorProvider(StashableBase):
                 # --
                 queryName = cfDL[0]["target_name"] if cfDL and "target_name" in cfDL[0] else None
                 # --
+                if "alignedRegions" in matchD:
+                    tBegSeqId = ",".join([str(arD["targetBegin"]) for arD in matchD["alignedRegions"]])
+                    qBegSeqId = ",".join([str(arD["queryBegin"]) for arD in matchD["alignedRegions"]])
+                    alignLen = ",".join([str(arD["targetEnd"] - arD["targetBegin"]) for arD in matchD["alignedRegions"]])
+                else:
+                    tBegSeqId = matchD["targetStart"]
+                    qBegSeqId = matchD["queryStart"]
+                    alignLen = matchD["alignLen"]
+                # --
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
@@ -159,9 +168,11 @@ class DrugBankTargetCofactorProvider(StashableBase):
                     "assignment_version": assignVersion,
                     "query_taxonomy_id": int(queryTaxId) if queryTaxId else None,
                     "target_taxonomy_id": int(matchD["targetTaxId"]) if "targetTaxId" in matchD else None,
-                    "target_beg_seq_id": matchD["targetStart"],
-                    "query_beg_seq_id": matchD["queryStart"],
-                    "align_length": matchD["alignLen"],
+                    #
+                    "target_beg_seq_id": tBegSeqId,
+                    "query_beg_seq_id": qBegSeqId,
+                    "align_length": alignLen,
+                    #
                     "taxonomy_match_status": matchD["taxonomyMatchStatus"] if "taxonomyMatchStatus" in matchD else None,
                     "lca_taxonomy_id": matchD["lcaTaxId"] if "lcaTaxId" in matchD else None,
                     "lca_taxonomy_name": matchD["lcaTaxName"] if "lcaTaxName" in matchD else None,

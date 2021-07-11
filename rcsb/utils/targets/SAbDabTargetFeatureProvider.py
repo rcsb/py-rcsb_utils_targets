@@ -129,8 +129,12 @@ class SAbDabTargetFeatureProvider(StashableBase):
             chainType = qCmtD["chain"]
             #
             for matchD in matchDL:
-                begSeqId = matchD["targetStart"]
-                endSeqId = matchD["targetEnd"]
+                if "alignedRegions" in matchD:
+                    begSeqId = ",".join([str(arD["targetBegin"]) for arD in matchD["alignedRegions"]])
+                    endSeqId = ",".join([str(arD["targetEnd"]) for arD in matchD["alignedRegions"]])
+                else:
+                    begSeqId = matchD["targetStart"]
+                    endSeqId = matchD["targetEnd"]
                 #
                 tCmtD = self.__decodeComment(matchD["target"])
                 entryId = tCmtD["entityId"].split("_")[0]

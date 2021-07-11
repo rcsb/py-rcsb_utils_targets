@@ -36,3 +36,4 @@
    2-Jul-2021  - V0.44 Add the remaining subset of the antibody data from SAbDab and add taxonomy filtering for CARD features
    2-Jul-2021  - V0.45 Handle to testing case lacking taxonomy in CARDTargetFeatureProvider()
    7-Jul-2021  - V0.46 Add IMGTTargetProvider() and IMGTTargetFeatureProvider() modules and associated tests
+  11-Jul-2021  - V0.47 Add support for "alignedRegions" in sequence alignment result files

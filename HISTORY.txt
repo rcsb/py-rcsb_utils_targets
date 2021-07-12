@@ -40,3 +40,4 @@
   12-Jul-2021  - V0.48 Export aligned regions as lists of dictionaries in JSON
   12-Jul-2021  - V0.49 Adjust diagnostics for long running activity workflow
   12-Jul-2021  - V0.50 Add public reload method for ChEMBLTargetActivityProvider()
+  12-Jul-2021  - V0.51 Make return status True in ChEMBLTargetActivityProvider.fetchTargetActivityData if the filtered target list is empty

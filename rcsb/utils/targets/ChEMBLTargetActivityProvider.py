@@ -379,6 +379,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
         numToProcess = len(idList)
         allIdL = []
         logger.info("Filtered target list (%d)", numToProcess)
+        ok = numToProcess == 0
         try:
             for ii in range(0, len(idList), chunkSize):
                 logger.info("Begin outer chunk at ii %d (total targets %d)", ii, numToProcess)

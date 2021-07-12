@@ -129,12 +129,11 @@ class SAbDabTargetFeatureProvider(StashableBase):
             chainType = qCmtD["chain"]
             #
             for matchD in matchDL:
+                fpL = []
                 if "alignedRegions" in matchD:
-                    begSeqId = ",".join([str(arD["targetBegin"]) for arD in matchD["alignedRegions"]])
-                    endSeqId = ",".join([str(arD["targetEnd"]) for arD in matchD["alignedRegions"]])
+                    fpL = [{"beg_seq_id": arD["targetBegin"], "end_seq_id": arD["targetEnd"]} for arD in matchD["alignedRegions"]]
                 else:
-                    begSeqId = matchD["targetStart"]
-                    endSeqId = matchD["targetEnd"]
+                    fpL = [{"beg_seq_id": matchD["targetBegin"], "end_seq_id": matchD["targetEnd"]}]
                 #
                 tCmtD = self.__decodeComment(matchD["target"])
                 entryId = tCmtD["entityId"].split("_")[0]
@@ -164,8 +163,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
                             "provenance_source": provenanceSource,
                             "reference_scheme": refScheme,
                             "assignment_version": assignVersion,
-                            "feature_positions_beg_seq_id": begSeqId,
-                            "feature_positions_end_seq_id": endSeqId,
+                            "feature_positions": fpL,
                         }
                         rDL.append(rD)
                         ii += 1

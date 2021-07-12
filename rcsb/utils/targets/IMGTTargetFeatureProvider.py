@@ -181,8 +181,7 @@ class IMGTTargetFeatureProvider(StashableBase):
                     "provenance_source": provenanceSource,
                     "reference_scheme": refScheme,
                     "assignment_version": assignVersion,
-                    "feature_positions_beg_seq_id": None,
-                    "feature_positions_end_seq_id": None,
+                    "feature_positions": [],
                 }
                 rDL.append(rD)
                 ii += 1
@@ -216,8 +215,7 @@ class IMGTTargetFeatureProvider(StashableBase):
                     "provenance_source": provenanceSource,
                     "reference_scheme": refScheme,
                     "assignment_version": assignVersion,
-                    "feature_positions_beg_seq_id": begSeqId,
-                    "feature_positions_end_seq_id": endSeqId,
+                    "feature_positions": [{"beg_seq_id": begSeqId, "end_seq_id": endSeqId}],
                 }
                 rDL.append(rD)
                 ii += 1
@@ -232,8 +230,7 @@ class IMGTTargetFeatureProvider(StashableBase):
                         "provenance_source": provenanceSource,
                         "reference_scheme": refScheme,
                         "assignment_version": assignVersion,
-                        "feature_positions_beg_seq_id": begSeqId,
-                        "feature_positions_end_seq_id": endSeqId,
+                        "feature_positions": [{"beg_seq_id": begSeqId, "end_seq_id": endSeqId}],
                     }
                     rDL.append(rD)
                     ii += 1

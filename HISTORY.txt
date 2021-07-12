@@ -39,3 +39,4 @@
   11-Jul-2021  - V0.47 Add support for "alignedRegions" in sequence alignment result files
   12-Jul-2021  - V0.48 Export aligned regions as lists of dictionaries in JSON
   12-Jul-2021  - V0.49 Adjust diagnostics for long running activity workflow
+  12-Jul-2021  - V0.50 Add public reload method for ChEMBLTargetActivityProvider()

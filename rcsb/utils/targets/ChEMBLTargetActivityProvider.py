@@ -145,6 +145,9 @@ class ChEMBLTargetActivityProvider(StashableBase):
     def getTargetActivityDataPath(self):
         return os.path.join(self.__dirPath, "chembl-target-activity-data.json")
 
+    def reload(self):
+        self.__aD, self.__allIdD = self.__reload(self.__dirPath, True)
+
     def __reload(self, dirPath, useCache):
         startTime = time.time()
         aD = {}

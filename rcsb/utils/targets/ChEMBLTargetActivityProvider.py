@@ -53,7 +53,7 @@ class ChEMBLTargetActivityWorker(object):
             maxActivity = optionsD.get("maxActivity", None)
 
             for ii in range(0, len(dataList), chunkSize):
-                logger.info("Begin chunk at ii %d/%d", ii, len(dataList))
+                logger.info("Begin chunk at ii %d/(for %d targets)", ii, len(dataList))
                 try:
                     act = new_client.activity  # pylint: disable=no-member
                     act.set_format("json")
@@ -135,7 +135,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
         if minCount == 0:
             return True
         if self.__aD and (len(self.__aD) > minCount):
-            logger.info("Activity data for (%d) targets", len(self.__aD))
+            logger.info("Activity data cached for (%d) targets", len(self.__aD))
             return True
         return False
 
@@ -160,7 +160,13 @@ class ChEMBLTargetActivityProvider(StashableBase):
             idL = qD["all_ids"] if "all_ids" in qD else []
             allIdD = {k: k in aD for k in idL}
         #
-        logger.info("Completed reload of (%d) at %s (%.4f seconds)", len(aD), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        logger.info(
+            "Completed reload (%d activities) (%d tried identifiers) at %s (%.4f seconds)",
+            len(aD),
+            len(allIdD),
+            time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
+            time.time() - startTime,
+        )
         #
         return aD, allIdD
 
@@ -188,7 +194,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
                 tL = tS.split(",")
                 chemblIdList.extend(tL)
             chemblIdList = list(set(chemblIdList))
-            logger.info("Total matched targets (%d)", len(chemblIdList))
+            logger.info("Total targets from sequence matching (%d)", len(chemblIdList))
         except Exception as e:
             logger.exception("Failing for %r with %s", sequenceMatchFilePath, str(e))
         return chemblIdList
@@ -223,6 +229,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
         ]
         ok = False
         targetD = self.__aD if self.__aD else {}
+        logger.info("Fetching activities for starting target list (%d) skip option %r", len(targetChEMBLIdList), skip)
         idList = []
         if skip == "matched":
             for tId in targetChEMBLIdList:
@@ -238,6 +245,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
             idList = targetChEMBLIdList
 
         numToProcess = len(idList)
+        logger.info("Filtered target list (%d)", len(idList))
         try:
             for ii in range(0, len(idList), chunkSize):
                 logger.info("Begin chunk at ii %d/%d", ii, numToProcess)
@@ -348,6 +356,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
             "standard_value",
             "target_chembl_id",
         ]
+        logger.info("Fetching activities for starting target list (%d) skip option %r", len(targetChEMBLIdList), skip)
         ok = False
         targetD = self.__aD if self.__aD else {}
         idList = []
@@ -366,9 +375,10 @@ class ChEMBLTargetActivityProvider(StashableBase):
 
         numToProcess = len(idList)
         allIdL = []
+        logger.info("Filtered target list (%d)", numToProcess)
         try:
             for ii in range(0, len(idList), chunkSize):
-                logger.info("Begin chunk at ii %d/%d", ii, numToProcess)
+                logger.info("Begin outer chunk at ii %d (total targets %d)", ii, numToProcess)
                 tIdList = idList[ii : ii + chunkSize]
                 #
                 tD = self.__getActivityMulti(tIdList, atL, maxActivity=maxActivity, numProc=numProc, chunkSize=5)
@@ -376,11 +386,11 @@ class ChEMBLTargetActivityProvider(StashableBase):
                 #
                 allIdL.extend(tIdList)
                 #
-                logger.info("Completed chunk starting at (%d)", ii)
+                logger.info("Completed outer chunk (%d) total processed targets (%d/%d)", ii, len(allIdL), numToProcess)
                 tS = datetime.datetime.now().isoformat()
                 vS = datetime.datetime.now().strftime("%Y-%m-%d")
                 ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": allIdL}, fmt="json", indent=3)
-                logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
+                logger.info("Wrote completed outer chunk starting at (%d) (%r)", ii, ok)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return ok

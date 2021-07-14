@@ -42,3 +42,4 @@
   12-Jul-2021  - V0.50 Add public reload method for ChEMBLTargetActivityProvider()
   12-Jul-2021  - V0.51 Make return status True in ChEMBLTargetActivityProvider.fetchTargetActivityData if the filtered target list is empty
   13-Jul-2021  - V0.52 Make all getFeatures() return an empty list rather than None, plus other small json export adjustments
+  13-Jul-2021  - V0.53 Various unifying API method adjustments in cofactor and features providers

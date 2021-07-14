@@ -85,9 +85,9 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True, fmt="json")
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasCofactor("5vbn_2")
+        ok = stfP.hasTarget("5vbn_2")
         self.assertTrue(ok)
-        fL = stfP.getCofactors("5vbn_2")
+        fL = stfP.getTargets("5vbn_2")
         self.assertGreaterEqual(len(fL), 1)
 
 

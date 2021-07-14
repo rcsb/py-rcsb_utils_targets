@@ -70,7 +70,7 @@ class IMGTTargetFeatureProvider(StashableBase):
         try:
             return self.__fD["features"][rcsbInstanceId]
         except Exception:
-            return None
+            return []
 
     def __getFeatureDataPath(self):
         return os.path.join(self.__dirPath, "IMGT-feature-data.json")
@@ -160,10 +160,11 @@ class IMGTTargetFeatureProvider(StashableBase):
         chainD = imgtP.getChains()
         #
         fTupL = [
-            ("description", "IMGT_CHAIN_DESCRIPTION"),
+            ("description", "IMGT_DESCRIPTION"),
             ("proteinName", "IMGT_PROTEIN_NAME"),
             ("receptorType", "IMGT_RECEPTOR_TYPE"),
             ("receptorDescription", "IMGT_RECEPTOR_DESCRIPTION"),
+            ("species", "IMGT_ORGANISM_NAME"),
         ]
         ii = 1
         #

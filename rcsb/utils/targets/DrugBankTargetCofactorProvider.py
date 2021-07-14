@@ -45,14 +45,14 @@ class DrugBankTargetCofactorProvider(StashableBase):
         else:
             return False
 
-    def hasCofactor(self, rcsbEntityId):
+    def hasTarget(self, rcsbEntityId):
         return rcsbEntityId.upper() in self.__fD["cofactors"]
 
-    def getCofactors(self, rcsbEntityId):
+    def getTargets(self, rcsbEntityId):
         try:
             return self.__fD["cofactors"][rcsbEntityId.upper()]
         except Exception:
-            return None
+            return []
 
     def __getCofactorDataPath(self, fmt="json"):
         fExt = "json" if fmt == "json" else "pic"

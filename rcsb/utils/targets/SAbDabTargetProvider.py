@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class SAbDabTargetProvider(object):
     """Accessors for SAbDab and Thera-SAbDab(Therapeutic Structural Antibody Database) target data.
 
-       See: Dunbar, J., Krawczyk, K. et al (2014). Nucleic Acids Res. 42. D1140-D1146
+    See: Dunbar, J., Krawczyk, K. et al (2014). Nucleic Acids Res. 42. D1140-D1146
     """
 
     def __init__(self, **kwargs):
@@ -37,7 +37,7 @@ class SAbDabTargetProvider(object):
         #
 
     def testCache(self, minCount=590):
-        logger.info("SAbDab count %d", len(self.__oD))
+        logger.info("Therapeutic SAbDab count %d", len(self.__oD))
         if self.__oD and len(self.__oD) > minCount:
             return True
         else:
@@ -59,8 +59,8 @@ class SAbDabTargetProvider(object):
         """Return the value of the key feature for the input instance identifier.
 
         Args:
-            instanceId (str): instance identifier '<pdbId>|<authAsymId>'
-            featureKey (str): assignment feature key: pdb|Hchain|Lchain|model|antigen_chain|antigen_type|
+            instanceId (str): instance identifier '<pdbId>.<authAsymId>'
+            featureKey (str): assignment feature key: one of pdb|Hchain|Lchain|model|antigen_chain|antigen_type|
                               antigen_het_name|antigen_name|heavy_subclass|light_subclass|light_ctype)
 
         Returns:
@@ -72,6 +72,20 @@ class SAbDabTargetProvider(object):
         except Exception:
             fVal = None
         return fVal
+
+    def hasAssignment(self, instanceId):
+        """Return if assignment data is available for the input instance.
+
+        Args:
+            instanceId (str): instance identifier '<pdbId>.<authAsymId>'
+
+        Returns:
+            bool: True for success or False otherwise
+        """
+        return instanceId in self.__aD
+
+    def getAssignments(self):
+        return self.__aD
 
     def getAssignmentVersion(self):
         return self.__assignVersion
@@ -151,16 +165,17 @@ class SAbDabTargetProvider(object):
             rDL = self.__mU.doImport(dumpPath, fmt="tdd", rowFormat="dict")
             logger.info("SAbDab raw records (%d)", len(rDL))
             logger.debug("rD keys %r", list(rDL[0].keys()))
-            kyL = ["pdb", "Hchain", "Lchain", "model", "antigen_chain", "antigen_type", "antigen_het_name", "antigen_name", "heavy_subclass", "light_subclass", "light_ctype"]
-
+            kyHL = ["pdb", "Hchain", "model", "antigen_chain", "antigen_type", "antigen_het_name", "antigen_name", "heavy_subclass"]
+            kyLL = ["pdb", "Lchain", "model", "antigen_chain", "antigen_type", "antigen_het_name", "antigen_name", "light_subclass", "light_ctype"]
+            #
             for rD in rDL:
                 pdbId = rD["pdb"] if rD["pdb"] and rD["pdb"] != "NA" else None
                 authAsymIdH = rD["Hchain"] if rD["Hchain"] and rD["Hchain"] != "NA" else None
                 authAsymIdL = rD["Lchain"] if rD["Lchain"] and rD["Lchain"] != "NA" else None
                 if pdbId and authAsymIdH:
-                    aD[pdbId + "|" + authAsymIdH] = {k: v for k, v in rD.items() if v and v != "NA" and k in kyL}
+                    aD[pdbId + "." + authAsymIdH] = {k: v for k, v in rD.items() if v and v != "NA" and k in kyHL}
                 if pdbId and authAsymIdL:
-                    aD[pdbId + "|" + authAsymIdL] = {k: v for k, v in rD.items() if v and v != "NA" and k in kyL}
+                    aD[pdbId + "." + authAsymIdL] = {k: v for k, v in rD.items() if v and v != "NA" and k in kyLL}
 
             logger.info("Fetched (%d) SAbDab assignment records.", len(aD))
             #

@@ -50,7 +50,8 @@ class CARDTargetFeatureProvider(StashableBase):
         try:
             return self.__fD["features"][rcsbEntityId.upper()]
         except Exception:
-            return None
+            pass
+        return []
 
     def reload(self):
         self.__fD = self.__reload(self.__dirPath, useCache=True)

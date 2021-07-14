@@ -57,9 +57,9 @@ class ChEMBLTargetCofactorProviderTests(unittest.TestCase):
         stfP = ChEMBLTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasCofactor("5fn7_1")
+        ok = stfP.hasTarget("5fn7_1")
         self.assertTrue(ok)
-        aL = stfP.getCofactors("5fn7_1")
+        aL = stfP.getTargets("5fn7_1")
         self.assertGreaterEqual(len(aL[0]["cofactors"]), 5)
 
 

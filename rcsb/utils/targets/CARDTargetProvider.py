@@ -161,7 +161,8 @@ class CARDTargetProvider:
             logger.info("CARD model count (%d)", len(cD))
             for modelId, mD in cD.items():
                 if modelId.startswith("_"):
-                    version = mD
+                    if modelId == "_version":
+                        version = mD
                     continue
                 oD[modelId] = {}
                 for kTup in [

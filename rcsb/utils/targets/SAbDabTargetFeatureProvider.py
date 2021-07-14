@@ -39,12 +39,23 @@ class SAbDabTargetFeatureProvider(StashableBase):
         self.__fD = self.__reload(self.__dirPath, useCache)
         #
 
-    def testCache(self, minCount=300):
-        logger.info("SAbDab feature count %d", len(self.__fD["features"]) if "features" in self.__fD else 0)
-        if self.__fD and "features" in self.__fD and len(self.__fD["features"]) > minCount:
+    def testCache(self, minCount=500):
+        logger.info(
+            "Therapeutic SAbDab feature count %d Assignment count %d",
+            len(self.__fD["features"]) if "features" in self.__fD else 0,
+            len(self.__fD["assignments"]) if "assignments" in self.__fD else 0,
+        )
+        if self.__fD and "features" in self.__fD and len(self.__fD["features"]) > minCount and self.__fD and "assignments" in self.__fD and len(self.__fD["assignments"]):
             return True
         else:
             return False
+
+    def getVersion(self):
+        try:
+            return self.__fD["version"]
+        except Exception:
+            pass
+        return None
 
     def hasFeatures(self, rcsbEntityId):
         return rcsbEntityId.upper() in self.__fD["features"]
@@ -53,7 +64,36 @@ class SAbDabTargetFeatureProvider(StashableBase):
         try:
             return self.__fD["features"][rcsbEntityId.upper()]
         except Exception:
-            return None
+            return []
+
+    def getAssignment(self, instanceId, featureKey):
+        """Return the value of the key feature for the input instance identifier.
+
+        Args:
+            instanceId (str): instance identifier '<pdbId>.<authAsymId>'
+            featureKey (str): assignment feature key: one of pdb|Hchain|Lchain|model|antigen_chain|antigen_type|
+                              antigen_het_name|antigen_name|heavy_subclass|light_subclass|light_ctype)
+
+        Returns:
+            str:  feature value or None
+        """
+        fVal = None
+        try:
+            fVal = self.__fD["assignments"][instanceId][featureKey]
+        except Exception:
+            fVal = None
+        return fVal
+
+    def hasAssignment(self, instanceId):
+        """Return if assignment data is available for the input instance.
+
+        Args:
+            instanceId (str): instance identifier '<pdbId>.<authAsymId>'
+
+        Returns:
+            bool: True for success or False otherwise
+        """
+        return instanceId in self.__fD["assignments"]
 
     def __getFeatureDataPath(self):
         return os.path.join(self.__dirPath, "sabdab-feature-data.json")
@@ -142,11 +182,11 @@ class SAbDabTargetFeatureProvider(StashableBase):
                     continue
                 ii = 1
                 for fType, fKy in [
-                    ("Antibody_Name", "antibodyName"),
-                    ("Antibody_Format", "antibodyFormat"),
-                    ("Antibody_CH1_IsoType", "ch1IsoType"),
-                    ("Antibody_Light_Chain_Type", "VD_LC"),
-                    ("Antibody_Target", "target"),
+                    ("SABDAB_ANTIBODY_NAME", "antibodyName"),
+                    ("SABDAB_ANTIBODY_FORMAT", "antibodyFormat"),
+                    ("SABDAB_ANTIBODY_CH1_ISOTYPE", "ch1IsoType"),
+                    ("SABDAB_ANTIBODY_LIGHT_CHAIN_TYPE", "VD_LC"),
+                    ("SABDAB_ANTIBODY_TARGET", "target"),
                 ]:
                     if fType == "Antibody_Light_Chain_Type" and chainType == "heavy":
                         continue
@@ -178,7 +218,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
         fp = self.__getFeatureDataPath()
         tS = datetime.datetime.now().isoformat()
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
-        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": qD}, fmt="json", indent=3)
+        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": qD, "assignments": stP.getAssignments()}, fmt="json", indent=3)
         return ok
 
     def __decodeComment(self, comment, separator="|"):

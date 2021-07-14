@@ -41,3 +41,4 @@
   12-Jul-2021  - V0.49 Adjust diagnostics for long running activity workflow
   12-Jul-2021  - V0.50 Add public reload method for ChEMBLTargetActivityProvider()
   12-Jul-2021  - V0.51 Make return status True in ChEMBLTargetActivityProvider.fetchTargetActivityData if the filtered target list is empty
+  13-Jul-2021  - V0.52 Make all getFeatures() return an empty list rather than None, plus other small json export adjustments

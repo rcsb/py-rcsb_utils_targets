@@ -61,6 +61,11 @@ class SAbDabTargetFeatureProviderTests(unittest.TestCase):
         self.assertTrue(ok)
         fL = stfP.getFeatures("4g6k_2")
         self.assertGreaterEqual(len(fL), 3)
+        # "5bk0|A"
+        ok = stfP.hasAssignment("5bk0.A")
+        self.assertTrue(ok)
+        ok = stfP.getAssignment("5bk0.A", "antigen_name")
+        self.assertTrue(ok)
 
 
 def buildSAbDabFeaturesTargets():

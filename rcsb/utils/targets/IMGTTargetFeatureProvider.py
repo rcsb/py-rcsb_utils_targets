@@ -160,11 +160,11 @@ class IMGTTargetFeatureProvider(StashableBase):
         chainD = imgtP.getChains()
         #
         fTupL = [
-            ("description", "IMGT_DESCRIPTION"),
-            ("proteinName", "IMGT_PROTEIN_NAME"),
-            ("receptorType", "IMGT_RECEPTOR_TYPE"),
-            ("receptorDescription", "IMGT_RECEPTOR_DESCRIPTION"),
-            ("species", "IMGT_ORGANISM_NAME"),
+            ("description", "IMGT_ANTIBODY_DESCRIPTION"),
+            ("proteinName", "IMGT_ANTIBODY_PROTEIN_NAME"),
+            ("receptorType", "IMGT_ANTIBODY_RECEPTOR_TYPE"),
+            ("receptorDescription", "IMGT_ANTIBODY_RECEPTOR_DESCRIPTION"),
+            ("species", "IMGT_ANTIBODY_ORGANISM_NAME"),
         ]
         ii = 1
         #
@@ -210,7 +210,7 @@ class IMGTTargetFeatureProvider(StashableBase):
                 rD = {
                     "entry_id": entryId,
                     "auth_asym_id": authAsymId,
-                    "type": "IMGT_DOMAIN_NAME",
+                    "type": "IMGT_ANTIBODY_DOMAIN_NAME",
                     "feature_id": "IMGT_" + str(ii),
                     "name": domainName,
                     "provenance_source": provenanceSource,
@@ -225,7 +225,7 @@ class IMGTTargetFeatureProvider(StashableBase):
                     rD = {
                         "entry_id": entryId,
                         "auth_asym_id": authAsymId,
-                        "type": "IMGT_GENE_ALLELE_NAME",
+                        "type": "IMGT_ANTIBODY_GENE_ALLELE_NAME",
                         "feature_id": "IMGT_" + str(ii),
                         "name": ga,
                         "provenance_source": provenanceSource,

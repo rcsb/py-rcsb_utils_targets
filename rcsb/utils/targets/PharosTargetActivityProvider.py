@@ -15,6 +15,7 @@ import logging
 import os.path
 import time
 
+from rcsb.utils.chemref.PharosProvider import PharosProvider
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
@@ -99,10 +100,15 @@ class PharosTargetActivityProvider(StashableBase):
         cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "drug_activity.tdd")
         cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
         targetD = self.__extactCofactorData(cfDL)
+        drgIdS = self.__extractDrugIdentifiers(cfDL)
         #
         cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "cmpd_activity.tdd")
         cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
         targetD.update(self.__extactCofactorData(cfDL))
+        cmpIdS = self.__extractCompoundIdentifiers(cfDL)
+        chemblIdList = list(cmpIdS.union(drgIdS))
+        phP = PharosProvider(cachePath=self.__cachePath, useCache=False)
+        phP.load(chemblIdList, "identifiers", fmt="json", indent=0)
         #
         targetFilePath = os.path.join(self.__cachePath, "Pharos-targets", "protein.tdd")
         tDL = self.__mU.doImport(targetFilePath, fmt="tdd", rowFormat="dict")
@@ -117,6 +123,31 @@ class PharosTargetActivityProvider(StashableBase):
         vS = self.__version
         ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "targets": targetDetailsD}, fmt="json", indent=3)
         return ok
+
+    def fetchCompoundIdentifiers(self):
+        cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "drug_activity.tdd")
+        cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
+        drgIdS = self.__extractDrugIdentifiers(cfDL)
+        #
+        cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "cmpd_activity.tdd")
+        cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
+        cmpIdS = self.__extractCompoundIdentifiers(cfDL)
+        chemblIdList = list(cmpIdS.union(drgIdS))
+        return chemblIdList
+
+    def __extractCompoundIdentifiers(self, cfDL):
+        chemblIdS = set()
+        for cfD in cfDL:
+            if cfD["catype"].upper() == "CHEMBL":
+                chemblIdS.add(cfD["cmpd_id_in_src"])
+        return chemblIdS
+
+    def __extractDrugIdentifiers(self, cfDL):
+        chemblIdS = set()
+        for cfD in cfDL:
+            if cfD["cmpd_chemblid"] and cfD["cmpd_chemblid"].startswith("CHEM"):
+                chemblIdS.add(cfD["cmpd_chemblid"])
+        return chemblIdS
 
     def __extactCofactorData(self, cfDL):
         """Extract ids, activity and moa data for drugs and cofactors from the Pharos schema dump files.

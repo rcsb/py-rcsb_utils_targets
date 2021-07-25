@@ -71,6 +71,8 @@ class PharosTargetActivityProviderTests(unittest.TestCase):
             self.assertTrue(ok)
             ok = ptP.fetchTargetActivityData()
             self.assertTrue(ok)
+            chIdL = ptP.fetchCompoundIdentifiers()
+            self.assertGreaterEqual(len(chIdL), 1000)
             #
             ptP = PharosTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
             ok = ptP.testCache(minCount=1)

@@ -44,3 +44,4 @@
   13-Jul-2021  - V0.52 Make all getFeatures() return an empty list rather than None, plus other small json export adjustments
   13-Jul-2021  - V0.53 Various unifying API method adjustments in cofactor and features providers
   14-Jul-2021  - V0.54 Adjustments for more descriptive IMGT attribute names
+  14-Jul-2021  - V0.55 Standardize provider APIs, make SCOP and CATH  providers a subclass of StashableBase, extend functionality of PharosTargetActivityProvider

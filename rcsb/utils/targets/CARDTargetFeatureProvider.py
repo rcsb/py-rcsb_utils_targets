@@ -135,8 +135,13 @@ class CARDTargetFeatureProvider(StashableBase):
                 rDL.append(rD)
         #
         qD = {}
+        dD = {}
         for rD in rDL:
             eId = rD["entry_id"] + "_" + rD["entity_id"]
+            fId = rD["feature_id"]
+            if (eId, fId) in dD:
+                continue
+            dD[(eId, fId)] = True
             qD.setdefault(eId, []).append(rD)
         # --
         if useTaxonomy:

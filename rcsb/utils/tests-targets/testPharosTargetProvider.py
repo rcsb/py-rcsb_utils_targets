@@ -45,9 +45,6 @@ class PharosTargetProviderTests(unittest.TestCase):
         self.__dirPath = os.path.join(self.__cachePath, "Pharos-targets")
         self.__dataPath = os.path.join(HERE, "test-data")
         #
-        self.__stashUrl = None
-        self.__stashRemotePath = os.path.join(self.__cachePath, "stash-remote")
-        #
         self.__pharosFixture()
 
     def tearDown(self):

@@ -45,3 +45,4 @@
   13-Jul-2021  - V0.53 Various unifying API method adjustments in cofactor and features providers
   14-Jul-2021  - V0.54 Adjustments for more descriptive IMGT attribute names
   14-Jul-2021  - V0.55 Standardize provider APIs extend functionality of PharosTargetActivityProvider
+  28-Jul-2021  - V0.56 Update constructor API for TaxonomyProvider and update dependencies

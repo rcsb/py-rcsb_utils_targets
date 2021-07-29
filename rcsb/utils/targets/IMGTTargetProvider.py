@@ -134,7 +134,7 @@ class IMGTTargetProvider(StashableBase):
         # --
         fastaPath = os.path.join(self.__dirPath, "imgt-reference.fa")
         taxonPath = os.path.join(self.__dirPath, "imgt-reference-taxon.tdd")
-        tP = TaxonomyProvider(taxDirPath=self.__cachePath)
+        tP = TaxonomyProvider(cachePath=self.__cachePath)
 
         rawQD = self.__mU.doImport(rawFastaPath, fmt="fasta", commentStyle="default")
         oD = {}

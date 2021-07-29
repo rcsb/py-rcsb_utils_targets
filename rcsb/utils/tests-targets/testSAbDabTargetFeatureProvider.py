@@ -24,6 +24,7 @@ import resource
 import time
 import unittest
 
+from rcsb.utils.config.ConfigUtil import ConfigUtil
 from rcsb.utils.targets.SAbDabTargetFeatureProvider import SAbDabTargetFeatureProvider
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -36,6 +37,7 @@ logger = logging.getLogger()
 class SAbDabTargetFeatureProviderTests(unittest.TestCase):
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
+        self.__dataPath = os.path.join(HERE, "test-data")
         #
         self.__seqMatchResultsPath = os.path.join(HERE, "test-data", "sabdab-vs-pdbprent-filtered-results.json.gz")
         self.__startTime = time.time()
@@ -66,6 +68,21 @@ class SAbDabTargetFeatureProviderTests(unittest.TestCase):
         self.assertTrue(ok)
         ok = stfP.getAssignment("5bk0.A", "antigen_name")
         self.assertTrue(ok)
+
+    @unittest.skip("Bootstrap test")
+    def testSabdabCacheBootstrap(self):
+        try:
+            stfP = SAbDabTargetFeatureProvider(cachePath=self.__cachePath, useCache=True)
+            ok = stfP.testCache()
+            self.assertTrue(ok)
+            configPath = os.path.join(self.__dataPath, "sabdab-config.yml")
+            configName = "site_info_remote_configuration"
+            cfgOb = ConfigUtil(configPath=configPath, defaultSectionName=configName)
+            ok = stfP.backup(cfgOb, configName, useGit=True, useStash=True)
+            self.assertTrue(ok)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+            self.fail()
 
 
 def buildSAbDabFeaturesTargets():

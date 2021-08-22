@@ -84,7 +84,7 @@ class PharosTargetProvider(StashableBase):
             logger.info("Filtering SQL dump %r for selected tables %r", pharosDumpFileName, pharosSelectedTables)
             doWrite = True
             # Note: the pharos dump file latest.sql.gz is not gzipped
-            with open(pharosDumpPath, "r") as ifh, open(pharosUpdatePath, "w") as ofh:
+            with open(pharosDumpPath, "r", encoding="utf-8") as ifh, open(pharosUpdatePath, "w", encoding="utf-8") as ofh:
                 for line in ifh:
                     if line.startswith("-- Table structure for table"):
                         tN = line.split(" ")[-1][1:-2]

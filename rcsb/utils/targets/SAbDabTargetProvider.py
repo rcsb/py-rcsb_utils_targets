@@ -122,7 +122,7 @@ class SAbDabTargetProvider(object):
                         ("Format", "antiBodyFormat"),
                         ("CH1 Isotype", "ch1Isotype"),
                         ("VD LC", "VD_LC"),
-                        ("Highest_Clin_Trial (Jan '20)", "maxClinicalPhase"),
+                        ("Highest_Clin_Trial (Aug '21)", "maxClinicalPhase"),
                         ("Est. Status", "status"),
                         ("Target", "target"),
                         ("Conditions Approved", "conditionsApproved"),

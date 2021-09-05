@@ -302,6 +302,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
 
     def getStatusDetails(self):
         try:
+            version = releaseDateString = None
             baseUrl = "https://www.ebi.ac.uk"
             endPoint = "chembl/api/data/status.json"
             hL = []
@@ -309,7 +310,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
             ureq = UrlRequestUtil()
             ret, retCode = ureq.get(baseUrl, endPoint, pD, headers=hL, returnContentType="JSON")
             logger.info("retCode %r ret %r", retCode, ret)
-            tS = ret["chembl_db_version"] if "chembl_db_version" in ret else None
+            tS = ret["chembl_db_version"] if ret and "chembl_db_version" in ret else None
             version = tS.split("_")[1] if tS and tS.split("_")[1] else None
             releaseDateString = ret["chembl_release_date"] if "chembl_release_date" in ret else None
         except Exception as e:

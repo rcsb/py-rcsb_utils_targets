@@ -46,3 +46,4 @@
   14-Jul-2021  - V0.54 Adjustments for more descriptive IMGT attribute names
   14-Jul-2021  - V0.55 Standardize provider APIs extend functionality of PharosTargetActivityProvider
   28-Jul-2021  - V0.56 Update constructor API for TaxonomyProvider and update dependencies
+   5-Sep-2021  - V0.57 Update SAbDab data importer, fix initialization in ChEMBLTargetActivityProvider.getStatusDetails()

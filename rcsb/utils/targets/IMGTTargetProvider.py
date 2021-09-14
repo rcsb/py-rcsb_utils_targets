@@ -134,7 +134,10 @@ class IMGTTargetProvider(StashableBase):
         # --
         fastaPath = os.path.join(self.__dirPath, "imgt-reference.fa")
         taxonPath = os.path.join(self.__dirPath, "imgt-reference-taxon.tdd")
-        tP = TaxonomyProvider(cachePath=self.__cachePath)
+        tP = TaxonomyProvider(cachePath=self.__cachePath, useCache=True)
+        ok = tP.testCache()
+        if not ok:
+            tP = TaxonomyProvider(cachePath=self.__cachePath, useCache=False)
 
         rawQD = self.__mU.doImport(rawFastaPath, fmt="fasta", commentStyle="default")
         oD = {}
@@ -151,7 +154,7 @@ class IMGTTargetProvider(StashableBase):
                     tD["taxVar"] = taxVar
                 sD.update(tD)
             else:
-                logger.info("Unknown taxonomy %r", queryId)
+                logger.info("Unknown taxonomy %r (taxName=%r)", queryId, taxName)
             sD["sequence"].replace(".", "-")
             seqId = ""
             cL = []

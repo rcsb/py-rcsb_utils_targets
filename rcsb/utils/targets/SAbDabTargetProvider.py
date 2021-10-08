@@ -115,20 +115,25 @@ class SAbDabTargetProvider(object):
             logger.debug("rD keys %r", list(rDL[0].keys()))
             tD = {}
             for rD in rDL:
-                tD[rD["Therapeutic"]] = {
-                    kTup[1]: rD[kTup[0]] if rD[kTup[0]] not in ["na", "na;na"] else None
-                    for kTup in [
-                        ("Therapeutic", "antibodyName"),
-                        ("Format", "antiBodyFormat"),
-                        ("CH1 Isotype", "ch1Isotype"),
-                        ("VD LC", "VD_LC"),
-                        ("Highest_Clin_Trial (Aug '21)", "maxClinicalPhase"),
-                        ("Est. Status", "status"),
-                        ("Target", "target"),
-                        ("Conditions Approved", "conditionsApproved"),
-                        ("Conditions Active", "conditionsActive"),
-                    ]
-                }
+                qD = {}
+                for kTup in [
+                    ("Therapeutic", "antibodyName"),
+                    ("Format", "antiBodyFormat"),
+                    ("CH1 Isotype", "ch1Isotype"),
+                    ("VD LC", "VD_LC"),
+                    ("Highest_Clin_Trial (Oct '21)", "maxClinicalPhase"),
+                    ("Est. Status", "status"),
+                    ("Target", "target"),
+                    ("Conditions Approved", "conditionsApproved"),
+                    ("Conditions Active", "conditionsActive"),
+                ]:
+                    if kTup[0] in rD and rD[kTup[0]] not in ["na", "na;na"]:
+                        qD[kTup[1]] = rD[kTup[0]]
+                    else:
+                        qD[kTup[1]] = None
+                    if kTup[0] not in rD:
+                        logger.error("SabDab key %r missing in input dataset %r", kTup[0], list(rD.keys()))
+                tD[rD["Therapeutic"]] = qD
             aD = self.__reloadAssignments(dirPath, **kwargs)
             #
             tS = datetime.datetime.now().isoformat()

@@ -3,7 +3,7 @@
 #  Date:           18-Jun-2021 jdw
 #
 #  Updated:
-#
+#   9-Feb-2023 aae  Find Highest_Clin_Trial column regardless of month
 ##
 """
 Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data.
@@ -116,12 +116,15 @@ class SAbDabTargetProvider(object):
             tD = {}
             for rD in rDL:
                 qD = {}
+                # Highest_Clin_Trial column name changes each month
+                clinTrialCol = next((k for k in list(rD.keys()) if "Highest_Clin_Trial" in k), "Highest_Clin_Trial")
+                #
                 for kTup in [
                     ("Therapeutic", "antibodyName"),
                     ("Format", "antiBodyFormat"),
                     ("CH1 Isotype", "ch1Isotype"),
                     ("VD LC", "VD_LC"),
-                    ("Highest_Clin_Trial (Oct '21)", "maxClinicalPhase"),
+                    (clinTrialCol, "maxClinicalPhase"),
                     ("Est. Status", "status"),
                     ("Target", "target"),
                     ("Conditions Approved", "conditionsApproved"),

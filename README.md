@@ -1,5 +1,7 @@
 # RCSB Python Target Data Management Utilities
 
+[![Build Status](https://dev.azure.com/rcsb/RCSB%20PDB%20Python%20Projects/_apis/build/status/rcsb.py-rcsb_utils_targets?branchName=master)](https://dev.azure.com/rcsb/RCSB%20PDB%20Python%20Projects/_build/latest?definitionId=1&branchName=master)
+
 ## Introduction
 
 This module contains methods for target data management.

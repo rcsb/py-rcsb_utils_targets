@@ -2,7 +2,8 @@
 #  File:           PharosTargetProvider.py
 #  Date:           11-Jun-2021 jdw
 #
-#  Updated:
+#  Updates:
+#   27-Feb-2023 dwp Update mysql loading command
 #
 ##
 """
@@ -107,10 +108,14 @@ class PharosTargetProvider(StashableBase):
             #     outAppend=True,
             #     timeOut=None,
             # )
-            shellCmd = 'trap "" SIGHUP SIGINT SIGTERM; nohup mysql -u %s --password=%s tcrd6 < %s >& %s' % (mysqlUser, mysqlPassword, pharosUpdatePath, logPath)
+            #
+            # Load pharos data into MySQL and trap for hangup, interruption and termination signals (note that the SIG prefix isn't necessary).
+            # (Also note that subprocess will use `/bin/sh`, which may point to `dash` and thus may behave differently than if run via `bash`)
+            logger.info("Loading pharosUpdatePath %s into mysql db 'tcrd6' (check log: %s)", os.path.abspath(pharosUpdatePath), os.path.abspath(logPath))
+            shellCmd = f'trap "" HUP INT TERM; nohup mysql -u {mysqlUser} --password={mysqlPassword} tcrd6 < {pharosUpdatePath}'
             ok = exU.runShell(
                 shellCmd,
-                outPath=None,
+                outPath=logPath,
                 inpPath=None,
                 outAppend=True,
                 timeOut=None,

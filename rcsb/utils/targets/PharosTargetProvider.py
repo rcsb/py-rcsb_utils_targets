@@ -3,7 +3,7 @@
 #  Date:           11-Jun-2021 jdw
 #
 #  Updates:
-#   22-Feb-2023 dwp Update mysql loading command
+#   27-Feb-2023 dwp Update mysql loading command
 #
 ##
 """
@@ -108,6 +108,9 @@ class PharosTargetProvider(StashableBase):
             #     outAppend=True,
             #     timeOut=None,
             # )
+            #
+            # Load pharos data into MySQL and trap for hangup, interruption and termination signals (note that the SIG prefix isn't necessary).
+            # (Also note that subprocess will use `/bin/sh`, which may point to `dash` and thus may behave differently than if run via `bash`)
             logger.info("Loading pharosUpdatePath %s into mysql db 'tcrd6' (check log: %s)", os.path.abspath(pharosUpdatePath), os.path.abspath(logPath))
             shellCmd = f'trap "" HUP INT TERM; nohup mysql -u {mysqlUser} --password={mysqlPassword} tcrd6 < {pharosUpdatePath}'
             ok = exU.runShell(

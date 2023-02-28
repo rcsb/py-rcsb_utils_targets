@@ -99,12 +99,12 @@ class PharosTargetActivityProvider(StashableBase):
         targetD = {}
         cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "drug_activity.tdd")
         cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
-        targetD = self.__extactCofactorData(cfDL)
+        targetD = self.__extractCofactorData(cfDL)
         drgIdS = self.__extractDrugIdentifiers(cfDL)
         #
         cofactorFilePath = os.path.join(self.__cachePath, "Pharos-targets", "cmpd_activity.tdd")
         cfDL = self.__mU.doImport(cofactorFilePath, fmt="tdd", rowFormat="dict")
-        targetD.update(self.__extactCofactorData(cfDL))
+        targetD.update(self.__extractCofactorData(cfDL))
         cmpIdS = self.__extractCompoundIdentifiers(cfDL)
         chemblIdList = list(cmpIdS.union(drgIdS))
         phP = PharosProvider(cachePath=self.__cachePath, useCache=False)
@@ -149,7 +149,7 @@ class PharosTargetActivityProvider(StashableBase):
                 chemblIdS.add(cfD["cmpd_chemblid"])
         return chemblIdS
 
-    def __extactCofactorData(self, cfDL):
+    def __extractCofactorData(self, cfDL):
         """Extract ids, activity and moa data for drugs and cofactors from the Pharos schema dump files.
 
         Args:

@@ -164,7 +164,7 @@ class PharosTargetCofactorProvider(StashableBase):
                     actD = {
                         "cofactor_id": taD["chemblId"],
                         "cofactor_name": taD["molecule_name"] if "name" in taD else None,
-                        "measurement_type": "p" + taD["activityType"],
+                        "measurement_type": "p" + taD["activityType"] if "activityType" in taD else None,
                         "measurement_value": taD["activity"],
                         "pubmed_ids": [taD["pubmedId"]] if "pubmedId" in taD else None,
                         "patent_nos": taD["patents"] if "patents" in taD else None,

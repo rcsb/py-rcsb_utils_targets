@@ -51,3 +51,4 @@
    8-Oct-2021  - V0.59 Fix changing column heading issue for SAbDabTargetProvider()
    6-Jan-2023  - V0.60 Configuration changes to support tox 4
    9-Feb-2023  - V0.61 Find Highest_Clin_Trial column regardless of month in SAbDabTargetProvider(), Update baseVersion for ChEMBL
+   3-Mar-2023  - V0.62 Fix typo and handle missing activityType in PharosTargetCofactorProvider()

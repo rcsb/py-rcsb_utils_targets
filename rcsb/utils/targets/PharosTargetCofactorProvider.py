@@ -3,6 +3,7 @@
 #  Date:           15-Jun-2021 jdw
 #
 #  Updated:
+#  3-Mar-2023 aae Handle missing activityType in buildCofactorList
 #
 ##
 """

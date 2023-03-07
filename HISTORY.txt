@@ -52,3 +52,4 @@
    6-Jan-2023  - V0.60 Configuration changes to support tox 4
    9-Feb-2023  - V0.61 Find Highest_Clin_Trial column regardless of month in SAbDabTargetProvider(), Update baseVersion for ChEMBL
   27-Feb-2023  - V0.62 Fix PharosTargetProvider mysql loading issue
+   6-Mar-2023  - V0.63 Add CARDTargetAnnotationProvider (to replace CARDTargetFeatureProvider)

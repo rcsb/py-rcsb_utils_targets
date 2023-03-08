@@ -3,7 +3,8 @@
 #  Date:           27-Nov-2020 jdw
 #
 #  Updated:
-#    6-Mar-2023 dwp  Add filterForHomologs() method to filter CARD data for only protein homolog models
+#    6-Mar-2023 dwp  Add filterForHomologs() method to filter CARD data for only protein homolog models;
+#                    Add ontology data and parsing methods for getting lineage
 ##
 """
 Accessors for CARD target assignments.
@@ -31,6 +32,7 @@ class CARDTargetProvider:
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
         self.__oD, self.__version = self.__reload(self.__dirPath, **kwargs)
+        self.__cpD, self.__ontologyVersion = self.__reloadOntology(self.__dirPath, **kwargs)
         #
 
     def testCache(self, minCount=3000):
@@ -51,6 +53,20 @@ class CARDTargetProvider:
     def getAssignmentVersion(self):
         return self.__version
 
+    def getOntologyVersion(self):
+        return self.__ontologyVersion
+
+    def getLineage(self, aroId):
+        """Return the lineage (all parents + the requested aroId) of the given aroId.
+
+        Args:
+            aroId (str): ARO ID in the form of "ARO:3001059"
+
+        Returns:
+            list: list of dictionaries containing the "id" and "name" of each parent
+        """
+        return self.__cpD[aroId]
+
     def getTargetDataPath(self):
         return os.path.join(self.__dirPath, "card-target-data.json")
 
@@ -63,17 +79,20 @@ class CARDTargetProvider:
         startTime = time.time()
         useCache = kwargs.get("useCache", True)
         #
-        # CARDDumpUrl = kwargs.get("CARDDumpUrl", "https://card.mcmaster.ca/latest/data/broadstreet-v3.1.0.tar.bz2")
-        cardDumpUrl = kwargs.get("CARDDumpUrl", "https://card.mcmaster.ca/latest/data")
         ok = False
         fU = FileUtil()
+        #
+        # CARDDumpUrl = kwargs.get("CARDDumpUrl", "https://card.mcmaster.ca/latest/data/broadstreet-v3.1.0.tar.bz2")
+        cardDumpUrl = kwargs.get("CARDDumpUrl", "https://card.mcmaster.ca/latest/data")
         cardDumpFileName = "card-data.tar.bz2"
         cardDumpPath = os.path.join(dirPath, cardDumpFileName)
-        cardDumpDirPath = os.path.join(dirPath, "dump")
+        cardDumpDirPath = os.path.join(dirPath, "dump-targets")
         #
         fU.mkdir(dirPath)
         cardDataPath = os.path.join(dirPath, "card-select-data.json")
         #
+        # ---
+        # Load CARD data
         logger.info("useCache %r CARDDumpPath %r", useCache, cardDumpPath)
         if useCache and self.__mU.exists(cardDataPath):
             qD = self.__mU.doImport(cardDataPath, fmt="json")
@@ -98,6 +117,47 @@ class CARDTargetProvider:
             logger.info("Export CARD data (%d) status %r", len(oD), ok)
         # ---
         return oD, version
+
+    def __reloadOntology(self, dirPath, **kwargs):
+        cpD = None
+        version = None
+        startTime = time.time()
+        useCache = kwargs.get("useCache", True)
+        #
+        ok = False
+        fU = FileUtil()
+        #
+        ontologyDumpUrl = kwargs.get("OntologyDumpUrl", "https://card.mcmaster.ca/latest/ontology")
+        ontologyDumpFileName = "card-ontology.tar.bz2"
+        ontologyDumpPath = os.path.join(dirPath, ontologyDumpFileName)
+        ontologyDumpDirPath = os.path.join(dirPath, "dump-ontology")
+        #
+        fU.mkdir(dirPath)
+        ontologyDataPath = os.path.join(dirPath, "card-ontology-data.json")
+        #
+        # ---
+        # Load Ontology data
+        logger.info("useCache %r ontologyDumpPath %r", useCache, ontologyDumpPath)
+        if useCache and self.__mU.exists(ontologyDataPath):
+            qD = self.__mU.doImport(ontologyDataPath, fmt="json")
+            version = qD["version"]
+            cpD = qD["data"]
+        else:
+            logger.info("Fetching url %s path %s", ontologyDumpUrl, ontologyDumpPath)
+            ok = fU.get(ontologyDumpUrl, ontologyDumpPath)
+            fU.mkdir(ontologyDumpDirPath)
+            fU.uncompress(ontologyDumpPath, outputDir=ontologyDumpDirPath)
+            fU.unbundleTarfile(os.path.join(ontologyDumpDirPath, ontologyDumpFileName[:-4]), dirPath=ontologyDumpDirPath)
+            logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+            cpD, version = self.__parseOntologyData(os.path.join(ontologyDumpDirPath, "aro.obo"))
+            #
+            tS = datetime.datetime.now().isoformat()
+            qD = {"version": version, "created": tS, "data": cpD}
+            cpD = qD["data"]
+            ok = self.__mU.doExport(ontologyDataPath, qD, fmt="json", indent=3)
+            logger.info("Export CARD ontology data (%d) status %r", len(cpD), ok)
+
+        return cpD, version
 
     def exportCardFasta(self, fastaPath, taxonPath):
         ok = self.__exportCardFasta(fastaPath, taxonPath, self.__oD)
@@ -237,3 +297,91 @@ class CARDTargetProvider:
                 filteredD.update({k: v})
 
         return filteredD
+
+    def __parseOntologyData(self, filePath):
+        """Parse CARD ontology data
+
+        Args:
+            filePath (str): card ontology data file (aro.obo)
+
+        Returns:
+            (dict, string): dictionary of all ARO IDs and their ancestor lineages, ontology version string
+        """
+        try:
+            cpD = None
+            version = None
+            parentChildList = []
+            idNameD = {}
+
+            with open(filePath, "r", encoding="utf-8") as f:
+                data = f.read()
+
+            dL = data.split("[Term]")
+
+            version = dL.pop(0).split("\n")[0].split("format-version: ")[1]
+
+            for tS in dL:
+                tsL = tS.strip().split("\n")
+                childId, parentId, childName = None, None, None
+                for item in tsL:
+                    if item.startswith("id: "):
+                        childId = item.split('id: ')[1]
+                    if item.startswith("is_a: "):
+                        parentId = item.split('is_a: ')[1].split(" !")[0]
+                    if item.startswith("name: "):
+                        childName = item.split('name: ')[1]
+                    if parentId and childId and (parentId, childId) not in parentChildList:
+                        parentChildList.append((parentId, childId))
+                    if childName and childId not in idNameD:
+                        idNameD[childId] = childName
+                    if item.startswith("[Typedef]"):
+                        break
+
+            logger.info("Ontology parent-child pair count (%d)", len(parentChildList))
+
+            cpD = self.__buildLineageTree(parentChildList, idNameD)
+
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        return cpD, version
+
+    def __buildLineageTree(self, parentChildTupleList, idNameMapD):
+        """Build a lineage tree containing all children as keys and a
+        list of all possible parents as the values.
+
+        Args:
+            parentChildTupleList (list): list of (parent, child) tuples (e.g., [('ARO:1000003', 'ARO:0000000'), ('ARO:1000003', 'ARO:0000001')])
+            idNameMapD (dict): dictionary mapping of ARO IDs to their corresponding name
+
+        Returns:
+            dict: dictionary containing all children as keys and all possible parents as values
+                  (including the child itself, but excluding the top-level parent 'ARO:1000001')
+        """
+        # create a dictionary to store the parents of each child
+        parents = {}
+        for parent, child in parentChildTupleList:
+            if child not in parents:
+                parents[child] = []
+            parents[child].append(parent)
+
+        # create a dictionary to store the ancestors of each child
+        lineageD = {}
+        for child in parents.keys():
+            lineageD[child] = []
+            stack = [child]
+            while stack:
+                node = stack.pop()
+                if node in parents:
+                    for parent in parents[node]:
+                        lineageD[child].append(parent)
+                        stack.append(parent)
+
+        # Go through the lineage dict and add the child to its own list and remove the top-level "ARO:1000001"
+        # Also, update the list to contain both the parent ARO IDs and their associated names.
+        for child, pL in lineageD.items():
+            if child not in pL:
+                npL = [child] + [p for p in pL if p != "ARO:1000001"]
+                npL = [{"id": id, "name": idNameMapD[id]} for id in npL]
+                lineageD[child] = npL
+
+        return lineageD

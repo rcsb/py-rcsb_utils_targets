@@ -155,29 +155,9 @@ class CARDTargetAnnotationProvider(StashableBase):
             dD[(eId, fId)] = True
             qD.setdefault(eId, []).append(rD)
         # --
-        # Check whether entities match multiple CARD annotations or demonstrate a perfect match
-        qcD = {}
-        for eId, rDL in qD.items():
-            if len(rDL) == 1:
-                rD = rDL[0]
-                rD["perfect_match"] = "Y"  # indicates there's a direct 1:1 of CARD match with entity
-                # rD["card_aro_category"] = "AMR Gene"
-                qcD[eId] = [rD]
-            else:
-                # Run check if all items of rDL have the same FAMILY
-                # Count up number of each type of family the items of rDL contain
-                familyAnnotationIdCounts = dict(Counter([rD["family_annotation_id"] for rD in rDL]))
-                # familyAnnotationIds = set([rD["family_annotation_id"] for rD in rDL])
-                if len(familyAnnotationIdCounts) > 1:
-                    logger.info("eId %s familyAnnotationIdCounts: %r", eId, familyAnnotationIdCounts)
-                rD = rDL[0]
-                rD["perfect_match"] = "N"  # indicates there were multiple CARDs matching the given entity
-                # rD["card_aro_category"] = "AMR Gene Family"
-                qcD[eId] = [rD]
-        # --
         if useTaxonomy:
             fqD = {}
-            for eId, rDL in qcD.items():
+            for eId, rDL in qD.items():
                 mL = []
                 oL = []
                 for rD in rDL:
@@ -194,13 +174,35 @@ class CARDTargetAnnotationProvider(StashableBase):
                 logger.debug("eId %r mL (%d) oL (%d)", eId, len(mL), len(oL))
                 fqD.setdefault(eId, []).extend(mL if mL else oL)
         else:
-            fqD = qcD
+            fqD = qD
+        # --
+        # Check whether entities match multiple CARD annotations or demonstrate a perfect match
+        cqD = {}
+        for eId, rDL in fqD.items():
+            # if eId == "2BUE_1":
+            #     print(eId, rDL)
+            if len(rDL) == 1:
+                # rD = rDL[0]
+                rDL[0]["perfect_match"] = "Y"  # indicates there's a direct 1:1 of CARD match with entity
+                # rD["card_aro_category"] = "AMR Gene"
+                cqD[eId] = rDL
+            else:
+                # Run check if all items of rDL have the same FAMILY
+                # Count up number of each type of family the items of rDL contain
+                familyAnnotationIdCounts = dict(Counter([rD["family_annotation_id"] for rD in rDL]))
+                # familyAnnotationIds = set([rD["family_annotation_id"] for rD in rDL])
+                if len(familyAnnotationIdCounts) > 1:
+                    logger.info("eId %s familyAnnotationIdCounts: %r", eId, familyAnnotationIdCounts)
+                # rD = rDL[0]
+                rDL[0]["perfect_match"] = "N"  # indicates there were multiple CARDs matching the given entity
+                # rD["card_aro_category"] = "AMR Gene Family"
+                cqD[eId] = rDL
         # --
 
         fp = self.__getAnnotationDataPath()
         tS = datetime.datetime.now().isoformat()
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
-        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "annotations": fqD}, fmt="json", indent=3)
+        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "annotations": cqD}, fmt="json", indent=3)
         return ok
 
     def __decodeComment(self, comment, separator="|"):

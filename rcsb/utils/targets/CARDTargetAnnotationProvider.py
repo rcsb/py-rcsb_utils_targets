@@ -13,7 +13,6 @@ import datetime
 import logging
 import os.path
 import time
-from collections import Counter
 
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
@@ -105,13 +104,11 @@ class CARDTargetAnnotationProvider(StashableBase):
             for matchD in matchDL:
                 #
                 fpL = []
-                # if "alignedRegions" in matchD:
-                #     fpL = [{"beg_seq_id": arD["targetBegin"], "end_seq_id": arD["targetEnd"]} for arD in matchD["alignedRegions"]]
-                # else:
-                #     fpL = [{"beg_seq_id": matchD["targetBegin"], "end_seq_id": matchD["targetEnd"]}]
                 tCmtD = self.__decodeComment(matchD["target"])
                 entryId = tCmtD["entityId"].split("_")[0]
                 entityId = tCmtD["entityId"].split("_")[1]
+                seqIdPct = matchD["sequenceIdentity"]
+                bitScore = matchD["bitScore"]
                 nm = cardP.getModelKey(modelId, "modelName")
                 descr = cardP.getModelKey(modelId, "descr")
                 cvTermId = cardP.getModelKey(modelId, "cvTermId")
@@ -124,6 +121,8 @@ class CARDTargetAnnotationProvider(StashableBase):
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
+                    "seq_id_pct": seqIdPct,
+                    "bit_score": bitScore,
                     # "type": "CARD",
                     "annotation_id": "ARO:" + annotationId,
                     "card_aro_cvterm_id": cvTermId,
@@ -179,26 +178,28 @@ class CARDTargetAnnotationProvider(StashableBase):
         # Check whether entities match multiple CARD annotations or demonstrate a perfect match
         cqD = {}
         for eId, rDL in fqD.items():
-            # if eId == "2BUE_1":
+            # if eId == "2PRB_1":
             #     print(eId, rDL)
             if len(rDL) == 1:
-                # rD = rDL[0]
-                rDL[0]["perfect_match"] = "Y"  # indicates there's a direct 1:1 of CARD match with entity
-                # rD["card_aro_category"] = "AMR Gene"
-                cqD[eId] = rDL
+                rD = rDL[0]
+                rD["perfect_match"] = "Y"
+                rD["card_aro_category"] = "AMR Gene"
+                cqD[eId] = rD
             else:
-                # Run check if all items of rDL have the same FAMILY
-                # Count up number of each type of family the items of rDL contain
-                familyAnnotationIdCounts = dict(Counter([rD["family_annotation_id"] for rD in rDL]))
-                # familyAnnotationIds = set([rD["family_annotation_id"] for rD in rDL])
-                if len(familyAnnotationIdCounts) > 1:
-                    logger.info("eId %s familyAnnotationIdCounts: %r", eId, familyAnnotationIdCounts)
-                # rD = rDL[0]
+                # Sort list of matches by highest sequence identity percent and bit score
+                rDLSorted = sorted(rDL, key=lambda k: (-k["seq_id_pct"], -k["bit_score"]))
+                rD = rDLSorted[0]
+                #
+                # Check for rD that has 100% match, and if so, set this a perfect_match
+                if rD["seq_id_pct"] == 100.0:
+                    rD["perfect_match"] = "Y"
+                    rD["card_aro_category"] = "AMR Gene"
+                else:
+                    rD["perfect_match"] = "N"
+                    rD["card_aro_category"] = "AMR Gene Family"
                 rDL[0]["perfect_match"] = "N"  # indicates there were multiple CARDs matching the given entity
-                # rD["card_aro_category"] = "AMR Gene Family"
-                cqD[eId] = rDL
+                cqD[eId] = rD
         # --
-
         fp = self.__getAnnotationDataPath()
         tS = datetime.datetime.now().isoformat()
         vS = datetime.datetime.now().strftime("%Y-%m-%d")

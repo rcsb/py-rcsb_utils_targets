@@ -57,10 +57,11 @@ class CARDTargetProviderTests(unittest.TestCase):
         self.assertTrue(ok)
         ok = ctP.exportCardFasta(self.__fastaPath, self.__taxonPath)
         self.assertTrue(ok)
-        aroId = "ARO:3000096"
-        lineageL = ctP.getLineage(aroId)
-        logger.info("Lineage list for aroId %s: %r", aroId, lineageL)
-        self.assertGreaterEqual(len(lineageL), 2)
+        aroIdL = ["ARO:3000096", "ARO:3000015"]
+        for aroId in aroIdL:
+            lineageL = ctP.getLineage(aroId)
+            logger.info("Lineage list for aroId %s: %r", aroId, lineageL)
+            self.assertGreaterEqual(len(lineageL), 2)
 
 
 def fetchCARDTargets():

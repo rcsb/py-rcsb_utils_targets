@@ -61,8 +61,6 @@ class CARDTargetAnnotationProviderTests(unittest.TestCase):
         self.assertTrue(ok)
         aD = stfP.getAnnotation("5f64_1")
         self.assertGreaterEqual(len(list(aD)), 10)
-        fL = stfP.getLineage("ARO:3000015")
-        self.assertGreaterEqual(len(fL), 1)
 
 
 def buildCARDAnnotationsTargets():

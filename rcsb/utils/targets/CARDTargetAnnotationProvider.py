@@ -32,8 +32,6 @@ class CARDTargetAnnotationProvider(StashableBase):
         super(CARDTargetAnnotationProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
-        self.__cardP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
-        #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
         self.__fD = self.__reload(self.__dirPath, **kwargs)
         #
@@ -90,60 +88,62 @@ class CARDTargetAnnotationProvider(StashableBase):
             bool: True for success or False otherwise
         """
         rDL = []
+        cardP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
-        provenanceSource = "matching CARD Protein Homolog Models (PHM)"
         refScheme = "PDB entity"
-        assignVersion = self.__cardP.getAssignmentVersion()
+        assignVersion = cardP.getAssignmentVersion()
         for queryId, matchDL in mD.items():
             qCmtD = self.__decodeComment(queryId)
             modelId = qCmtD["modelId"]
-            if not self.__cardP.hasModel(modelId):
+            if not cardP.hasModel(modelId):
                 logger.info("Skipping CARD model %r", modelId)
                 continue
 
             for matchD in matchDL:
                 #
-                fpL = []
                 tCmtD = self.__decodeComment(matchD["target"])
                 entryId = tCmtD["entityId"].split("_")[0]
                 entityId = tCmtD["entityId"].split("_")[1]
                 seqIdPct = matchD["sequenceIdentity"]
                 bitScore = matchD["bitScore"]
-                nm = self.__cardP.getModelKey(modelId, "modelName")
-                descr = self.__cardP.getModelKey(modelId, "descr")
-                cvTermId = self.__cardP.getModelKey(modelId, "cvTermId")
-                annotationId = self.__cardP.getModelKey(modelId, "accession")
-                familyCvTermId = self.__cardP.getModelKey(modelId, "familyCvTermId")
-                familyName = self.__cardP.getModelKey(modelId, "familyName")
-                familyAnnotationId = self.__cardP.getModelKey(modelId, "familyAccession")
-                familyDescription = self.__cardP.getModelKey(modelId, "familyDescription")
-                drugClasses = self.__cardP.getModelKey(modelId, "drugClasses")
-                resistanceMechanism = self.__cardP.getModelKey(modelId, "resistanceMechanism")
+                nm = cardP.getModelKey(modelId, "modelName")
+                descr = cardP.getModelKey(modelId, "descr")
+                cvTermId = cardP.getModelKey(modelId, "cvTermId")
+                annotationId = "ARO:" + cardP.getModelKey(modelId, "accession")
+                annotationLineage = cardP.getLineage(annotationId)
+                familyCvTermId = cardP.getModelKey(modelId, "familyCvTermId")
+                familyName = cardP.getModelKey(modelId, "familyName")
+                familyAnnotationId = "ARO:" + cardP.getModelKey(modelId, "familyAccession")
+                familyDescription = cardP.getModelKey(modelId, "familyDescription")
+                drugClasses = cardP.getModelKey(modelId, "drugClasses")
+                resistanceMechanism = cardP.getModelKey(modelId, "resistanceMechanism")
+                familyAnnotationLineage = cardP.getLineage(familyAnnotationId)
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
+                    # "type": "CARD",  # Assigned in DictMethodEntityHelper
+                    # "provenance_source": "matching CARD Protein Homolog Models (PHM)",  # Assigned in DictMethodEntityHelper
+                    "name": nm,
+                    "annotation_id": annotationId,
+                    "card_aro_cvterm_id": cvTermId,
+                    "description": descr,
                     "seq_id_pct": seqIdPct,
                     "bit_score": bitScore,
-                    # "type": "CARD",  # Assigned in DictMethodEntityHelper
-                    "annotation_id": "ARO:" + annotationId,
-                    "card_aro_cvterm_id": cvTermId,
-                    "name": nm,
-                    "family_annotation_id": "ARO:" + familyAnnotationId,
+                    "reference_scheme": refScheme,
+                    "assignment_version": assignVersion,
+                    "annotation_lineage": annotationLineage,
+                    "query_tax_name": matchD["queryTaxName"] if "queryTaxName" in matchD else None,
+                    "target_tax_name": matchD["targetTaxName"] if "targetTaxName" in matchD else None,
+                    "match_status": matchD["taxonomyMatchStatus"] if "taxonomyMatchStatus" in matchD else None,
+                    "lca_tax_name": matchD["lcaTaxName"] if "lcaTaxName" in matchD else None,
+                    "family_annotation_id": familyAnnotationId,
                     "family_card_aro_cvterm_id": familyCvTermId,
                     "family_name": familyName,
                     "family_description": familyDescription,
                     "card_aro_drug_class": drugClasses,
                     "card_aro_resistance_mechanism": resistanceMechanism,
-                    "description": descr,
-                    "provenance_source": provenanceSource,
-                    "reference_scheme": refScheme,
-                    "assignment_version": assignVersion,
-                    "annotation_positions": fpL,
-                    "query_tax_name": matchD["queryTaxName"] if "queryTaxName" in matchD else None,
-                    "target_tax_name": matchD["targetTaxName"] if "targetTaxName" in matchD else None,
-                    "match_status": matchD["taxonomyMatchStatus"] if "taxonomyMatchStatus" in matchD else None,
-                    "lca_tax_name": matchD["lcaTaxName"] if "lcaTaxName" in matchD else None,
+                    "family_annotation_lineage": familyAnnotationLineage,
                 }
                 rDL.append(rD)
         #
@@ -211,14 +211,3 @@ class CARDTargetAnnotationProvider(StashableBase):
         except Exception:
             pass
         return dD
-
-    def getLineage(self, aroId):
-        """Return the lineage (all parents + the requested aroId) of the given aroId.
-
-        Args:
-            aroId (str): ARO ID in the form of "ARO:3001059"
-
-        Returns:
-            list: list of dictionaries containing the "id" and "name" of each parent
-        """
-        return self.__cardP.getLineage(aroId)

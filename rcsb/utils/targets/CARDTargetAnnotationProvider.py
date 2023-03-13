@@ -157,7 +157,7 @@ class CARDTargetAnnotationProvider(StashableBase):
             dD[(eId, fId)] = True
             qD.setdefault(eId, []).append(rD)
         # --
-        # If useTaxonomy filter is True, resulting dictionary contains ~100 fewer perfect matches (as of March 2023)
+        # If useTaxonomy filter is True, resulting dictionary contains ~50 fewer perfect matches (as of March 2023)
         if useTaxonomy:
             fqD = {}
             for eId, rDL in qD.items():
@@ -195,7 +195,6 @@ class CARDTargetAnnotationProvider(StashableBase):
                     rD["perfect_match"] = "Y"
                 else:
                     rD["perfect_match"] = "N"
-                rDL[0]["perfect_match"] = "N"  # indicates there were multiple CARDs matching the given entity
                 cqD[eId] = rD
         # --
         fp = self.__getAnnotationDataPath()

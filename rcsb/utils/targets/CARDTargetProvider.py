@@ -65,7 +65,7 @@ class CARDTargetProvider:
         Returns:
             list: list of dictionaries containing the "id" and "name" of each parent
         """
-        return self.__cpD[aroId]
+        return self.__cpD.get(aroId, [])
 
     def getTargetDataPath(self):
         return os.path.join(self.__dirPath, "card-target-data.json")
@@ -244,11 +244,12 @@ class CARDTargetProvider:
                 if "ARO_category" in mD:
                     aroCategoryD = mD["ARO_category"]  # 'ARO_category', large dict containing each type of 'category_aro_class_name' ("AMR Gene Family", "Drug Class", ...)
                     for cvId, catD in aroCategoryD.items():
-                        if all([k in catD for k in ["category_aro_class_name", "category_aro_accession", "category_aro_name"]]):
+                        if all([k in catD for k in ["category_aro_class_name", "category_aro_accession", "category_aro_name", "category_aro_description"]]):
                             if catD["category_aro_class_name"] == "AMR Gene Family":
                                 acD["familyCvTermId"] = cvId
                                 acD["familyAccession"] = catD["category_aro_accession"]
                                 acD["familyName"] = catD["category_aro_name"]
+                                acD["familyDescription"] = catD["category_aro_description"]
                             if catD["category_aro_class_name"] == "Drug Class":
                                 acD.setdefault("drugClasses", []).append(catD["category_aro_name"])
                             if catD["category_aro_class_name"] == "Resistance Mechanism":

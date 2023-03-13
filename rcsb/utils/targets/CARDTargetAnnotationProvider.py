@@ -32,6 +32,8 @@ class CARDTargetAnnotationProvider(StashableBase):
         super(CARDTargetAnnotationProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
+        self.__cardP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
+        #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
         self.__fD = self.__reload(self.__dirPath, **kwargs)
         #
@@ -43,15 +45,15 @@ class CARDTargetAnnotationProvider(StashableBase):
         else:
             return False
 
-    def hasAnnotations(self, rcsbEntityId):
+    def hasAnnotation(self, rcsbEntityId):
         return rcsbEntityId.upper() in self.__fD["annotations"]
 
-    def getAnnotations(self, rcsbEntityId):
+    def getAnnotation(self, rcsbEntityId):
         try:
             return self.__fD["annotations"][rcsbEntityId.upper()]
         except Exception:
             pass
-        return []
+        return None
 
     def reload(self):
         self.__fD = self.__reload(self.__dirPath, useCache=True)
@@ -88,16 +90,15 @@ class CARDTargetAnnotationProvider(StashableBase):
             bool: True for success or False otherwise
         """
         rDL = []
-        cardP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
-        provenanceSource = "CARD"
+        provenanceSource = "matching CARD Protein Homolog Models (PHM)"
         refScheme = "PDB entity"
-        assignVersion = cardP.getAssignmentVersion()
+        assignVersion = self.__cardP.getAssignmentVersion()
         for queryId, matchDL in mD.items():
             qCmtD = self.__decodeComment(queryId)
             modelId = qCmtD["modelId"]
-            if not cardP.hasModel(modelId):
+            if not self.__cardP.hasModel(modelId):
                 logger.info("Skipping CARD model %r", modelId)
                 continue
 
@@ -109,27 +110,29 @@ class CARDTargetAnnotationProvider(StashableBase):
                 entityId = tCmtD["entityId"].split("_")[1]
                 seqIdPct = matchD["sequenceIdentity"]
                 bitScore = matchD["bitScore"]
-                nm = cardP.getModelKey(modelId, "modelName")
-                descr = cardP.getModelKey(modelId, "descr")
-                cvTermId = cardP.getModelKey(modelId, "cvTermId")
-                annotationId = cardP.getModelKey(modelId, "accession")
-                familyCvTermId = cardP.getModelKey(modelId, "familyCvTermId")
-                familyName = cardP.getModelKey(modelId, "familyName")
-                familyAnnotationId = cardP.getModelKey(modelId, "familyAccession")
-                drugClasses = cardP.getModelKey(modelId, "drugClasses")
-                resistanceMechanism = cardP.getModelKey(modelId, "resistanceMechanism")
+                nm = self.__cardP.getModelKey(modelId, "modelName")
+                descr = self.__cardP.getModelKey(modelId, "descr")
+                cvTermId = self.__cardP.getModelKey(modelId, "cvTermId")
+                annotationId = self.__cardP.getModelKey(modelId, "accession")
+                familyCvTermId = self.__cardP.getModelKey(modelId, "familyCvTermId")
+                familyName = self.__cardP.getModelKey(modelId, "familyName")
+                familyAnnotationId = self.__cardP.getModelKey(modelId, "familyAccession")
+                familyDescription = self.__cardP.getModelKey(modelId, "familyDescription")
+                drugClasses = self.__cardP.getModelKey(modelId, "drugClasses")
+                resistanceMechanism = self.__cardP.getModelKey(modelId, "resistanceMechanism")
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
                     "seq_id_pct": seqIdPct,
                     "bit_score": bitScore,
-                    # "type": "CARD",
+                    # "type": "CARD",  # Assigned in DictMethodEntityHelper
                     "annotation_id": "ARO:" + annotationId,
                     "card_aro_cvterm_id": cvTermId,
                     "name": nm,
                     "family_annotation_id": "ARO:" + familyAnnotationId,
                     "family_card_aro_cvterm_id": familyCvTermId,
                     "family_name": familyName,
+                    "family_description": familyDescription,
                     "card_aro_drug_class": drugClasses,
                     "card_aro_resistance_mechanism": resistanceMechanism,
                     "description": descr,
@@ -154,6 +157,7 @@ class CARDTargetAnnotationProvider(StashableBase):
             dD[(eId, fId)] = True
             qD.setdefault(eId, []).append(rD)
         # --
+        # If useTaxonomy filter is True, resulting dictionary contains ~100 fewer perfect matches (as of March 2023)
         if useTaxonomy:
             fqD = {}
             for eId, rDL in qD.items():
@@ -175,35 +179,29 @@ class CARDTargetAnnotationProvider(StashableBase):
         else:
             fqD = qD
         # --
-        # Check whether entities match multiple CARD annotations or demonstrate a perfect match
+        # Determine whether entities demonstrate a perfect match or match multiple CARD annotations
         cqD = {}
         for eId, rDL in fqD.items():
-            # if eId == "2PRB_1":
-            #     print(eId, rDL)
             if len(rDL) == 1:
                 rD = rDL[0]
                 rD["perfect_match"] = "Y"
-                rD["card_aro_category"] = "AMR Gene"
                 cqD[eId] = rD
             else:
                 # Sort list of matches by highest sequence identity percent and bit score
                 rDLSorted = sorted(rDL, key=lambda k: (-k["seq_id_pct"], -k["bit_score"]))
                 rD = rDLSorted[0]
-                #
                 # Check for rD that has 100% match, and if so, set this a perfect_match
                 if rD["seq_id_pct"] == 100.0:
                     rD["perfect_match"] = "Y"
-                    rD["card_aro_category"] = "AMR Gene"
                 else:
                     rD["perfect_match"] = "N"
-                    rD["card_aro_category"] = "AMR Gene Family"
                 rDL[0]["perfect_match"] = "N"  # indicates there were multiple CARDs matching the given entity
                 cqD[eId] = rD
         # --
         fp = self.__getAnnotationDataPath()
         tS = datetime.datetime.now().isoformat()
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
-        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "annotations": cqD}, fmt="json", indent=3)
+        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "taxonomyFilter": useTaxonomy, "annotations": cqD}, fmt="json", indent=3)
         return ok
 
     def __decodeComment(self, comment, separator="|"):
@@ -214,3 +212,14 @@ class CARDTargetAnnotationProvider(StashableBase):
         except Exception:
             pass
         return dD
+
+    def getLineage(self, aroId):
+        """Return the lineage (all parents + the requested aroId) of the given aroId.
+
+        Args:
+            aroId (str): ARO ID in the form of "ARO:3001059"
+
+        Returns:
+            list: list of dictionaries containing the "id" and "name" of each parent
+        """
+        return self.__cardP.getLineage(aroId)

@@ -382,7 +382,7 @@ class CARDTargetProvider:
         for child, pL in lineageD.items():
             if child not in pL:
                 npL = [child] + [p for p in pL if p != "ARO:1000001"]
-                npL = npL.reverse()  # List oldest/broadest ancestor first (depth=1), youngest/most-specific child last (depth=n)
+                npL.reverse()  # List oldest/broadest ancestor first (depth=1), youngest/most-specific child last (depth=n)
                 npL = [{"id": id, "name": idNameMapD[id], "depth": ii + 1} for ii, id in enumerate(npL)]
                 lineageD[child] = npL
 

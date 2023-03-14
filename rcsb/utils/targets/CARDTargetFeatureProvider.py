@@ -113,9 +113,9 @@ class CARDTargetFeatureProvider(StashableBase):
                 tCmtD = self.__decodeComment(matchD["target"])
                 entryId = tCmtD["entityId"].split("_")[0]
                 entityId = tCmtD["entityId"].split("_")[1]
-                nm = cardP.getModelKey(modelId, "modelName")
-                descr = cardP.getModelKey(modelId, "descr")
-                featureId = cardP.getModelKey(modelId, "cvTermId")
+                nm = cardP.getModelValue(modelId, "modelName")
+                descr = cardP.getModelValue(modelId, "descr")
+                featureId = cardP.getModelValue(modelId, "cvTermId")
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,

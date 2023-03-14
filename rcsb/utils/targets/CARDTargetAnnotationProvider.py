@@ -107,17 +107,17 @@ class CARDTargetAnnotationProvider(StashableBase):
                 entityId = tCmtD["entityId"].split("_")[1]
                 seqIdPct = matchD["sequenceIdentity"]
                 bitScore = matchD["bitScore"]
-                nm = cardP.getModelKey(modelId, "modelName")
-                descr = cardP.getModelKey(modelId, "descr")
-                cvTermId = cardP.getModelKey(modelId, "cvTermId")
-                annotationId = "ARO:" + cardP.getModelKey(modelId, "accession")
+                nm = cardP.getModelValue(modelId, "modelName")
+                descr = cardP.getModelValue(modelId, "descr")
+                cvTermId = cardP.getModelValue(modelId, "cvTermId")
+                annotationId = "ARO:" + cardP.getModelValue(modelId, "accession")
                 annotationLineage = cardP.getLineage(annotationId)
-                familyCvTermId = cardP.getModelKey(modelId, "familyCvTermId")
-                familyName = cardP.getModelKey(modelId, "familyName")
-                familyAnnotationId = "ARO:" + cardP.getModelKey(modelId, "familyAccession")
-                familyDescription = cardP.getModelKey(modelId, "familyDescription")
-                drugClasses = cardP.getModelKey(modelId, "drugClasses")
-                resistanceMechanism = cardP.getModelKey(modelId, "resistanceMechanism")
+                familyCvTermId = cardP.getModelValue(modelId, "familyCvTermId")
+                familyName = cardP.getModelValue(modelId, "familyName")
+                familyAnnotationId = "ARO:" + cardP.getModelValue(modelId, "familyAccession")
+                familyDescription = cardP.getModelValue(modelId, "familyDescription")
+                drugClasses = cardP.getModelValue(modelId, "drugClasses")
+                resistanceMechanism = cardP.getModelValue(modelId, "resistanceMechanism")
                 familyAnnotationLineage = cardP.getLineage(familyAnnotationId)
                 rD = {
                     "entry_id": entryId,

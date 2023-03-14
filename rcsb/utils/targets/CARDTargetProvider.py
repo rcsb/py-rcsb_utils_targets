@@ -44,7 +44,7 @@ class CARDTargetProvider:
     def hasModel(self, modelId):
         return modelId in self.__oD
 
-    def getModelKey(self, modelId, key):
+    def getModelValue(self, modelId, key):
         try:
             return self.__oD[modelId][key]
         except Exception:

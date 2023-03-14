@@ -2,7 +2,7 @@
 #  File:           CARDTargetAnnotationProvider.py
 #  Date:           6-Mar-2023 dwp
 #
-#  Updated:
+#  Updates:
 #
 ##
 """
@@ -18,6 +18,7 @@ from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
 from rcsb.utils.targets.CARDTargetProvider import CARDTargetProvider
+from rcsb.utils.targets.CARDTargetOntologyProvider import CARDTargetOntologyProvider
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,7 @@ class CARDTargetAnnotationProvider(StashableBase):
         """
         rDL = []
         cardP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
+        ontologyP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=False)
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         refScheme = "PDB entity"
@@ -111,14 +113,14 @@ class CARDTargetAnnotationProvider(StashableBase):
                 descr = cardP.getModelValue(modelId, "descr")
                 cvTermId = cardP.getModelValue(modelId, "cvTermId")
                 annotationId = "ARO:" + cardP.getModelValue(modelId, "accession")
-                annotationLineage = cardP.getLineage(annotationId)
+                annotationLineage = ontologyP.getLineage(annotationId)
                 familyCvTermId = cardP.getModelValue(modelId, "familyCvTermId")
                 familyName = cardP.getModelValue(modelId, "familyName")
                 familyAnnotationId = "ARO:" + cardP.getModelValue(modelId, "familyAccession")
                 familyDescription = cardP.getModelValue(modelId, "familyDescription")
                 drugClasses = cardP.getModelValue(modelId, "drugClasses")
                 resistanceMechanism = cardP.getModelValue(modelId, "resistanceMechanism")
-                familyAnnotationLineage = cardP.getLineage(familyAnnotationId)
+                familyAnnotationLineage = ontologyP.getLineage(familyAnnotationId)
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,

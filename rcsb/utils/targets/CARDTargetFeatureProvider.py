@@ -2,8 +2,8 @@
 #  File:           CARDTargetFeatureProvider.py
 #  Date:           12-Jun-2021 jdw
 #
-#  Updated:
-#
+#  Updates:
+#   14-Mar-2023 dwp  CARD feature data will stop being used temporarily (in favor of CARD annotations)
 ##
 """
 Accessors and generators for CARD target feature data.

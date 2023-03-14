@@ -280,7 +280,7 @@ class CARDTargetProvider:
         """Filter the CARD target data to select only for protein homologs
 
         Args:
-            filePath (str): path to CARD fasta protein homoolog model file (protein_fasta_protein_homolog_model.fasta; from source)
+            filePath (str): path to CARD fasta protein homolog model file (protein_fasta_protein_homolog_model.fasta; from source)
             targetD (dict): dictionary generated from __parseCardData (i.e., oD)
 
         Returns:

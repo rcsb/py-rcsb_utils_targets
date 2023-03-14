@@ -2,8 +2,9 @@
 #  File:           CARDTargetProvider.py
 #  Date:           27-Nov-2020 jdw
 #
-#  Updated:
-#
+#  Updates:
+#   14-Mar-2023 dwp  Add filterForHomologs() method to filter CARD data for only protein homolog models;
+#                    Remove unused getTargetDataPath() and getCofactorDataPath() methods
 ##
 """
 Accessors for CARD target assignments.
@@ -39,23 +40,17 @@ class CARDTargetProvider:
         else:
             return False
 
-    def hasFeature(self, modelId):
+    def hasModel(self, modelId):
         return modelId in self.__oD
 
-    def getFeature(self, modelId, featureKey):
+    def getModelValue(self, modelId, key):
         try:
-            return self.__oD[modelId][featureKey]
+            return self.__oD[modelId][key]
         except Exception:
             return None
 
     def getAssignmentVersion(self):
         return self.__version
-
-    def getTargetDataPath(self):
-        return os.path.join(self.__dirPath, "card-target-data.json")
-
-    def getCofactorDataPath(self):
-        return None
 
     def __reload(self, dirPath, **kwargs):
         oD = None
@@ -63,17 +58,20 @@ class CARDTargetProvider:
         startTime = time.time()
         useCache = kwargs.get("useCache", True)
         #
-        # CARDDumpUrl = kwargs.get("CARDDumpUrl", "https://card.mcmaster.ca/latest/data/broadstreet-v3.1.0.tar.bz2")
-        cardDumpUrl = kwargs.get("CARDDumpUrl", "https://card.mcmaster.ca/latest/data")
         ok = False
         fU = FileUtil()
+        #
+        # CARDDumpUrl = kwargs.get("CARDDumpUrl", "https://card.mcmaster.ca/latest/data/broadstreet-v3.1.0.tar.bz2")
+        cardDumpUrl = kwargs.get("CARDDumpUrl", "https://card.mcmaster.ca/latest/data")
         cardDumpFileName = "card-data.tar.bz2"
         cardDumpPath = os.path.join(dirPath, cardDumpFileName)
-        cardDumpDirPath = os.path.join(dirPath, "dump")
+        cardDumpDirPath = os.path.join(dirPath, "dump-targets")
         #
         fU.mkdir(dirPath)
         cardDataPath = os.path.join(dirPath, "card-select-data.json")
         #
+        # ---
+        # Load CARD data
         logger.info("useCache %r CARDDumpPath %r", useCache, cardDumpPath)
         if useCache and self.__mU.exists(cardDataPath):
             qD = self.__mU.doImport(cardDataPath, fmt="json")
@@ -87,6 +85,10 @@ class CARDTargetProvider:
             fU.unbundleTarfile(os.path.join(cardDumpDirPath, cardDumpFileName[:-4]), dirPath=cardDumpDirPath)
             logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
             oD, version = self.__parseCardData(os.path.join(cardDumpDirPath, "card.json"))
+            #
+            # Filter for only protein homolog models (this can be removed if/when we decide to include all types of models)
+            oD = self.__filterForHomologs(os.path.join(cardDumpDirPath, "protein_fasta_protein_homolog_model.fasta"), oD)
+            #
             tS = datetime.datetime.now().isoformat()
             qD = {"version": version, "created": tS, "data": oD}
             oD = qD["data"]
@@ -115,7 +117,7 @@ class CARDTargetProvider:
             for modelId, tD in cardD.items():
                 modelBitScore = None
                 # aroAcc = tD["accession"]
-                aroId = tD["id"]
+                aroId = tD["cvTermId"]
                 if "sequences" not in tD:
                     continue
                 modelBitScore = tD["modelBitScore"] if "modelBitScore" in tD else None
@@ -164,18 +166,34 @@ class CARDTargetProvider:
                     if modelId == "_version":
                         version = mD
                     continue
-                oD[modelId] = {}
+                oD[modelId] = {}  # modelId = '1028'
                 for kTup in [
-                    ("ARO_accession", "accession"),
-                    ("ARO_id", "id"),
-                    ("ARO_name", "name"),
-                    ("ARO_description", "descr"),
-                    ("model_name", "modelName"),
-                    ("model_type", "modelType"),
+                    ("ARO_accession", "accession"),  # 'ARO_accession', '3001059'
+                    ("ARO_id", "cvTermId"),  # 'ARO_id', '37439'
+                    ("ARO_name", "name"),  # 'ARO_name', 'SHV-1'
+                    ("ARO_description", "descr"),  # 'SHV-1 is a broad-spectrum beta-lactamase...
+                    ("model_name", "modelName"),  # 'model_name', 'SHV-1'
+                    ("model_type", "modelType"),  # 'model_type', 'protein homolog model'
                 ]:
                     if kTup[0] in mD:
                         oD[modelId][kTup[1]] = mD[kTup[0]]
-
+                # Add in category details (Family, Drug Class(es), and Resistance mechanism)
+                acD = {}
+                if "ARO_category" in mD:
+                    aroCategoryD = mD["ARO_category"]  # 'ARO_category', large dict containing each type of 'category_aro_class_name' ("AMR Gene Family", "Drug Class", ...)
+                    for cvId, catD in aroCategoryD.items():
+                        if all([k in catD for k in ["category_aro_class_name", "category_aro_accession", "category_aro_name", "category_aro_description"]]):
+                            if catD["category_aro_class_name"] == "AMR Gene Family":
+                                acD["familyCvTermId"] = cvId
+                                acD["familyAccession"] = catD["category_aro_accession"]
+                                acD["familyName"] = catD["category_aro_name"]
+                                acD["familyDescription"] = catD["category_aro_description"]
+                            if catD["category_aro_class_name"] == "Drug Class":
+                                acD.setdefault("drugClasses", []).append(catD["category_aro_name"])
+                            if catD["category_aro_class_name"] == "Resistance Mechanism":
+                                acD["resistanceMechanism"] = catD["category_aro_name"]
+                oD[modelId].update(acD)
+                #
                 try:
                     if "model_sequences" in mD:
                         for seqId, tD in mD["model_sequences"]["sequence"].items():
@@ -195,3 +213,26 @@ class CARDTargetProvider:
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return oD, version
+
+    def __filterForHomologs(self, filePath, targetD):
+        """Filter the CARD target data to select only for protein homologs
+
+        Args:
+            filePath (str): path to CARD fasta protein homolog model file (protein_fasta_protein_homolog_model.fasta; from source)
+            targetD (dict): dictionary generated from __parseCardData (i.e., oD)
+
+        Returns:
+            (dict): filtered card selected data dictionary
+        """
+
+        with open(filePath, "r", encoding="utf-8") as f:
+            data = f.readlines()
+
+        aroL = [i.split("|")[2].strip("ARO:") for i in data if i.startswith(">")]
+
+        filteredD = {}
+        for k, v in targetD.items():
+            if v["accession"] in aroL:
+                filteredD.update({k: v})
+
+        return filteredD

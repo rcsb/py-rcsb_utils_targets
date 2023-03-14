@@ -1,12 +1,12 @@
 ##
-#  File:           CARDTargetFeatureProvider.py
-#  Date:           12-Jun-2021 jdw
+#  File:           CARDTargetAnnotationProvider.py
+#  Date:           6-Mar-2023 dwp
 #
 #  Updates:
-#   14-Mar-2023 dwp  CARD feature data will stop being used temporarily (in favor of CARD annotations)
+#
 ##
 """
-Accessors and generators for CARD target feature data.
+Accessors and generators for CARD target annotation data.
 """
 
 import datetime
@@ -18,18 +18,19 @@ from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
 from rcsb.utils.targets.CARDTargetProvider import CARDTargetProvider
+from rcsb.utils.targets.CARDTargetOntologyProvider import CARDTargetOntologyProvider
 
 logger = logging.getLogger(__name__)
 
 
-class CARDTargetFeatureProvider(StashableBase):
-    """Accessors and generators for CARD target feature data."""
+class CARDTargetAnnotationProvider(StashableBase):
+    """Accessors and generators for CARD target annotation data."""
 
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
-        self.__dirName = "CARD-features"
-        super(CARDTargetFeatureProvider, self).__init__(self.__cachePath, [self.__dirName])
+        self.__dirName = "CARD-annotations"
+        super(CARDTargetAnnotationProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
@@ -37,39 +38,39 @@ class CARDTargetFeatureProvider(StashableBase):
         #
 
     def testCache(self, minCount=590):
-        logger.info("CARD feature count %d", len(self.__fD["features"]) if "features" in self.__fD else 0)
-        if self.__fD and "features" in self.__fD and len(self.__fD["features"]) > minCount:
+        logger.info("CARD annotation count %d", len(self.__fD["annotations"]) if "annotations" in self.__fD else 0)
+        if self.__fD and "annotations" in self.__fD and len(self.__fD["annotations"]) > minCount:
             return True
         else:
             return False
 
-    def hasFeatures(self, rcsbEntityId):
-        return rcsbEntityId.upper() in self.__fD["features"]
+    def hasAnnotation(self, rcsbEntityId):
+        return rcsbEntityId.upper() in self.__fD["annotations"]
 
-    def getFeatures(self, rcsbEntityId):
+    def getAnnotation(self, rcsbEntityId):
         try:
-            return self.__fD["features"][rcsbEntityId.upper()]
+            return self.__fD["annotations"][rcsbEntityId.upper()]
         except Exception:
             pass
-        return []
+        return None
 
     def reload(self):
         self.__fD = self.__reload(self.__dirPath, useCache=True)
         return True
 
-    def __getFeatureDataPath(self):
-        return os.path.join(self.__dirPath, "CARD-feature-data.json")
+    def __getAnnotationDataPath(self):
+        return os.path.join(self.__dirPath, "CARD-annotation-data.json")
 
     def __reload(self, dirPath, **kwargs):
         startTime = time.time()
         fD = {}
         useCache = kwargs.get("useCache", True)
         ok = False
-        featurePath = self.__getFeatureDataPath()
+        annotationPath = self.__getAnnotationDataPath()
         #
-        logger.info("useCache %r featurePath %r", useCache, featurePath)
-        if useCache and self.__mU.exists(featurePath):
-            fD = self.__mU.doImport(featurePath, fmt="json")
+        logger.info("useCache %r annotationPath %r", useCache, annotationPath)
+        if useCache and self.__mU.exists(annotationPath):
+            fD = self.__mU.doImport(annotationPath, fmt="json")
         else:
             fU = FileUtil()
             fU.mkdir(dirPath)
@@ -77,8 +78,8 @@ class CARDTargetFeatureProvider(StashableBase):
         logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         return fD
 
-    def buildFeatureList(self, sequenceMatchFilePath, useTaxonomy=False):
-        """Build polymer entity feature list for the matching entities in the input sequence match file.
+    def buildAnnotationList(self, sequenceMatchFilePath, useTaxonomy=False):
+        """Build polymer entity annotation list for the matching entities in the input sequence match file.
 
         Args:
             sequenceMatchFilePath (str): sequence match output file path
@@ -86,14 +87,12 @@ class CARDTargetFeatureProvider(StashableBase):
 
         Returns:
             bool: True for success or False otherwise
-
-
         """
         rDL = []
         cardP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
+        ontologyP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=False)
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
-        provenanceSource = "CARD"
         refScheme = "PDB entity"
         assignVersion = cardP.getAssignmentVersion()
         for queryId, matchDL in mD.items():
@@ -105,32 +104,48 @@ class CARDTargetFeatureProvider(StashableBase):
 
             for matchD in matchDL:
                 #
-                fpL = []
-                if "alignedRegions" in matchD:
-                    fpL = [{"beg_seq_id": arD["targetBegin"], "end_seq_id": arD["targetEnd"]} for arD in matchD["alignedRegions"]]
-                else:
-                    fpL = [{"beg_seq_id": matchD["targetBegin"], "end_seq_id": matchD["targetEnd"]}]
                 tCmtD = self.__decodeComment(matchD["target"])
                 entryId = tCmtD["entityId"].split("_")[0]
                 entityId = tCmtD["entityId"].split("_")[1]
+                seqIdPct = matchD["sequenceIdentity"]
+                bitScore = matchD["bitScore"]
                 nm = cardP.getModelValue(modelId, "modelName")
                 descr = cardP.getModelValue(modelId, "descr")
-                featureId = cardP.getModelValue(modelId, "cvTermId")
+                cvTermId = cardP.getModelValue(modelId, "cvTermId")
+                annotationId = "ARO:" + cardP.getModelValue(modelId, "accession")
+                annotationLineage = ontologyP.getLineage(annotationId)
+                familyCvTermId = cardP.getModelValue(modelId, "familyCvTermId")
+                familyName = cardP.getModelValue(modelId, "familyName")
+                familyAnnotationId = "ARO:" + cardP.getModelValue(modelId, "familyAccession")
+                familyDescription = cardP.getModelValue(modelId, "familyDescription")
+                drugClasses = cardP.getModelValue(modelId, "drugClasses")
+                resistanceMechanism = cardP.getModelValue(modelId, "resistanceMechanism")
+                familyAnnotationLineage = ontologyP.getLineage(familyAnnotationId)
                 rD = {
                     "entry_id": entryId,
                     "entity_id": entityId,
-                    "type": "CARD_MODEL",
-                    "feature_id": featureId,
+                    # "type": "CARD",  # Assigned in DictMethodEntityHelper
+                    # "provenance_source": "matching CARD Protein Homolog Models (PHM)",  # Assigned in DictMethodEntityHelper
                     "name": nm,
+                    "annotation_id": annotationId,
+                    "card_aro_cvterm_id": cvTermId,
                     "description": descr,
-                    "provenance_source": provenanceSource,
+                    "seq_id_pct": seqIdPct,
+                    "bit_score": bitScore,
                     "reference_scheme": refScheme,
                     "assignment_version": assignVersion,
-                    "feature_positions": fpL,
+                    "annotation_lineage": annotationLineage,
                     "query_tax_name": matchD["queryTaxName"] if "queryTaxName" in matchD else None,
                     "target_tax_name": matchD["targetTaxName"] if "targetTaxName" in matchD else None,
                     "match_status": matchD["taxonomyMatchStatus"] if "taxonomyMatchStatus" in matchD else None,
                     "lca_tax_name": matchD["lcaTaxName"] if "lcaTaxName" in matchD else None,
+                    "family_annotation_id": familyAnnotationId,
+                    "family_card_aro_cvterm_id": familyCvTermId,
+                    "family_name": familyName,
+                    "family_description": familyDescription,
+                    "card_aro_drug_class": drugClasses,
+                    "card_aro_resistance_mechanism": resistanceMechanism,
+                    "family_annotation_lineage": familyAnnotationLineage,
                 }
                 rDL.append(rD)
         #
@@ -138,12 +153,13 @@ class CARDTargetFeatureProvider(StashableBase):
         dD = {}
         for rD in rDL:
             eId = rD["entry_id"] + "_" + rD["entity_id"]
-            fId = rD["feature_id"]
+            fId = rD["annotation_id"]
             if (eId, fId) in dD:
                 continue
             dD[(eId, fId)] = True
             qD.setdefault(eId, []).append(rD)
         # --
+        # If useTaxonomy filter is True, resulting dictionary contains ~50 fewer perfect matches (as of March 2023)
         if useTaxonomy:
             fqD = {}
             for eId, rDL in qD.items():
@@ -165,11 +181,28 @@ class CARDTargetFeatureProvider(StashableBase):
         else:
             fqD = qD
         # --
-
-        fp = self.__getFeatureDataPath()
+        # Determine whether entities demonstrate a perfect match or match multiple CARD annotations
+        cqD = {}
+        for eId, rDL in fqD.items():
+            if len(rDL) == 1:
+                rD = rDL[0]
+                rD["perfect_match"] = "Y"
+                cqD[eId] = rD
+            else:
+                # Sort list of matches by highest sequence identity percent and bit score
+                rDLSorted = sorted(rDL, key=lambda k: (-k["seq_id_pct"], -k["bit_score"]))
+                rD = rDLSorted[0]
+                # Check for rD that has 100% match, and if so, set this a perfect_match
+                if rD["seq_id_pct"] == 100.0:
+                    rD["perfect_match"] = "Y"
+                else:
+                    rD["perfect_match"] = "N"
+                cqD[eId] = rD
+        # --
+        fp = self.__getAnnotationDataPath()
         tS = datetime.datetime.now().isoformat()
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
-        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": fqD}, fmt="json", indent=3)
+        ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "taxonomyFilter": useTaxonomy, "annotations": cqD}, fmt="json", indent=3)
         return ok
 
     def __decodeComment(self, comment, separator="|"):

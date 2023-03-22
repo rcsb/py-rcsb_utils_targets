@@ -3,6 +3,7 @@
 #  Date:           5-Jul-2021 jdw
 #
 #  Updated:
+#   14-Mar-2023 dwp  Add timeout to IMGT data file fetch
 #
 ##
 """
@@ -56,7 +57,7 @@ class IMGTTargetProvider(StashableBase):
         imgtD = {}
         startTime = time.time()
 
-        fU = FileUtil()
+        fU = FileUtil(timeout=300)
         fU.mkdir(dirPath)
         #
         imgtDataPath = os.path.join(self.__dirPath, "imgt-data.json")

@@ -12,6 +12,7 @@
 #   11-Dec-2020 - add alternate pw for mysql
 #   19-Jul-2021 - add git stash configuration
 #   24-Jul-2021 - adjust stash mock configuration
+#   22-Mar-2023 - Update references to py-rcsb_exdb_assets master branch
 ---
 DEFAULT: {}
 ##

@@ -46,7 +46,16 @@ class PharosTargetProvider(StashableBase):
         mysqlPassword = kwargs.get("mysqlPassword", None)
         self.__version = None
         if reloadDb or fromDb:
-            self.__reload(targetsPath=self.__dirPath, sqlPath=self.__sqlDumpDirPath, reloadDb=reloadDb, fromDb=fromDb, useCache=useCache, pharosDumpUrl=pharosDumpUrl, mysqlUser=mysqlUser, mysqlPassword=mysqlPassword)
+            self.__reload(
+                targetsPath=self.__dirPath,
+                sqlPath=self.__sqlDumpDirPath,
+                reloadDb=reloadDb,
+                fromDb=fromDb,
+                useCache=useCache,
+                pharosDumpUrl=pharosDumpUrl,
+                mysqlUser=mysqlUser,
+                mysqlPassword=mysqlPassword
+            )
         #
 
     def testCache(self):

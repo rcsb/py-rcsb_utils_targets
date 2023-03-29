@@ -4,7 +4,7 @@
 #
 #  Updates:
 #   27-Feb-2023 dwp Update mysql loading command
-#
+#   23-Mar-2023 aae Download sql file to separate dir
 ##
 """
 Accessors for Pharos target assignments.
@@ -33,6 +33,10 @@ class PharosTargetProvider(StashableBase):
         super(PharosTargetProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
+        # Folder for SQL dump
+        self.__sqlDumpDirName = "Pharos-targets-sqldump"
+        self.__sqlDumpDirPath = os.path.join(self.__cachePath, self.__sqlDumpDirName)
+        #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
         reloadDb = kwargs.get("reloadDb", False)
         fromDb = kwargs.get("fromDb", False)
@@ -42,7 +46,16 @@ class PharosTargetProvider(StashableBase):
         mysqlPassword = kwargs.get("mysqlPassword", None)
         self.__version = None
         if reloadDb or fromDb:
-            self.__reload(self.__dirPath, reloadDb=reloadDb, fromDb=fromDb, useCache=useCache, pharosDumpUrl=pharosDumpUrl, mysqlUser=mysqlUser, mysqlPassword=mysqlPassword)
+            self.__reload(
+                targetsPath=self.__dirPath,
+                sqlPath=self.__sqlDumpDirPath,
+                reloadDb=reloadDb,
+                fromDb=fromDb,
+                useCache=useCache,
+                pharosDumpUrl=pharosDumpUrl,
+                mysqlUser=mysqlUser,
+                mysqlPassword=mysqlPassword
+            )
         #
 
     def testCache(self):
@@ -51,7 +64,7 @@ class PharosTargetProvider(StashableBase):
     def getVersion(self):
         return self.__version
 
-    def __reload(self, dirPath, reloadDb=False, fromDb=False, useCache=False, pharosDumpUrl=None, mysqlUser=None, mysqlPassword=None):
+    def __reload(self, targetsPath, sqlPath, reloadDb=False, fromDb=False, useCache=False, pharosDumpUrl=None, mysqlUser=None, mysqlPassword=None):
         startTime = time.time()
         pharosSelectedTables = ["drug_activity", "cmpd_activity", "target", "protein", "t2tc"]
         pharosDumpUrl = pharosDumpUrl if pharosDumpUrl else "http://juniper.health.unm.edu/tcrd/download/latest.sql.gz"
@@ -59,12 +72,13 @@ class PharosTargetProvider(StashableBase):
         ok = False
         fU = FileUtil()
         pharosDumpFileName = fU.getFileName(pharosDumpUrl)
-        pharosDumpPath = os.path.join(dirPath, pharosDumpFileName)
-        pharosUpdatePath = os.path.join(dirPath, "pharos-update.sql")
-        pharosReadmePath = os.path.join(dirPath, "pharos-readme.txt")
-        logPath = os.path.join(dirPath, "pharosLoad.log")
+        pharosDumpPath = os.path.join(sqlPath, pharosDumpFileName)
+        pharosUpdatePath = os.path.join(sqlPath, "pharos-update.sql")
+        pharosReadmePath = os.path.join(targetsPath, "pharos-readme.txt")  # needed by PharosTargetActivityProvider
+        logPath = os.path.join(sqlPath, "pharosLoad.log")
         #
-        fU.mkdir(dirPath)
+        fU.mkdir(sqlPath)
+        fU.mkdir(targetsPath)
         #
 
         exU = ExecUtils()
@@ -124,7 +138,7 @@ class PharosTargetProvider(StashableBase):
         # --
         if fromDb:
             for tbl in pharosSelectedTables:
-                outPath = os.path.join(dirPath, "%s.tdd" % tbl)
+                outPath = os.path.join(targetsPath, "%s.tdd" % tbl)
                 # if useCache and self.__mU.exists(outPath):
                 #   continue
                 ok = exU.run(

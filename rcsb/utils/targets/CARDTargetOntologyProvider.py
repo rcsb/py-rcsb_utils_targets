@@ -168,17 +168,16 @@ class CARDTargetOntologyProvider:
         # create a dictionary to store the ancestors of each child
         lineageD = {}
         for child in childToParentD.keys():
-            lineageD[child] = [{"id": child, "name": idNameMapD[child], "depth": 0}]
+            lineageD[child] = [{"id": child, "name": idNameMapD[child], "depth": 0}]  # Add the child to its own ancestry list
             stack = [child]
             depth = -1
             while stack:
                 node = stack.pop()
                 if node in childToParentD:
                     for parent in childToParentD[node]:
-                        if parent != "ARO:1000001":
-                            pD = {"id": parent, "name": idNameMapD[parent], "depth": depth}
+                        if parent != "ARO:1000001":  # Exclude the top-level "ARO:1000001"
                             if parent not in [d["id"] for d in lineageD[child]]:
-                                lineageD[child].append(pD)
+                                lineageD[child].append({"id": parent, "name": idNameMapD[parent], "depth": depth})
                                 stack.append(parent)
                     depthLevels = set(i["depth"] for i in lineageD[child])
                     depth = min(depthLevels) - 1
@@ -189,27 +188,18 @@ class CARDTargetOntologyProvider:
             for aD in lineageD[child]:
                 aD["depth"] += numDepthLevels
                 nL.append(aD)
-            snL = sorted(nL, key=lambda x: x["depth"])
+            snL = sorted(nL, key=lambda x: x["depth"])  # List oldest/broadest ancestor first (depth=1), youngest/most-specific child last (depth=n)
             lineageD[child] = snL
-
-        # Go through the lineage dict and add the child to its own list and remove the top-level "ARO:1000001"
-        # Also, update the list to contain both the parent ARO IDs and their associated names.
-        # for child, pL in lineageD.items():
-        #     if child not in pL:
-        #         npL = [child] + [p for p in pL if p != "ARO:1000001"]
-        #         npL.reverse()  # List oldest/broadest ancestor first (depth=1), youngest/most-specific child last (depth=n)
-        #         npL = [{"id": id, "name": idNameMapD[id], "depth": ii + 1} for ii, id in enumerate(npL)]
-        #         lineageD[child] = npL
 
         return lineageD, treeNodeL
 
     def __exportTreeNodeList(self, childToParentD, parentChildTupleList, idNameMapD):
         """Create tree node list in the format of:
 
-        {'id': 'ARO:_____', 'name': '____', 'depth': 0}
+        {'id': 'ARO:1000003', 'name': 'antibiotic molecule'}
         {'id': 'ARO:0000041', 'name': 'bacitracin', 'parents': ['ARO:3000053', 'ARO:3000707']}
         {'id': 'ARO:0000039', 'name': 'spectinomycin', 'parents': ['ARO:0000016']}
-                """
+        """
         #
         dL = []
         for child, parentL in childToParentD.items():

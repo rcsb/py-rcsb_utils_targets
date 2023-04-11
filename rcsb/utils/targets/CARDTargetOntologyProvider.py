@@ -163,7 +163,7 @@ class CARDTargetOntologyProvider:
                 childToParentD[child] = []
             childToParentD[child].append(parent)
 
-        treeNodeL = self.__exportTreeNodeList(childToParentD, parentChildTupleList, idNameMapD)
+        treeNodeL = self.__exportTreeNodeList(childToParentD, idNameMapD)
 
         # create a dictionary to store the ancestors of each child
         lineageD = {}
@@ -193,7 +193,7 @@ class CARDTargetOntologyProvider:
 
         return lineageD, treeNodeL
 
-    def __exportTreeNodeList(self, childToParentD, parentChildTupleList, idNameMapD):
+    def __exportTreeNodeList(self, childToParentD, idNameMapD):
         """Create tree node list in the format of:
 
         {'id': 'ARO:1000003', 'name': 'antibiotic molecule'}

@@ -3,7 +3,8 @@
 #  Date:           14-Mar-2023 dwp
 #
 #  Updates:
-#
+#   11-Apr-2023 dwp  Fix issue with lineage tree building--handle cases with two parents at same depth;
+#                    Add treeNodeList building and exporting
 ##
 """
 Accessors for CARD ontologies.
@@ -30,7 +31,7 @@ class CARDTargetOntologyProvider:
         self.__dirPath = os.path.join(self.__cachePath, "CARD-ontology")
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
-        self.__oD, self.__version = self.__reload(self.__dirPath, **kwargs)
+        self.__oD, self.__tnL, self.__version = self.__reload(self.__dirPath, **kwargs)
         #
 
     def testCache(self, minCount=500):
@@ -52,6 +53,9 @@ class CARDTargetOntologyProvider:
             list: list of dictionaries containing the "id" and "name" of each parent
         """
         return self.__oD.get(aroId, [])
+
+    def getTreeNodeList(self):
+        return self.__tnL
 
     def __reload(self, dirPath, **kwargs):
         oD = None
@@ -84,7 +88,7 @@ class CARDTargetOntologyProvider:
             fU.uncompress(ontologyDumpPath, outputDir=ontologyDumpDirPath)
             fU.unbundleTarfile(os.path.join(ontologyDumpDirPath, ontologyDumpFileName[:-4]), dirPath=ontologyDumpDirPath)
             logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
-            oD, version = self.__parseOntologyData(os.path.join(ontologyDumpDirPath, "aro.obo"))
+            oD, tnL, version = self.__parseOntologyData(os.path.join(ontologyDumpDirPath, "aro.obo"))
             #
             tS = datetime.datetime.now().isoformat()
             qD = {"version": version, "created": tS, "data": oD}
@@ -92,7 +96,7 @@ class CARDTargetOntologyProvider:
             ok = self.__mU.doExport(ontologyDataPath, qD, fmt="json", indent=3)
             logger.info("Export CARD ontology data (%d) status %r", len(oD), ok)
 
-        return oD, version
+        return oD, tnL, version
 
     def __parseOntologyData(self, filePath):
         """Parse CARD ontology data
@@ -104,7 +108,7 @@ class CARDTargetOntologyProvider:
             (dict, string): dictionary of all ARO IDs and their ancestor lineages, ontology version string
         """
         try:
-            cpD = None
+            cpD, tnL = None, None
             version = None
             parentChildList = []
             idNameD = {}
@@ -135,15 +139,14 @@ class CARDTargetOntologyProvider:
 
             logger.info("Ontology parent-child pair count (%d)", len(parentChildList))
 
-            cpD = self.__buildLineageTree(parentChildList, idNameD)
+            cpD, tnL = self.__buildLineageTree(parentChildList, idNameD)
 
         except Exception as e:
             logger.exception("Failing with %s", str(e))
-        return cpD, version
+        return cpD, tnL, version
 
     def __buildLineageTree(self, parentChildTupleList, idNameMapD):
-        """Build a lineage tree containing all children as keys and a
-        list of all possible parents as the values.
+        """Build a lineage tree containing all children as keys and a list of all possible parents as the values.
 
         Args:
             parentChildTupleList (list): list of (parent, child) tuples (e.g., [('ARO:1000003', 'ARO:0000000'), ('ARO:1000003', 'ARO:0000001')])
@@ -154,31 +157,63 @@ class CARDTargetOntologyProvider:
                   (including the child itself, but excluding the top-level parent 'ARO:1000001')
         """
         # create a dictionary to store the parents of each child
-        parents = {}
+        childToParentD = {}
         for parent, child in parentChildTupleList:
-            if child not in parents:
-                parents[child] = []
-            parents[child].append(parent)
+            if child not in childToParentD:
+                childToParentD[child] = []
+            childToParentD[child].append(parent)
+
+        treeNodeL = self.__exportTreeNodeList(childToParentD, parentChildTupleList, idNameMapD)
 
         # create a dictionary to store the ancestors of each child
         lineageD = {}
-        for child in parents.keys():
-            lineageD[child] = []
+        for child in childToParentD.keys():
+            lineageD[child] = [{"id": child, "name": idNameMapD[child], "depth": 0}]
             stack = [child]
+            depth = -1
             while stack:
                 node = stack.pop()
-                if node in parents:
-                    for parent in parents[node]:
-                        lineageD[child].append(parent)
-                        stack.append(parent)
+                if node in childToParentD:
+                    for parent in childToParentD[node]:
+                        if parent != "ARO:1000001":
+                            pD = {"id": parent, "name": idNameMapD[parent], "depth": depth}
+                            if parent not in [d["id"] for d in lineageD[child]]:
+                                lineageD[child].append(pD)
+                                stack.append(parent)
+                    depthLevels = set(i["depth"] for i in lineageD[child])
+                    depth = min(depthLevels) - 1
+            numDepthLevels = len(set(i["depth"] for i in lineageD[child]))
+            #
+            # Flip the depth numbering so that oldest ancestor has depth=1 and youngest/most-specific cihld has depth=n
+            nL = []
+            for aD in lineageD[child]:
+                aD["depth"] += numDepthLevels
+                nL.append(aD)
+            snL = sorted(nL, key=lambda x: x["depth"])
+            lineageD[child] = snL
 
         # Go through the lineage dict and add the child to its own list and remove the top-level "ARO:1000001"
         # Also, update the list to contain both the parent ARO IDs and their associated names.
-        for child, pL in lineageD.items():
-            if child not in pL:
-                npL = [child] + [p for p in pL if p != "ARO:1000001"]
-                npL.reverse()  # List oldest/broadest ancestor first (depth=1), youngest/most-specific child last (depth=n)
-                npL = [{"id": id, "name": idNameMapD[id], "depth": ii + 1} for ii, id in enumerate(npL)]
-                lineageD[child] = npL
+        # for child, pL in lineageD.items():
+        #     if child not in pL:
+        #         npL = [child] + [p for p in pL if p != "ARO:1000001"]
+        #         npL.reverse()  # List oldest/broadest ancestor first (depth=1), youngest/most-specific child last (depth=n)
+        #         npL = [{"id": id, "name": idNameMapD[id], "depth": ii + 1} for ii, id in enumerate(npL)]
+        #         lineageD[child] = npL
 
-        return lineageD
+        return lineageD, treeNodeL
+
+    def __exportTreeNodeList(self, childToParentD, parentChildTupleList, idNameMapD):
+        """Create tree node list in the format of:
+
+        {'id': 'ARO:_____', 'name': '____', 'depth': 0}
+        {'id': 'ARO:0000041', 'name': 'bacitracin', 'parents': ['ARO:3000053', 'ARO:3000707']}
+        {'id': 'ARO:0000039', 'name': 'spectinomycin', 'parents': ['ARO:0000016']}
+                """
+        #
+        dL = []
+        for child, parentL in childToParentD.items():
+            tD = {"id": child, "name": idNameMapD[child], "parents": parentL}
+            dL.append(tD)
+
+        return dL

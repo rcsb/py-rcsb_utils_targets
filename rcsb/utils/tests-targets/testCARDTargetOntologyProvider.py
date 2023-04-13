@@ -52,11 +52,14 @@ class CARDTargetOntologyProviderTests(unittest.TestCase):
         coP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=False)
         ok = coP.testCache()
         self.assertTrue(ok)
-        aroIdL = ["ARO:3000096", "ARO:3000015"]
+        aroIdL = ["ARO:3000096", "ARO:3000015", "ARO:3001110", "ARO:0000041", "ARO:0000039"]
         for aroId in aroIdL:
             lineageL = coP.getLineage(aroId)
             logger.info("Lineage list for aroId %s: %r", aroId, lineageL)
             self.assertGreaterEqual(len(lineageL), 2)
+        tnL = coP.getTreeNodeList()
+        self.assertGreater(len(tnL), 100)
+        logger.info("Tree node list items 0-10: %r", tnL[0:10])
 
 
 def fetchCARDTargetOntology():

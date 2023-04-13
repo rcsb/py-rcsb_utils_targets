@@ -61,6 +61,8 @@ class CARDTargetAnnotationProviderTests(unittest.TestCase):
         self.assertTrue(ok)
         aD = stfP.getAnnotation("5f64_1")
         self.assertGreaterEqual(len(list(aD)), 10)
+        tnL = stfP.getTreeNodeList()
+        self.assertGreaterEqual(len(tnL), 100)
 
 
 def buildCARDAnnotationsTargets():

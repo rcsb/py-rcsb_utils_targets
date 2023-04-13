@@ -3,6 +3,7 @@
 #  Date:           6-Mar-2023 dwp
 #
 #  Updates:
+#   13-Apr-2023 dwp  Add treeNodeList building and exporting (via OntologyProvider)
 #
 ##
 """
@@ -204,6 +205,13 @@ class CARDTargetAnnotationProvider(StashableBase):
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "taxonomyFilter": useTaxonomy, "annotations": cqD}, fmt="json", indent=3)
         return ok
+
+    def getTreeNodeList(self):
+        """Get tree node list from ontology provider."""
+        tnL = []
+        ontologyP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=False)
+        tnL = ontologyP.getTreeNodeList()
+        return tnL
 
     def __decodeComment(self, comment, separator="|"):
         dD = {}

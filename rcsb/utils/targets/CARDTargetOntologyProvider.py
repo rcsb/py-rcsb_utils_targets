@@ -5,6 +5,9 @@
 #  Updates:
 #   11-Apr-2023 dwp  Fix issue with lineage tree building--handle cases with two parents at same depth;
 #                    Add treeNodeList building and exporting
+#
+#  Todo:
+#   - Make this store a cache of ontology data on BL, and be restorable (follow mechanism used for AnnotationProvider)
 ##
 """
 Accessors for CARD ontologies.
@@ -81,6 +84,7 @@ class CARDTargetOntologyProvider:
             qD = self.__mU.doImport(ontologyDataPath, fmt="json")
             version = qD["version"]
             oD = qD["data"]
+            tnL = qD["treeList"]
         else:
             logger.info("Fetching url %s path %s", ontologyDumpUrl, ontologyDumpPath)
             ok = fU.get(ontologyDumpUrl, ontologyDumpPath)
@@ -91,7 +95,7 @@ class CARDTargetOntologyProvider:
             oD, tnL, version = self.__parseOntologyData(os.path.join(ontologyDumpDirPath, "aro.obo"))
             #
             tS = datetime.datetime.now().isoformat()
-            qD = {"version": version, "created": tS, "data": oD}
+            qD = {"version": version, "created": tS, "data": oD, "treeList": tnL}
             oD = qD["data"]
             ok = self.__mU.doExport(ontologyDataPath, qD, fmt="json", indent=3)
             logger.info("Export CARD ontology data (%d) status %r", len(oD), ok)

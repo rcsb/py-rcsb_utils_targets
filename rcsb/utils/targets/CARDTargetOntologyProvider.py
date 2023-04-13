@@ -6,7 +6,7 @@
 #   11-Apr-2023 dwp  Fix issue with lineage tree building--handle cases with two parents at same depth;
 #                    Add treeNodeList building and exporting
 #
-#  Todo:
+#  TODO:
 #   - Make this store a cache of ontology data on BL, and be restorable (follow mechanism used for AnnotationProvider)
 ##
 """

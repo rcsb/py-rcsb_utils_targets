@@ -183,7 +183,7 @@ class CARDTargetOntologyProvider:
                     depth = min(depthLevels) - 1
             numDepthLevels = len(set(i["depth"] for i in lineageD[child]))
             #
-            # Flip the depth numbering so that oldest ancestor has depth=1 and youngest/most-specific cihld has depth=n
+            # Flip the depth numbering so that oldest ancestor has depth=1 and youngest/most-specific child has depth=n
             nL = []
             for aD in lineageD[child]:
                 aD["depth"] += numDepthLevels

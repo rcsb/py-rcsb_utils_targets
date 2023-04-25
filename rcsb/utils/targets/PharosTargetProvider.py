@@ -38,6 +38,7 @@ class PharosTargetProvider(StashableBase):
         self.__sqlDumpDirPath = os.path.join(self.__cachePath, self.__sqlDumpDirName)
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
+        self.__pharosSelectedTables = ["drug_activity", "cmpd_activity", "target", "protein", "t2tc"]
         reloadDb = kwargs.get("reloadDb", False)
         fromDb = kwargs.get("fromDb", False)
         useCache = kwargs.get("useCache", False)
@@ -59,14 +60,19 @@ class PharosTargetProvider(StashableBase):
         #
 
     def testCache(self):
-        return True
+        ok = True
+        for tbl in self.__pharosSelectedTables:
+            outPath = os.path.join(self.__dirPath, "%s.tdd" % tbl)
+            ok = self.__mU.exists(outPath) and ok
+            if not ok:
+                break
+        return ok
 
     def getVersion(self):
         return self.__version
 
     def __reload(self, targetsPath, sqlPath, reloadDb=False, fromDb=False, useCache=False, pharosDumpUrl=None, mysqlUser=None, mysqlPassword=None):
         startTime = time.time()
-        pharosSelectedTables = ["drug_activity", "cmpd_activity", "target", "protein", "t2tc"]
         pharosDumpUrl = pharosDumpUrl if pharosDumpUrl else "http://juniper.health.unm.edu/tcrd/download/latest.sql.gz"
         pharosReadmeUrl = "http://juniper.health.unm.edu/tcrd/download/latest.README"
         ok = False
@@ -96,14 +102,14 @@ class PharosTargetProvider(StashableBase):
             readmeLines = self.__mU.doImport(pharosReadmePath, fmt="list")
             self.__version = readmeLines[0].split(" ")[1][1:] if readmeLines else "6"
             # ---
-            logger.info("Filtering SQL dump %r for selected tables %r", pharosDumpFileName, pharosSelectedTables)
+            logger.info("Filtering SQL dump %r for selected tables %r", pharosDumpFileName, self.__pharosSelectedTables)
             doWrite = True
             # Note: the pharos dump file latest.sql.gz is not gzipped
             with open(pharosDumpPath, "r", encoding="utf-8") as ifh, open(pharosUpdatePath, "w", encoding="utf-8") as ofh:
                 for line in ifh:
                     if line.startswith("-- Table structure for table"):
                         tN = line.split(" ")[-1][1:-2]
-                        doWrite = True if tN in pharosSelectedTables else False
+                        doWrite = True if tN in self.__pharosSelectedTables else False
                     if doWrite:
                         ofh.write(line)
             # ---
@@ -137,7 +143,7 @@ class PharosTargetProvider(StashableBase):
             logger.info("SQL dump restore status %r", ok)
         # --
         if fromDb:
-            for tbl in pharosSelectedTables:
+            for tbl in self.__pharosSelectedTables:
                 outPath = os.path.join(targetsPath, "%s.tdd" % tbl)
                 # if useCache and self.__mU.exists(outPath):
                 #   continue

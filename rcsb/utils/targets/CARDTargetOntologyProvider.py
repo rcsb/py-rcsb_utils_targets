@@ -156,19 +156,22 @@ class CARDTargetOntologyProvider:
         Returns:
             dict: dictionary containing all children as keys and all possible parents as values
                   (including the child itself, but excluding the top-level parent 'ARO:1000001')
+            list: list of all nodes (as dicts) in the tree with their immediate parents only (for building tree in browser)
         """
         # create a dictionary to store the parents of each child
         childToParentD = {}
         for parent, child in parentChildTupleList:
-            if child not in childToParentD:
+            if child not in childToParentD and child != "ARO:1000001":
                 childToParentD[child] = []
-            childToParentD[child].append(parent)
+            if parent != "ARO:1000001":  # Exclude the top-level "ARO:1000001"
+                childToParentD[child].append(parent)
 
+        # depthD = self.__createDepthDict(parentChildTupleList)
         treeNodeL = self.__exportTreeNodeList(childToParentD, idNameMapD)
 
         # create a dictionary to store the ancestors of each child
         lineageD = {}
-        for child in childToParentD.keys():
+        for child in childToParentD:
             lineageD[child] = [{"id": child, "name": idNameMapD[child], "depth": 0}]  # Add the child to its own ancestry list
             stack = [child]
             depth = -1
@@ -176,10 +179,9 @@ class CARDTargetOntologyProvider:
                 node = stack.pop()
                 if node in childToParentD:
                     for parent in childToParentD[node]:
-                        if parent != "ARO:1000001":  # Exclude the top-level "ARO:1000001"
-                            if parent not in [d["id"] for d in lineageD[child]]:
-                                lineageD[child].append({"id": parent, "name": idNameMapD[parent], "depth": depth})
-                                stack.append(parent)
+                        if parent not in [d["id"] for d in lineageD[child]]:
+                            lineageD[child].append({"id": parent, "name": idNameMapD[parent], "depth": depth})
+                            stack.append(parent)
                     depthLevels = set(i["depth"] for i in lineageD[child])
                     depth = min(depthLevels) - 1
             numDepthLevels = len(set(i["depth"] for i in lineageD[child]))
@@ -204,7 +206,6 @@ class CARDTargetOntologyProvider:
         #
         dL = []
         for child, parentL in childToParentD.items():
-            parentL = [p for p in parentL if p != "ARO:1000001"]  # Exclude the top-level "ARO:1000001"
             if parentL:
                 tD = {"id": child, "name": idNameMapD[child], "parents": parentL}
             else:
@@ -212,3 +213,42 @@ class CARDTargetOntologyProvider:
             dL.append(tD)
 
         return dL
+
+    # def __createDepthDict(self, parentChildTupleList):
+    #     # Create an adjacency list to represent the graph
+    #     graph = {}
+    #     for parent, child in parentChildTupleList:
+    #         if parent not in graph:
+    #             graph[parent] = set()
+    #         graph[parent].add(child)
+    #     #
+    #     # Initialize the depth dictionary and visited set
+    #     depthD = {}
+    #     visited = set()
+    #     #
+    #     # Define a helper function to traverse the graph
+    #     def traverse(node, depth, cycleNodes):
+    #         # If we have already visited this node, return
+    #         if node in visited:
+    #             return
+    #         #
+    #         # Add the node to the visited set
+    #         visited.add(node)
+    #         #
+    #         # Add the node to the depth dictionary
+    #         if node in depthD:
+    #             depthD[node].extend(cycleNodes + [depth])
+    #         else:
+    #             depthD[node] = cycleNodes + [depth]
+    #         #
+    #         # Traverse the children of the node
+    #         if node in graph:
+    #             for child in graph[node]:
+    #                 traverse(child, depth+1, cycleNodes)
+    #     #
+    #     # Traverse the graph from each node to handle cycles
+    #     for node in graph:
+    #         traverse(node, 0, [])
+    #     #
+    #     # Return the completed depth dictionary
+    #     return depthD

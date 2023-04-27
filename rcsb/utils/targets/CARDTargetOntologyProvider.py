@@ -5,6 +5,7 @@
 #  Updates:
 #   11-Apr-2023 dwp  Fix issue with lineage tree building--handle cases with two parents at same depth;
 #                    Add treeNodeList building and exporting
+#   27-Apr-2023 dwp  Update tree node list generation
 ##
 """
 Accessors for CARD ontologies.
@@ -203,7 +204,11 @@ class CARDTargetOntologyProvider:
         #
         dL = []
         for child, parentL in childToParentD.items():
-            tD = {"id": child, "name": idNameMapD[child], "parents": parentL}
+            parentL = [p for p in parentL if p != "ARO:1000001"]  # Exclude the top-level "ARO:1000001"
+            if parentL:
+                tD = {"id": child, "name": idNameMapD[child], "parents": parentL}
+            else:
+                tD = {"id": child, "name": idNameMapD[child]}
             dL.append(tD)
 
         return dL

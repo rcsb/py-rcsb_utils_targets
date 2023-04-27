@@ -59,7 +59,10 @@ class CARDTargetOntologyProviderTests(unittest.TestCase):
             self.assertGreaterEqual(len(lineageL), 2)
         tnL = coP.getTreeNodeList()
         self.assertGreater(len(tnL), 100)
-        logger.info("Tree node list items 0-10: %r", tnL[0:10])
+        aroIdL += ["ARO:1000003", "ARO:3000000", "ARO:0000076", "ARO:1000002", "ARO:3000708", "ARO:3000082", "ARO:3000045"]
+        for treeNode in tnL:
+            if treeNode["id"] in aroIdL:
+                logger.info("tree node aroId %s: %r", aroId, treeNode)
 
 
 def fetchCARDTargetOntology():

@@ -63,11 +63,6 @@ class CARDTargetOntologyProviderTests(unittest.TestCase):
         for treeNode in tnL:
             if treeNode["id"] in aroIdL:
                 logger.info("tree node aroId %s: %r", aroId, treeNode)
-        # test depth list:
-        # ["ARO:3000096", "ARO:3000000", "ARO:3000557", "ARO:3000001", "ARO:3000078", "ARO:3000096", "ARO:3000015", "ARO:3000000", "ARO:3000557", "ARO:3000001", "ARO:3000078",
-        # "ARO:3000096", "ARO:3000015", "ARO:3001110", "ARO:3000000", "ARO:3000557", "ARO:3000001", "ARO:3000078", "ARO:3000096", "ARO:3000015", "ARO:3001110", "ARO:0000041",
-        # "ARO:1000003", "ARO:3000053", "ARO:3000707", "ARO:0000041", "ARO:0000039", "ARO:1000003", "ARO:0000016", "ARO:0000039", "ARO:3000454", "ARO:3000053", "ARO:3000035",
-        # "ARO:1000003", "ARO:0000022", "ARO:3000707", "ARO:3000454"]
 
 
 def fetchCARDTargetOntology():

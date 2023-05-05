@@ -5,6 +5,8 @@
 #  Updates:
 #   11-Apr-2023 dwp  Fix issue with lineage tree building--handle cases with two parents at same depth;
 #                    Add treeNodeList building and exporting
+#   27-Apr-2023 dwp  Update tree node list generation
+#    2-May-2023 dwp  Remove depth field from lineage tree
 ##
 """
 Accessors for CARD ontologies.
@@ -155,41 +157,30 @@ class CARDTargetOntologyProvider:
         Returns:
             dict: dictionary containing all children as keys and all possible parents as values
                   (including the child itself, but excluding the top-level parent 'ARO:1000001')
+            list: list of all nodes (as dicts) in the tree with their immediate parents only (for building tree in browser)
         """
         # create a dictionary to store the parents of each child
         childToParentD = {}
         for parent, child in parentChildTupleList:
-            if child not in childToParentD:
+            if child not in childToParentD and child != "ARO:1000001":
                 childToParentD[child] = []
-            childToParentD[child].append(parent)
+            if parent != "ARO:1000001":  # Exclude the top-level "ARO:1000001"
+                childToParentD[child].append(parent)
 
         treeNodeL = self.__exportTreeNodeList(childToParentD, idNameMapD)
 
         # create a dictionary to store the ancestors of each child
         lineageD = {}
-        for child in childToParentD.keys():
-            lineageD[child] = [{"id": child, "name": idNameMapD[child], "depth": 0}]  # Add the child to its own ancestry list
+        for child in childToParentD:
+            lineageD[child] = [{"id": child, "name": idNameMapD[child]}]  # Add the child to its own ancestry list
             stack = [child]
-            depth = -1
             while stack:
                 node = stack.pop()
                 if node in childToParentD:
                     for parent in childToParentD[node]:
-                        if parent != "ARO:1000001":  # Exclude the top-level "ARO:1000001"
-                            if parent not in [d["id"] for d in lineageD[child]]:
-                                lineageD[child].append({"id": parent, "name": idNameMapD[parent], "depth": depth})
-                                stack.append(parent)
-                    depthLevels = set(i["depth"] for i in lineageD[child])
-                    depth = min(depthLevels) - 1
-            numDepthLevels = len(set(i["depth"] for i in lineageD[child]))
-            #
-            # Flip the depth numbering so that oldest ancestor has depth=1 and youngest/most-specific child has depth=n
-            nL = []
-            for aD in lineageD[child]:
-                aD["depth"] += numDepthLevels
-                nL.append(aD)
-            snL = sorted(nL, key=lambda x: x["depth"])  # List oldest/broadest ancestor first (depth=1), youngest/most-specific child last (depth=n)
-            lineageD[child] = snL
+                        if parent not in [d["id"] for d in lineageD[child]]:
+                            lineageD[child].append({"id": parent, "name": idNameMapD[parent]})
+                            stack.append(parent)
 
         return lineageD, treeNodeL
 
@@ -203,7 +194,10 @@ class CARDTargetOntologyProvider:
         #
         dL = []
         for child, parentL in childToParentD.items():
-            tD = {"id": child, "name": idNameMapD[child], "parents": parentL}
+            if parentL:
+                tD = {"id": child, "name": idNameMapD[child], "parents": parentL}
+            else:
+                tD = {"id": child, "name": idNameMapD[child]}
             dL.append(tD)
 
         return dL

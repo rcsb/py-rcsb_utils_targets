@@ -5,6 +5,7 @@
 #  Updates:
 #   27-Feb-2023 dwp Update mysql loading command
 #   23-Mar-2023 aae Download sql file to separate dir
+#    5-May-2023 aae Check cache files exist in testCache()
 ##
 """
 Accessors for Pharos target assignments.

@@ -60,3 +60,4 @@
   27-Apr-2023  - V0.68 Update CARD treeNodeList building
    2-May-2023  - V0.69 Remove depth field from CARD lineage tree
    5-May-2023  - V0.70 Actually check cache files exist in PharosTargetProvider testCache()
+  22-May-2023  - V0.71 Add retries to tox task for MMseqs2 download

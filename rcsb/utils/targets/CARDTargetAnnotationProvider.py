@@ -83,7 +83,7 @@ class CARDTargetAnnotationProvider(StashableBase):
 
         Args:
             sequenceMatchFilePath (str): sequence match output file path
-            useTaxonomy (bool): apply taxonomy criteria to filter matches. Defaults to False
+            useTaxonomy (bool): apply taxonomy criteria to filter matches (only include matches that have a defined taxonomyMatchStatus). Defaults to False
 
         Returns:
             bool: True for success or False otherwise
@@ -176,7 +176,7 @@ class CARDTargetAnnotationProvider(StashableBase):
                         continue
                 if not mL and not oL:
                     continue
-                logger.debug("eId %r mL (%d) oL (%d)", eId, len(mL), len(oL))
+                logger.info("eId %r mL (%d) oL (%d)", eId, len(mL), len(oL))
                 fqD.setdefault(eId, []).extend(mL if mL else oL)
         else:
             fqD = qD
@@ -203,6 +203,7 @@ class CARDTargetAnnotationProvider(StashableBase):
         tS = datetime.datetime.now().isoformat()
         vS = datetime.datetime.now().strftime("%Y-%m-%d")
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "taxonomyFilter": useTaxonomy, "annotations": cqD}, fmt="json", indent=3)
+        logger.info("Done rebuilding CARD annotation features (status %r) version (%r) created (%r) useTaxonomy (%r) annotations (%d)", ok, vS, tS, useTaxonomy, len(cqD))
         return ok
 
     def __decodeComment(self, comment, separator="|"):

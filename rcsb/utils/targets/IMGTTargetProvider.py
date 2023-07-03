@@ -4,6 +4,7 @@
 #
 #  Updated:
 #   14-Mar-2023 dwp  Add timeout to IMGT data file fetch
+#    3-Jul-2023 aae  imgt.org no longer supports http
 #
 ##
 """
@@ -67,8 +68,8 @@ class IMGTTargetProvider(StashableBase):
             imgtD = self.__mU.doImport(imgtDataPath, fmt="json")
             self.__version = imgtD["version"]
         else:
-            imgtDumpUrl = imgtDumpUrl if imgtDumpUrl else "http://www.imgt.org/download/3Dstructure-DB/IMGT3DFlatFiles.tgz"
-            imgtReadmeUrl = "http://www.imgt.org/download/3Dstructure-DB/RELEASE"
+            imgtDumpUrl = imgtDumpUrl if imgtDumpUrl else "https://www.imgt.org/download/3Dstructure-DB/IMGT3DFlatFiles.tgz"
+            imgtReadmeUrl = "https://www.imgt.org/download/3Dstructure-DB/RELEASE"
             imgtDumpFileName = fU.getFileName(imgtDumpUrl)
             imgtDumpPath = os.path.join(dirPath, imgtDumpFileName)
             imgtReleasePath = os.path.join(dirPath, "IMGT-release.txt")
@@ -123,9 +124,9 @@ class IMGTTargetProvider(StashableBase):
         fU = FileUtil()
         fU.mkdir(self.__dirPath)
         if withGaps:
-            imgtTargetUrl = "http://www.imgt.org/download/GENE-DB/IMGTGENEDB-ReferenceSequences.fasta-AA-WithGaps-F+ORF+inframeP"
+            imgtTargetUrl = "https://www.imgt.org/download/GENE-DB/IMGTGENEDB-ReferenceSequences.fasta-AA-WithGaps-F+ORF+inframeP"
         else:
-            imgtTargetUrl = "http://www.imgt.org/download/GENE-DB/IMGTGENEDB-ReferenceSequences.fasta-AA-WithoutGaps-F+ORF+inframeP"
+            imgtTargetUrl = "https://www.imgt.org/download/GENE-DB/IMGTGENEDB-ReferenceSequences.fasta-AA-WithoutGaps-F+ORF+inframeP"
         imgtTargetFileName = fU.getFileName(imgtTargetUrl)
         rawFastaPath = os.path.join(self.__dirPath, imgtTargetFileName)
         # --

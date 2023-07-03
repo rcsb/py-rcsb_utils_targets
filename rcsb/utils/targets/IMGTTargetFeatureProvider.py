@@ -26,7 +26,7 @@ class IMGTTargetFeatureProvider(StashableBase):
     """Accessors for IMGT (The International Immunogenetic Information System) target features"""
 
     # Link out using the IMGT -
-    # http://www.imgt.org/3Dstructure-DB/cgi/details.cgi?pdbcode=5w5m&Part=Chain
+    # https://www.imgt.org/3Dstructure-DB/cgi/details.cgi?pdbcode=5w5m&Part=Chain
     #
     def __init__(self, **kwargs):
         #

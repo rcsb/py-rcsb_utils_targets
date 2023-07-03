@@ -62,3 +62,4 @@
    5-May-2023  - V0.70 Actually check cache files exist in PharosTargetProvider testCache()
   22-May-2023  - V0.71 Add retries to tox task for MMseqs2 download
   13-Jun-2023  - V0.72 Improve logging
+   3-Jul-2023  - V0.73 imgt.org no longer supports http

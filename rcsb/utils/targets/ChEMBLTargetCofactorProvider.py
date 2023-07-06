@@ -119,8 +119,14 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         chP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False)
+        if not chP.testCache(1):
+            logger.warning("Skipping build of target cofactor list because ChEMBL Target data is missing.")
+            return False
         # ---
         chaP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
+        if not chaP.testCache(1):
+            logger.warning("Skipping build of target cofactor list because ChEMBL Target Activity data is missing.")
+            return False
         #
         provenanceSource = "ChEMBL"
         refScheme = "PDB entity"

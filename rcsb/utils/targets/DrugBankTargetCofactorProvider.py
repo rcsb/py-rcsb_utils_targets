@@ -92,6 +92,9 @@ class DrugBankTargetCofactorProvider(StashableBase):
         """
         rDL = []
         dbP = DrugBankTargetProvider(cachePath=self.__cachePath, useCache=True)
+        if not dbP.testCache():
+            logger.warning("Skipping build of target cofactor list because DrugBank Target data is missing.")
+            return False
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         provenanceSource = "DrugBank"

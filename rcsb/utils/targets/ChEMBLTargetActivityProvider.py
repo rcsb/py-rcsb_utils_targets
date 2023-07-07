@@ -131,10 +131,8 @@ class ChEMBLTargetActivityProvider(StashableBase):
         logger.info("ChEMBL API MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
         self.__aD, self.__allIdD = self.__reload(self.__dirPath, useCache)
 
-    def testCache(self, minCount=0):
-        if minCount == 0:
-            return True
-        if self.__aD and (len(self.__aD) > minCount):
+    def testCache(self, minCount=1):
+        if self.__aD and (len(self.__aD) >= minCount):
             logger.info("Activity data cached for (%d) targets", len(self.__aD))
             return True
         return False

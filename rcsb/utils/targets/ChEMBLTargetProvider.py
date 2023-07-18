@@ -4,6 +4,7 @@
 #
 #  Updated:
 #   9-Feb-2023 aae  Update ChEMBL baseVersion to 31
+#  18-Jul-2023 dwp  Update ChEMBL baseVersion to 33
 ##
 """
 Accessors for ChEMBL target assignments.
@@ -31,7 +32,7 @@ class ChEMBLTargetProvider:
         #
         self.__cachePath = cachePath
         self.__dirPath = os.path.join(self.__cachePath, "ChEMBL-targets")
-        baseVersion = 31
+        baseVersion = 33
         self.__version = baseVersion
         self.__mapD = self.__reload(self.__dirPath, baseVersion, useCache, **kwargs)
         #

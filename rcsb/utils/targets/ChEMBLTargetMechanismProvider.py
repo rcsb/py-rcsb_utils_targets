@@ -16,12 +16,18 @@ import logging
 import os.path
 import time
 
-from chembl_webresource_client.new_client import new_client
 from chembl_webresource_client.settings import Settings
+
+# pylint: disable=ungrouped-imports
+try:
+    from chembl_webresource_client.new_client import new_client  # fails when service is down
+except Exception:
+    pass
 
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
+
 
 Settings.Instance().TIMEOUT = 10  # pylint: disable=no-member
 Settings.Instance().MAX_LIMIT = 50  # pylint: disable=no-member

@@ -16,14 +16,20 @@ import logging
 import os.path
 import time
 
-from chembl_webresource_client.new_client import new_client
 from chembl_webresource_client.settings import Settings
+
+# pylint: disable=ungrouped-imports
+try:
+    from chembl_webresource_client.new_client import new_client  # fails when service is down
+except Exception:
+    pass
 
 from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
 from rcsb.utils.io.UrlRequestUtil import UrlRequestUtil
+
 
 Settings.Instance().TIMEOUT = 10  # pylint: disable=no-member
 Settings.Instance().MAX_LIMIT = 50  # pylint: disable=no-member
@@ -269,14 +275,15 @@ class ChEMBLTargetActivityProvider(StashableBase):
                             actD["action_type"], actD["moa"], actD["max_phase"] = self.getMechanismDetails(actD["molecule_chembl_id"])
                             targetD.setdefault(actD["target_chembl_id"], []).append(actD)
                     #
+                    logger.info("Completed chunk starting at (%d)", ii)
+                    tS = datetime.datetime.now().isoformat()
+                    vS = datetime.datetime.now().strftime("%Y-%m-%d")
+                    ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": idList}, fmt="json", indent=3)
+                    logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
+                #
                 except Exception as e:
                     logger.exception("Failing with chunk at index %d with %s", ii, str(e)[:200])
-
-                logger.info("Completed chunk starting at (%d)", ii)
-                tS = datetime.datetime.now().isoformat()
-                vS = datetime.datetime.now().strftime("%Y-%m-%d")
-                ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": idList}, fmt="json", indent=3)
-                logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
+        #
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return ok

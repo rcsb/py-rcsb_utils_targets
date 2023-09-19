@@ -15,11 +15,15 @@ import logging
 import os.path
 import time
 
-from chembl_webresource_client.new_client import new_client
-
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.seq.UniProtIdMappingProvider import UniProtIdMappingProvider
+
+# pylint: disable=ungrouped-imports
+try:
+    from chembl_webresource_client.new_client import new_client  # fails when service is down
+except Exception:
+    pass
 
 
 logger = logging.getLogger(__name__)

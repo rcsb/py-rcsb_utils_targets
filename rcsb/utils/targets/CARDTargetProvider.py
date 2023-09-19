@@ -52,6 +52,9 @@ class CARDTargetProvider:
     def getAssignmentVersion(self):
         return self.__version
 
+    def reload(self):
+        self.__oD, self.__version = self.__reload(self.__dirPath, useCache=True)
+
     def __reload(self, dirPath, **kwargs):
         oD = None
         version = None

@@ -99,7 +99,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
         return os.path.join(self.__dirPath, "sabdab-feature-data.json")
 
     def reload(self):
-        self.__fD = self.__reload(self.__dirPath, True)
+        self.__fD = self.__reload(self.__dirPath, useCache=True)
         return True
 
     def __reload(self, dirPath, useCache):

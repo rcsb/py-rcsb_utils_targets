@@ -56,7 +56,8 @@ class CARDTargetAnnotationProvider(StashableBase):
 
     def reload(self):
         self.__fD = self.__reload(self.__dirPath, useCache=True)
-        return True
+        ok = self.testCache()
+        return ok
 
     def __getAnnotationDataPath(self):
         return os.path.join(self.__dirPath, "CARD-annotation-data.json")

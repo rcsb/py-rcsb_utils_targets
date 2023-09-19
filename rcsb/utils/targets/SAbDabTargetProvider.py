@@ -90,6 +90,9 @@ class SAbDabTargetProvider(object):
     def getAssignmentVersion(self):
         return self.__assignVersion
 
+    def reload(self):
+        self.__oD, self.__aD, self.__dumpPath, self.__assignVersion = self.__reload(self.__dirPath, useCache=True)
+
     def __reload(self, dirPath, **kwargs):
         startTime = time.time()
         oD = {}

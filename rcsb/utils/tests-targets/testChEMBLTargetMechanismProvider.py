@@ -42,12 +42,15 @@ class ChEMBLTargetMechanismProviderTests(unittest.TestCase):
 
     def testFetchMechanismData(self):
         try:
-            ctP = ChEMBLTargetMechanismProvider(cachePath=self.__cachePath, useCache=True)
+            ctP = ChEMBLTargetMechanismProvider(cachePath=self.__cachePath, useCache=False)
             ok = ctP.testCache()
-            self.assertTrue(ok)
+            self.assertFalse(ok)
             #
             tL = ["CHEMBL1987", "CHEMBL3243"]
             ok = ctP.fetchTargetMechanismData(tL, skipExisting=False)
+            self.assertTrue(ok)
+            ctP.reload()
+            ok = ctP.testCache()
             self.assertTrue(ok)
 
         except Exception as e:

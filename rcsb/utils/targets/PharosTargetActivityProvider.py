@@ -38,10 +38,8 @@ class PharosTargetActivityProvider(StashableBase):
         #
         self.__aD, self.__tD, self.__version = self.__reload(self.__dirPath, useCache)
 
-    def testCache(self, minCount=0):
-        if minCount == 0:
-            return True
-        if self.__aD and (len(self.__aD) > minCount):
+    def testCache(self, minCount=1):
+        if self.__aD and (len(self.__aD) >= minCount):
             logger.info("Cached Pharos activity data for (%d) targets", len(self.__aD))
             return True
         return False
@@ -51,6 +49,10 @@ class PharosTargetActivityProvider(StashableBase):
 
     def getTargetActivityDataPath(self):
         return os.path.join(self.__dirPath, "pharos-target-activity-data.json")
+
+    def reload(self):
+        self.__aD, self.__tD, self.__version = self.__reload(self.__dirPath, useCache=True)
+        return True
 
     def __reload(self, dirPath, useCache):
         startTime = time.time()

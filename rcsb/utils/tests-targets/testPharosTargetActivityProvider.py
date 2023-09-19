@@ -68,7 +68,7 @@ class PharosTargetActivityProviderTests(unittest.TestCase):
         try:
             ptP = PharosTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
             ok = ptP.testCache()
-            self.assertTrue(ok)
+            self.assertFalse(ok)
             ok = ptP.fetchTargetActivityData()
             self.assertTrue(ok)
             chIdL = ptP.fetchCompoundIdentifiers()

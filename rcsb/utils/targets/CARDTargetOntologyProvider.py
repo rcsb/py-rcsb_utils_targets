@@ -91,6 +91,7 @@ class CARDTargetOntologyProvider(StashableBase):
             qD = self.__mU.doImport(ontologyDataPath, fmt="json")
             version = qD["version"]
             oD = qD["data"]
+            tnL = qD["treeNodeList"]
         else:
             logger.info("Fetching url %s path %s", ontologyDumpUrl, ontologyDumpPath)
             ok = fU.get(ontologyDumpUrl, ontologyDumpPath)
@@ -101,7 +102,7 @@ class CARDTargetOntologyProvider(StashableBase):
             oD, tnL, version = self.__parseOntologyData(os.path.join(ontologyDumpDirPath, "aro.obo"))
             #
             tS = datetime.datetime.now().isoformat()
-            qD = {"version": version, "created": tS, "data": oD}
+            qD = {"version": version, "created": tS, "data": oD, "treeNodeList": tnL}
             oD = qD["data"]
             ok = self.__mU.doExport(ontologyDataPath, qD, fmt="json", indent=3)
             logger.info("Export CARD ontology data (%d) status %r", len(oD), ok)

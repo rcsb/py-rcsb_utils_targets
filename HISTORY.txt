@@ -63,5 +63,6 @@
   22-May-2023  - V0.71 Add retries to tox task for MMseqs2 download
   13-Jun-2023  - V0.72 Improve logging
    3-Jul-2023  - V0.73 imgt.org no longer supports http
-  19-Sep-2023  - V0.74 Update testCache and reload methods for target providers;
+  18-Jul-2023  - V0.74 Update baseVersion for ChEMBL
+  19-Sep-2023  - V0.75 Update testCache and reload methods for target providers;
                        Make testCARDTargetOntologyProvider stashable

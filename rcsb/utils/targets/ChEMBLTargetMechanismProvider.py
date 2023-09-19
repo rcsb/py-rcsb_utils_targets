@@ -4,6 +4,7 @@
 #
 #  Updated:
 #   9-Feb-2023 aae  Update ChEMBL baseVersion to 31
+#  18-Jul-2023 dwp  Update ChEMBL baseVersion to 33
 ##
 """
 Accessors for ChEMBL target mechanism data.
@@ -39,7 +40,7 @@ class ChEMBLTargetMechanismProvider(StashableBase):
         super(ChEMBLTargetMechanismProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         self.__mU = MarshalUtil(workPath=self.__cachePath)
-        baseVersion = 31
+        baseVersion = 33
         self.__version = baseVersion
         logger.info("ChEMBL API MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
         self.__aD = self.__reload(self.__dirPath, useCache)

@@ -4,6 +4,7 @@
 #
 #  Updated:
 #   9-Feb-2023 aae  Update ChEMBL baseVersion to 31
+#  18-Jul-2023 dwp  Update ChEMBL baseVersion to 33
 ##
 """
 Accessors for ChEMBL target assignments.

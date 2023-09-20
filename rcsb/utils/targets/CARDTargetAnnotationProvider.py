@@ -56,7 +56,8 @@ class CARDTargetAnnotationProvider(StashableBase):
 
     def reload(self):
         self.__fD = self.__reload(self.__dirPath, useCache=True)
-        return True
+        ok = self.testCache()
+        return ok
 
     def __getAnnotationDataPath(self):
         return os.path.join(self.__dirPath, "CARD-annotation-data.json")
@@ -90,7 +91,13 @@ class CARDTargetAnnotationProvider(StashableBase):
         """
         rDL = []
         cardP = CARDTargetProvider(cachePath=self.__cachePath, useCache=False)
+        if not cardP.testCache():
+            logger.warning("Skipping build of polymer entity annotation list because CARD Target data is missing.")
+            return False
         ontologyP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=False)
+        if not ontologyP.testCache():
+            logger.warning("Skipping build of polymer entity annotation list because CARD Target Ontology data is missing.")
+            return False
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         refScheme = "PDB entity"

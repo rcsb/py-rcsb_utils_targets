@@ -43,8 +43,6 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
     def testFetchStatus(self):
         try:
             ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
-            ok = ctP.testCache()
-            self.assertTrue(ok)
             version, releaseDateString = ctP.getStatusDetails()
             if not version:
                 logger.warning("status service request failed")
@@ -58,8 +56,6 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
     def testFetchMoleculeData(self):
         try:
             ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
-            ok = ctP.testCache()
-            self.assertTrue(ok)
             chemblId = "CHEMBL1421"
             name, inchiKey, _ = ctP.getMoleculeDetails(chemblId)
             self.assertEqual(name, "DASATINIB")
@@ -72,10 +68,13 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
         try:
             ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
             ok = ctP.testCache()
-            self.assertTrue(ok)
+            self.assertFalse(ok)
             #
             tL = ["CHEMBL1987", "CHEMBL3243"]
             ok = ctP.fetchTargetActivityDataMulti(tL, numProc=2)
+            self.assertTrue(ok)
+            ctP.reload()
+            ok = ctP.testCache()
             self.assertTrue(ok)
 
         except Exception as e:
@@ -86,7 +85,7 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
         try:
             ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
             ok = ctP.testCache()
-            self.assertTrue(ok)
+            self.assertFalse(ok)
 
             mL = ["CHEMBL200117"]
             for chemblId in mL:
@@ -96,6 +95,9 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
             tL = ["CHEMBL1987", "CHEMBL3243"]
             ok = ctP.fetchTargetActivityData(tL)
             self.assertTrue(ok)
+            ctP.reload()
+            ok = ctP.testCache()
+            self.assertTrue(ok)
 
         except Exception as e:
             logger.exception("Failing with %s", str(e))
@@ -104,6 +106,7 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
 
 def targetActivitySuite():
     suiteSelect = unittest.TestSuite()
+    suiteSelect.addTest(ChEMBLTargetActivityProviderTests("testFetchStatus"))
     suiteSelect.addTest(ChEMBLTargetActivityProviderTests("testFetchMoleculeData"))
     suiteSelect.addTest(ChEMBLTargetActivityProviderTests("testFetchActivityData"))
     suiteSelect.addTest(ChEMBLTargetActivityProviderTests("testFetchActivityDataMulti"))

@@ -99,7 +99,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
         return os.path.join(self.__dirPath, "sabdab-feature-data.json")
 
     def reload(self):
-        self.__fD = self.__reload(self.__dirPath, True)
+        self.__fD = self.__reload(self.__dirPath, useCache=True)
         return True
 
     def __reload(self, dirPath, useCache):
@@ -131,6 +131,9 @@ class SAbDabTargetFeatureProvider(StashableBase):
         """
         rDL = []
         stP = SAbDabTargetProvider(cachePath=self.__cachePath, useCache=False)
+        if not stP.testCache():
+            logger.warning("Skipping build of polymer entity feature list because SAbDab Target data is missing.")
+            return False
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         provenanceSource = "SAbDab"

@@ -15,11 +15,15 @@ import logging
 import os.path
 import time
 
-from chembl_webresource_client.new_client import new_client
-
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.seq.UniProtIdMappingProvider import UniProtIdMappingProvider
+
+# pylint: disable=ungrouped-imports
+try:
+    from chembl_webresource_client.new_client import new_client  # fails when service is down
+except Exception:
+    pass
 
 
 logger = logging.getLogger(__name__)
@@ -37,8 +41,8 @@ class ChEMBLTargetProvider:
         self.__mapD = self.__reload(self.__dirPath, baseVersion, useCache, **kwargs)
         #
 
-    def testCache(self, minCount=0):
-        return self.__mapD and len(self.__mapD) > minCount
+    def testCache(self, minCount=1):
+        return self.__mapD and len(self.__mapD) >= minCount
 
     def getAssignmentVersion(self):
         return self.__version
@@ -59,10 +63,13 @@ class ChEMBLTargetProvider:
     def getTargetDataPath(self):
         return os.path.join(self.__dirPath, "chembl-target-data.json")
 
+    def reload(self):
+        self.__mapD = self.__reload(self.__dirPath, self.__version, useCache=True)
+
     def __reload(self, dirPath, baseVersion, useCache, **kwargs):
         startTime = time.time()
         mU = MarshalUtil(workPath=dirPath)
-        chemblDbUrl = kwargs.get("ChEMBLDbUrl", "ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/")
+        chemblDbUrl = kwargs.get("ChEMBLDbUrl", "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/")
         ok = False
         fU = FileUtil()
         fU.mkdir(dirPath)

@@ -20,17 +20,20 @@ import time
 
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
+from rcsb.utils.io.StashableBase import StashableBase
 
 logger = logging.getLogger(__name__)
 
 
-class CARDTargetOntologyProvider:
+class CARDTargetOntologyProvider(StashableBase):
     """Accessors for CARD ontologies."""
 
     def __init__(self, **kwargs):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
-        self.__dirPath = os.path.join(self.__cachePath, "CARD-ontology")
+        self.__dirName = "CARD-ontology"
+        super(CARDTargetOntologyProvider, self).__init__(self.__cachePath, [self.__dirName])
+        self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
         self.__mU = MarshalUtil(workPath=self.__dirPath)
         self.__oD, self.__tnL, self.__version = self.__reload(self.__dirPath, **kwargs)
@@ -59,6 +62,11 @@ class CARDTargetOntologyProvider:
     def getTreeNodeList(self):
         return self.__tnL
 
+    def reload(self):
+        self.__oD, self.__tnL, self.__version = self.__reload(self.__dirPath, useCache=True)
+        ok = self.testCache()
+        return ok
+
     def __reload(self, dirPath, **kwargs):
         oD = None
         version = None
@@ -83,6 +91,7 @@ class CARDTargetOntologyProvider:
             qD = self.__mU.doImport(ontologyDataPath, fmt="json")
             version = qD["version"]
             oD = qD["data"]
+            tnL = qD["treeNodeList"]
         else:
             logger.info("Fetching url %s path %s", ontologyDumpUrl, ontologyDumpPath)
             ok = fU.get(ontologyDumpUrl, ontologyDumpPath)
@@ -93,7 +102,7 @@ class CARDTargetOntologyProvider:
             oD, tnL, version = self.__parseOntologyData(os.path.join(ontologyDumpDirPath, "aro.obo"))
             #
             tS = datetime.datetime.now().isoformat()
-            qD = {"version": version, "created": tS, "data": oD}
+            qD = {"version": version, "created": tS, "data": oD, "treeNodeList": tnL}
             oD = qD["data"]
             ok = self.__mU.doExport(ontologyDataPath, qD, fmt="json", indent=3)
             logger.info("Export CARD ontology data (%d) status %r", len(oD), ok)

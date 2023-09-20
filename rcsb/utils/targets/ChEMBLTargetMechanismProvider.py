@@ -16,12 +16,18 @@ import logging
 import os.path
 import time
 
-from chembl_webresource_client.new_client import new_client
 from chembl_webresource_client.settings import Settings
+
+# pylint: disable=ungrouped-imports
+try:
+    from chembl_webresource_client.new_client import new_client  # fails when service is down
+except Exception:
+    pass
 
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
+
 
 Settings.Instance().TIMEOUT = 10  # pylint: disable=no-member
 Settings.Instance().MAX_LIMIT = 50  # pylint: disable=no-member
@@ -45,10 +51,8 @@ class ChEMBLTargetMechanismProvider(StashableBase):
         logger.info("ChEMBL API MAX_LIMIT %r", Settings.Instance().MAX_LIMIT)  # pylint: disable=no-member
         self.__aD = self.__reload(self.__dirPath, useCache)
 
-    def testCache(self, minCount=0):
-        if minCount == 0:
-            return True
-        if self.__aD and (len(self.__aD) > minCount):
+    def testCache(self, minCount=1):
+        if self.__aD and (len(self.__aD) >= minCount):
             logger.info("Mechanism data for (%d) targets", len(self.__aD))
             return True
         return False
@@ -58,6 +62,10 @@ class ChEMBLTargetMechanismProvider(StashableBase):
 
     def getTargetMechanismDataPath(self):
         return os.path.join(self.__dirPath, "chembl-target-mechanism-data.json")
+
+    def reload(self):
+        self.__aD = self.__reload(self.__dirPath, useCache=True)
+        return True
 
     def __reload(self, dirPath, useCache):
         startTime = time.time()

@@ -50,7 +50,7 @@ class DrugBankTargetProvider(object):
     def testCache(self):
         try:
             # return len(self.__fastaPathList) >= 4
-            return self.__dbP is not None
+            return self.__dbP.testCache()
         except Exception as e:
             logger.debug("Failing with %s", str(e))
         return False

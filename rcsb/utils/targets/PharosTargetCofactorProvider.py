@@ -116,9 +116,12 @@ class PharosTargetCofactorProvider(StashableBase):
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         # ---
         chaP = PharosTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
-        if not chaP.testCache(1):
-            logger.warning("Skipping build of target cofactor list because Pharos Target Activity data is missing.")
-            return False
+        if not chaP.testCache():
+            okP = chaP.fetchTargetActivityData()
+            chaP.reload()
+            if not chaP.testCache():
+                logger.warning("Skipping build of target cofactor list because Pharos Target Activity data is missing (rebuild status %r).", okP)
+                return False
         #
         provenanceSource = "Pharos"
         refScheme = "PDB entity"

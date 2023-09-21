@@ -83,7 +83,7 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         """Build target cofactor list for the matching entities in the input sequence match file.
 
         Args:
-            sequenceMatchFilePath (str): sequence match output file path
+            sequenceMatchFilePath (str): sequence match output file path (e.g., "./CACHE/sequence-search-results/chembl-vs-pdbprent-filtered-results.json")
             crmpObj (obj, optional): instance of ChemRefMappingProviderObj()
             lnmpObj (obj, optional): instance of LigandNeighborMappingProviderObj(). Defaults to None.
             maxActivity (int, optional): maximum number of prioritized activity records per target
@@ -119,12 +119,12 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         chP = ChEMBLTargetProvider(cachePath=self.__cachePath, useCache=False)
-        if not chP.testCache(1):
+        if not chP.testCache():
             logger.warning("Skipping build of target cofactor list because ChEMBL Target data is missing.")
             return False
         # ---
         chaP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=True)
-        if not chaP.testCache(1):
+        if not chaP.testCache():
             logger.warning("Skipping build of target cofactor list because ChEMBL Target Activity data is missing.")
             return False
         #

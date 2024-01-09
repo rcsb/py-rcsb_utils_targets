@@ -348,7 +348,8 @@ class ChEMBLTargetActivityProvider(StashableBase):
 
         Args:
             targetChEMBLIdList (list): list of ChEMBL target identifiers
-            skip (str, optional): Skip searching identifiers previously tried|matched|none (default: none)
+            skip (str, optional): Skip searching identifiers previously tried|matched|none (default: none).
+                                  To rebuild ChEMBL-target-activity data from scratch (non-incremental), set to None.
             chunkSize(int, optional): ChEMBL API outer batch size for fetches (default: 50)
             numProc (int, optional): number processes to invoke. (default: 4)
             maxActivity (int, optional): number of activity records to return per target. (default: 10)

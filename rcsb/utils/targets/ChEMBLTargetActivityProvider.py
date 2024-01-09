@@ -65,7 +65,7 @@ class ChEMBLTargetActivityWorker(object):
                     act = new_client.activity  # pylint: disable=no-member
                     act.set_format("json")
                     actDL = (
-                        act.filter(target_chembl_id__in=dataList[ii : ii + chunkSize])
+                        act.filter(target_chembl_id__in=dataList[ii: ii + chunkSize])
                         .filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"])
                         .filter(standard_value__isnull=False)
                         .order_by("-standard_value")
@@ -239,14 +239,17 @@ class ChEMBLTargetActivityProvider(StashableBase):
         targetD = self.__aD if self.__aD else {}
         logger.info("Fetching activities for starting target list (%d) skip option %r", len(targetChEMBLIdList), skip)
         idList = []
+        allIdL = []
         if skip == "matched":
             for tId in targetChEMBLIdList:
                 if tId in self.__aD:
+                    allIdL.append(tId)
                     continue
                 idList.append(tId)
         elif skip == "tried":
             for tId in targetChEMBLIdList:
                 if tId in self.__allIdD:
+                    allIdL.append(tId)
                     continue
                 idList.append(tId)
         else:
@@ -261,7 +264,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
                     act = new_client.activity  # pylint: disable=no-member
                     act.set_format("json")
                     actDL = (
-                        act.filter(target_chembl_id__in=idList[ii : ii + chunkSize])
+                        act.filter(target_chembl_id__in=idList[ii: ii + chunkSize])
                         .filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"])
                         .filter(standard_value__isnull=False)
                         .order_by("-standard_value")
@@ -275,10 +278,12 @@ class ChEMBLTargetActivityProvider(StashableBase):
                             actD["action_type"], actD["moa"], actD["max_phase"] = self.getMechanismDetails(actD["molecule_chembl_id"])
                             targetD.setdefault(actD["target_chembl_id"], []).append(actD)
                     #
+                    allIdL.extend(idList)
+                    #
                     logger.info("Completed chunk starting at (%d)", ii)
                     tS = datetime.datetime.now().isoformat()
                     vS = datetime.datetime.now().strftime("%Y-%m-%d")
-                    ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": idList}, fmt="json", indent=3)
+                    ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": allIdL}, fmt="json", indent=3)
                     logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
                 #
                 except Exception as e:
@@ -371,34 +376,38 @@ class ChEMBLTargetActivityProvider(StashableBase):
         ok = False
         targetD = self.__aD if self.__aD else {}
         idList = []
+        allIdL = []
         if skip == "matched":
             for tId in targetChEMBLIdList:
                 if tId in self.__aD:
+                    allIdL.append(tId)
                     continue
                 idList.append(tId)
         elif skip == "tried":
             for tId in targetChEMBLIdList:
                 if tId in self.__allIdD:
+                    allIdL.append(tId)
                     continue
                 idList.append(tId)
         else:
             idList = targetChEMBLIdList
 
         numToProcess = len(idList)
-        allIdL = []
-        logger.info("Filtered target list (%d)", numToProcess)
+        tmpIdL = []
+        logger.info("Filtered target list (%d) (skipping %d)", numToProcess, len(allIdL))
         ok = numToProcess == 0
         try:
             for ii in range(0, len(idList), chunkSize):
                 logger.info("Begin outer chunk at ii %d (total targets %d)", ii, numToProcess)
-                tIdList = idList[ii : ii + chunkSize]
+                tIdList = idList[ii: ii + chunkSize]
                 #
                 tD = self.__getActivityMulti(tIdList, atL, maxActivity=maxActivity, numProc=numProc, chunkSize=5)
                 targetD.update(tD)
                 #
+                tmpIdL.extend(tIdList)
                 allIdL.extend(tIdList)
                 #
-                logger.info("Completed outer chunk (%d) total processed targets (%d/%d)", ii, len(allIdL), numToProcess)
+                logger.info("Completed outer chunk (%d) total processed targets (%d/%d)", ii, len(tmpIdL), numToProcess)
                 tS = datetime.datetime.now().isoformat()
                 vS = datetime.datetime.now().strftime("%Y-%m-%d")
                 ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": allIdL}, fmt="json", indent=3)

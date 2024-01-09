@@ -68,3 +68,5 @@
                        Make CARDTargetOntologyProvider stashable;
                        Add try/except for chembl_webresource_client.new_client imports in ChEMBL providers in case of service downtime
   21-Sep-2023  - V0.76 Additional updates to testCache and reload methods for target providers
+   9-Jan-2024  - V0.77 Update CARDTargetAnnotationProvider to ensure same annotations are selected between reruns (using a tie breaker);
+                       Bug fix in ChEMBLTargetActivityProvider in updating cache file

@@ -61,6 +61,12 @@ class CARDTargetAnnotationProviderTests(unittest.TestCase):
         self.assertTrue(ok)
         aD = stfP.getAnnotation("5f64_1")
         self.assertGreaterEqual(len(list(aD)), 10)
+        #
+        ok = stfP.hasAnnotation("4GD8_1")
+        self.assertTrue(ok)
+        aD = stfP.getAnnotation("4GD8_1")
+        ok = aD["annotation_id"] == "ARO:3001059"
+        self.assertTrue(ok)
 
 
 def buildCARDAnnotationsTargets():

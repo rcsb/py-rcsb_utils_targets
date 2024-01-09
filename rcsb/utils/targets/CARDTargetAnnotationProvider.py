@@ -196,8 +196,8 @@ class CARDTargetAnnotationProvider(StashableBase):
                 rD["perfect_match"] = "Y"
                 cqD[eId] = rD
             else:
-                # Sort list of matches by highest sequence identity percent and bit score
-                rDLSorted = sorted(rDL, key=lambda k: (-k["seq_id_pct"], -k["bit_score"]))
+                # Sort list of matches by highest sequence identity percent and bit score, as well as annotation_id as a tie breaker
+                rDLSorted = sorted(rDL, key=lambda k: (-k["seq_id_pct"], -k["bit_score"], k["annotation_id"]))
                 rD = rDLSorted[0]
                 # Check for rD that has 100% match, and if so, set this a perfect_match
                 if rD["seq_id_pct"] == 100.0:

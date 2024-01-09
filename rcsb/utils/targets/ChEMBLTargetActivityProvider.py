@@ -239,17 +239,17 @@ class ChEMBLTargetActivityProvider(StashableBase):
         targetD = self.__aD if self.__aD else {}
         logger.info("Fetching activities for starting target list (%d) skip option %r", len(targetChEMBLIdList), skip)
         idList = []
-        allIdL = []
+        allIdS = set()
         if skip == "matched":
             for tId in targetChEMBLIdList:
                 if tId in self.__aD:
-                    allIdL.append(tId)
+                    allIdS.add(tId)
                     continue
                 idList.append(tId)
         elif skip == "tried":
             for tId in targetChEMBLIdList:
                 if tId in self.__allIdD:
-                    allIdL.append(tId)
+                    allIdS.add(tId)
                     continue
                 idList.append(tId)
         else:
@@ -278,12 +278,12 @@ class ChEMBLTargetActivityProvider(StashableBase):
                             actD["action_type"], actD["moa"], actD["max_phase"] = self.getMechanismDetails(actD["molecule_chembl_id"])
                             targetD.setdefault(actD["target_chembl_id"], []).append(actD)
                     #
-                    allIdL.extend(idList)
+                    allIdS.update(set(idList))
                     #
                     logger.info("Completed chunk starting at (%d)", ii)
                     tS = datetime.datetime.now().isoformat()
                     vS = datetime.datetime.now().strftime("%Y-%m-%d")
-                    ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": allIdL}, fmt="json", indent=3)
+                    ok = self.__mU.doExport(self.getTargetActivityDataPath(), {"version": vS, "created": tS, "activity": targetD, "all_ids": list(allIdS)}, fmt="json", indent=3)
                     logger.info("Wrote completed chunk starting at (%d) (%r)", ii, ok)
                 #
                 except Exception as e:

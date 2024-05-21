@@ -208,6 +208,7 @@ class SAbDabTargetProvider(object):
             logger.debug("rD keys %r", list(rDL[0].keys()))
             sD = {}
             for rD in rDL:
+                cD = {}
                 hSeq = rD["Heavy Sequence"] if rD["Heavy Sequence"] != "na" else None
                 if hSeq:
                     cD = {"sequence": hSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "heavy"}

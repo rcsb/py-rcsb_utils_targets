@@ -70,4 +70,4 @@
   21-Sep-2023  - V0.76 Additional updates to testCache and reload methods for target providers
    9-Jan-2024  - V0.77 Update CARDTargetAnnotationProvider to ensure same annotations are selected between reruns (using a tie breaker);
                        Bug fix in ChEMBLTargetActivityProvider in updating cache file
-  21-May-2024  - V0.78 Fix pylinting
+   1-Jul-2024  - V0.78 Update SAbDabTargetProvider; Fix pylinting

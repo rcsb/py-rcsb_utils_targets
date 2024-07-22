@@ -5,6 +5,7 @@
 #  Updated:
 #   9-Feb-2023 aae  Find Highest_Clin_Trial column regardless of month
 #   1-Jul-2024 dwp  Update SAbDab data parsing (following change in source data headers)
+#  22-Jul-2024 dwp  Re-update SAbDab data parsing (following change in source data headers)
 ##
 """
 Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data.
@@ -209,7 +210,8 @@ class SAbDabTargetProvider(object):
             logger.debug("rD keys %r", list(rDL[0].keys()))
             sD = {}
             for rD in rDL:
-                hSeq = rD["HeavySequence"] if rD["HeavySequence"] != "na" else None
+                hsKey = "Heavy Sequence" if "Heavy Sequence" in rD else "HeavySequence"
+                hSeq = rD[hsKey] if rD[hsKey] != "na" else None
                 if not hSeq:
                     continue
                 cD = {"sequence": hSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "heavy"}
@@ -224,7 +226,8 @@ class SAbDabTargetProvider(object):
                 seqId = "|".join(cL)
                 sD[seqId] = cD
             for rD in rDL:
-                lSeq = rD["LightSequence"] if rD["LightSequence"] != "na" else None
+                lsKey = "Light Sequence" if "Light Sequence" in rD else "LightSequence"
+                lSeq = rD[lsKey] if rD[lsKey] != "na" else None
                 if not lSeq:
                     continue
                 cD = {"sequence": lSeq.strip(), "therapeutic": rD["Therapeutic"], "chain": "light"}

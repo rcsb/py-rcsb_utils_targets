@@ -19,6 +19,7 @@ from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
 from rcsb.utils.targets.PharosTargetActivityProvider import PharosTargetActivityProvider
+from rcsb.utils.targets.TargetCofactorDbProvider import TargetCofactorDbProvider
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,9 @@ class PharosTargetCofactorProvider(StashableBase):
             "Completed reload of (%d) cofactors with status (%r) at %s (%.4f seconds)", numCofactors, ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime
         )
         return fD
+
+    def getCofactorDataDict(self):
+        return self.__fD["cofactors"]
 
     def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, lnmpObj=None, maxActivity=5):
         """Build target cofactor list for the matching entities in the input sequence match file.
@@ -299,3 +303,34 @@ class PharosTargetCofactorProvider(StashableBase):
         except Exception:
             pass
         return dD
+
+
+class PharosTargetCofactorAccessor:
+    def __init__(self, cachePath, cfgOb=None, **kwargs):
+        """
+        Accessor class for fetching cofactor data from MongoDB.
+        """
+        self.__cofactorResourceName = "pharos"
+        self.__cfgOb = cfgOb
+        self.__cachePath = cachePath
+        # self.__configName = kwargs.get("configName", "site_info_remote_configuration")
+        # self.__numProc = kwargs.get("numProc", 2)
+        # self.__chunkSize = kwargs.get("chunkSize", 10)
+        #
+        self.__tcDbP = TargetCofactorDbProvider(
+            cachePath=self.__cachePath,
+            cfgOb=self.__cfgOb,
+            cofactorResourceName=self.__cofactorResourceName,
+            **kwargs
+        )
+
+    def testCache(self, minCount=0):
+        docCount = self.__tcDbP.cofactorDbCount()
+        logger.info("Loaded %s cofactor DB count %d", self.__cofactorResourceName, docCount)
+        return docCount >= minCount
+
+    def reload(self):
+        return True
+
+    def getTargets(self, rcsbEntityId, dataFieldName="rcsb_cofactors", **kwargs):
+        return self.__tcDbP.fetchCofactorData(rcsbEntityId, dataFieldName, **kwargs)

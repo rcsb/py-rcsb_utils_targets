@@ -14,9 +14,6 @@ import time
 
 from rcsb.db.mongo.Connection import Connection
 from rcsb.db.mongo.DocumentLoader import DocumentLoader
-# from pymongo import MongoClient
-# from rcsb.db.mongo.MongoDbUtil import MongoDbUtil
-# from rcsb.utils.config.ConfigUtil import ConfigUtil
 
 logger = logging.getLogger(__name__)
 
@@ -36,25 +33,11 @@ class TargetCofactorDbProvider:
         self.__databaseName = kwargs.get("databaseName", "cofactor_exdb")
         self.__collectionName = kwargs.get("collectionName", self.__cofactorResourceName)
         #
-        # self.__configName = kwargs.get("configName", "site_info_remote_configuration")
-        #
-        # self.connection_string = f'mongodb://{username}:{password}@{host}:{port}/'
-        # self.client = MongoClient(self.connection_string)
-        # self.db = self.client['cofactor_exdb']
-        # self.collection = self.db['chembl_cofactor']
-        #
         conn = Connection(cfgOb=self.__cfgOb, resourceName=self.__resourceName)
         conn.openConnection()
         self.__client = conn.getClientConnection()
         self.__db = self.__client[self.__databaseName]
         self.__collection = self.__db[self.__collectionName]
-        # mg = MongoDbUtil(client)
-
-    # def closeConnection(self):
-    #     """
-    #     Closes the connection to the MongoDB server.
-    #     """
-    #     self.__client.closeConnection()
 
     def cofactorDbCount(self):
         """Count the number of documents in the cofactor collection.
@@ -92,10 +75,6 @@ class TargetCofactorDbProvider:
             logger.error("Unsupported cofactor resource %r", cofactorResourceName)
             return False
         #
-        # databaseName = kwargs.get("databaseName", "cofactor_exdb")
-        # collectionName = kwargs.get("collectionName", cofactorResourceName)
-        # numProc = kwargs.get("numProc", 6)
-        # chunkSize = kwargs.get("chunkSize", 10)
         loadType = kwargs.get("loadType", "full")
         maxStepLength = kwargs.get("maxStepLength", 10000)
         documentLimit = kwargs.get("documentLimit", None)

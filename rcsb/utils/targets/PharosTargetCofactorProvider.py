@@ -31,6 +31,7 @@ class PharosTargetCofactorProvider(StashableBase):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
         self.__dirName = "Pharos-cofactors"
+        self.__cofactorResourceName = "pharos"
         super(PharosTargetCofactorProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
@@ -304,6 +305,24 @@ class PharosTargetCofactorProvider(StashableBase):
             pass
         return dD
 
+    def loadCofactorData(self, cfgOb, **kwargs):
+        """Load cofactor data to MongoDB.
+        """
+        ok = False
+        try:
+            tcDbP = TargetCofactorDbProvider(
+                cachePath=self.__cachePath,
+                cfgOb=cfgOb,
+                cofactorResourceName=self.__cofactorResourceName,
+                **kwargs
+            )
+            ok = tcDbP.loadCofactorData(self.__cofactorResourceName, self)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        #
+        logger.info("%r cofactor data DB load status (%r)", self.__cofactorResourceName, ok)
+        return ok
+
 
 class PharosTargetCofactorAccessor:
     def __init__(self, cachePath, cfgOb=None, **kwargs):
@@ -313,9 +332,6 @@ class PharosTargetCofactorAccessor:
         self.__cofactorResourceName = "pharos"
         self.__cfgOb = cfgOb
         self.__cachePath = cachePath
-        # self.__configName = kwargs.get("configName", "site_info_remote_configuration")
-        # self.__numProc = kwargs.get("numProc", 2)
-        # self.__chunkSize = kwargs.get("chunkSize", 10)
         #
         self.__tcDbP = TargetCofactorDbProvider(
             cachePath=self.__cachePath,

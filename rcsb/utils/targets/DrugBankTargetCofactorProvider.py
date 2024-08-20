@@ -32,6 +32,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         self.__useCache = kwargs.get("useCache", True)
         self.__fmt = kwargs.get("fmt", "pickle")
         self.__dirName = "DrugBank-cofactors"
+        self.__cofactorResourceName = "drugbank"
         super(DrugBankTargetCofactorProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
@@ -229,6 +230,24 @@ class DrugBankTargetCofactorProvider(StashableBase):
             pass
         return dD
 
+    def loadCofactorData(self, cfgOb, **kwargs):
+        """Load cofactor data to MongoDB.
+        """
+        ok = False
+        try:
+            tcDbP = TargetCofactorDbProvider(
+                cachePath=self.__cachePath,
+                cfgOb=cfgOb,
+                cofactorResourceName=self.__cofactorResourceName,
+                **kwargs
+            )
+            ok = tcDbP.loadCofactorData(self.__cofactorResourceName, self)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        #
+        logger.info("%r cofactor data DB load status (%r)", self.__cofactorResourceName, ok)
+        return ok
+
 
 class DrugBankTargetCofactorAccessor:
     def __init__(self, cachePath, cfgOb=None, **kwargs):
@@ -238,9 +257,6 @@ class DrugBankTargetCofactorAccessor:
         self.__cofactorResourceName = "drugbank"
         self.__cfgOb = cfgOb
         self.__cachePath = cachePath
-        # self.__configName = kwargs.get("configName", "site_info_remote_configuration")
-        # self.__numProc = kwargs.get("numProc", 2)
-        # self.__chunkSize = kwargs.get("chunkSize", 10)
         #
         self.__tcDbP = TargetCofactorDbProvider(
             cachePath=self.__cachePath,

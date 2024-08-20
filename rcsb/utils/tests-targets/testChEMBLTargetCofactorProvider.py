@@ -24,7 +24,9 @@ import resource
 import time
 import unittest
 
+from rcsb.utils.config.ConfigUtil import ConfigUtil
 from rcsb.utils.targets.ChEMBLTargetCofactorProvider import ChEMBLTargetCofactorProvider
+from rcsb.utils.targets.ChEMBLTargetCofactorProvider import ChEMBLTargetCofactorAccessor
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 TOPDIR = os.path.dirname(os.path.dirname(HERE))
@@ -36,6 +38,11 @@ logger = logging.getLogger()
 class ChEMBLTargetCofactorProviderTests(unittest.TestCase):
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
+        #
+        self.__mockTopPath = os.path.join(TOPDIR, "rcsb", "mock-data")
+        self.__configPath = os.path.join(self.__mockTopPath, "config", "dbload-setup-example.yml")
+        self.__configName = "site_info_configuration"
+        self.__cfgOb = ConfigUtil(configPath=self.__configPath, defaultSectionName=self.__configName, mockTopPath=self.__mockTopPath)
         #
         self.__seqMatchResultsPath = os.path.join(HERE, "test-data", "chembl-vs-pdbprent-filtered-results.json.gz")
         self.__startTime = time.time()
@@ -62,10 +69,28 @@ class ChEMBLTargetCofactorProviderTests(unittest.TestCase):
         aL = stfP.getTargets("5fn7_1")
         self.assertGreaterEqual(len(aL[0]["cofactors"]), 5)
 
+    def testChEMBLTargetsCofactorsDb(self):
+        # First test the loading of data to mongo
+        stfP = ChEMBLTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
+        ok = stfP.testCache()
+        self.assertTrue(ok)
+        ok = stfP.hasTarget("5fn7_1")
+        self.assertTrue(ok)
+        ok = stfP.loadCofactorData(cfgOb=self.__cfgOb)
+        self.assertTrue(ok)
+        #
+        # Now test access of data in mongo
+        stfA = ChEMBLTargetCofactorAccessor(cachePath=self.__cachePath, cfgOb=self.__cfgOb)
+        ok = stfA.testCache()
+        tDL = stfA.getTargets("5fn7_1")
+        ok = len(tDL) > 0
+        self.assertTrue(ok)
+
 
 def buildChEMBLTargetCofactors():
     suiteSelect = unittest.TestSuite()
     suiteSelect.addTest(ChEMBLTargetCofactorProviderTests("testBuildChEMBLTargetsCofactors"))
+    suiteSelect.addTest(ChEMBLTargetCofactorProviderTests("testChEMBLTargetsCofactorsDb"))
     return suiteSelect
 
 

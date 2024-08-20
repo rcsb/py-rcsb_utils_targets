@@ -28,15 +28,15 @@ jobs:
   - template: azure-template-tox-job.yml
     parameters: {tox: 'lint_pylint', python: '3.9', os: 'linux', fixtures: 'mmseqs2'}
   - template: azure-template-tox-job.yml
-    parameters: {tox: 'test_coverage', python: '3.9', os: 'linux', fixtures: 'mmseqs2'}
+    parameters: {tox: 'test_coverage', python: '3.9', os: 'linux', fixtures: 'mmseqs2,mongodb'}
     #
   - template: azure-template-tox-job.yml
-    parameters: {tox: 'py39', python: '3.9', os: 'linux', fixtures: 'mmseqs2'}
+    parameters: {tox: 'py39', python: '3.9', os: 'linux', fixtures: 'mmseqs2,mongodb'}
   # - template: azure-template-tox-job.yml
   #  parameters: {tox: 'py27', python: '2.7', os: 'linux'}
   #
   - template: azure-template-tox-job.yml
-    parameters: {tox: 'py39', python: '3.9', os: 'macos', fixtures: 'mmseqs2'}
+    parameters: {tox: 'py39', python: '3.9', os: 'macos', fixtures: 'mmseqs2,mongodb'}
   # - template: azure-template-tox-job.yml
   #  parameters: {tox: 'py27', python: '2.7', os: 'macos'}
   #

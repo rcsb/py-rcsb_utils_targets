@@ -29,7 +29,7 @@ from rcsb.utils.targets.ChEMBLTargetCofactorProvider import ChEMBLTargetCofactor
 from rcsb.utils.targets.ChEMBLTargetCofactorProvider import ChEMBLTargetCofactorAccessor
 
 HERE = os.path.abspath(os.path.dirname(__file__))
-TOPDIR = os.path.dirname(os.path.dirname(HERE))
+TOPDIR = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()

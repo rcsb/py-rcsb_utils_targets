@@ -41,7 +41,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         #
 
     def testCache(self, minCount=590):
-        logger.info("DrugBank feature count %d", len(self.__fD["cofactors"]) if "cofactors" in self.__fD else 0)
+        logger.info("DrugBank cofactor count %d", len(self.__fD["cofactors"]) if "cofactors" in self.__fD else 0)
         if self.__fD and "cofactors" in self.__fD and len(self.__fD["cofactors"]) > minCount:
             return True
         else:
@@ -71,7 +71,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         ok = False
         cofactorPath = self.__getCofactorDataPath(fmt=fmt)
         #
-        logger.info("useCache %r featurePath %r", useCache, cofactorPath)
+        logger.info("useCache %r cofactorPath %r", useCache, cofactorPath)
         if useCache and self.__mU.exists(cofactorPath):
             fD = self.__mU.doImport(cofactorPath, fmt=fmt)
         else:

@@ -29,7 +29,7 @@ from rcsb.utils.targets.PharosTargetCofactorProvider import PharosTargetCofactor
 from rcsb.utils.targets.TargetCofactorDbProvider import TargetCofactorDbProvider
 
 HERE = os.path.abspath(os.path.dirname(__file__))
-TOPDIR = os.path.dirname(os.path.dirname(HERE))
+TOPDIR = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()

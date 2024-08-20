@@ -124,10 +124,10 @@ jobs:
         - script: |
             brew tap mongodb/brew
             brew update
-            brew install mongodb-community@7.0
+            brew install mongodb-community@5.0
           displayName: "Installing mongodb"
         #
-        - script: brew services start mongodb-community@7.0
+        - script: brew services start mongodb-community@5.0
           displayName: "Start Mongo service"
         #
         - script: brew services list

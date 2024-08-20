@@ -3,7 +3,7 @@
 #  Date:           12-Jun-2021 jdw
 #
 #  Updated:
-#
+#  20-Aug-2024 dwp Add support for loading and accessing data on MongoDB
 ##
 """
 Accessors for DrugBank target cofactors.
@@ -18,6 +18,7 @@ from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
 from rcsb.utils.targets.DrugBankTargetProvider import DrugBankTargetProvider
+from rcsb.utils.targets.TargetCofactorDbProvider import TargetCofactorDbProvider
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         self.__useCache = kwargs.get("useCache", True)
         self.__fmt = kwargs.get("fmt", "pickle")
         self.__dirName = "DrugBank-cofactors"
+        self.__cofactorResourceName = "drugbank"
         super(DrugBankTargetCofactorProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
@@ -39,7 +41,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         #
 
     def testCache(self, minCount=590):
-        logger.info("DrugBank feature count %d", len(self.__fD["cofactors"]) if "cofactors" in self.__fD else 0)
+        logger.info("DrugBank cofactor count %d", len(self.__fD["cofactors"]) if "cofactors" in self.__fD else 0)
         if self.__fD and "cofactors" in self.__fD and len(self.__fD["cofactors"]) > minCount:
             return True
         else:
@@ -69,7 +71,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         ok = False
         cofactorPath = self.__getCofactorDataPath(fmt=fmt)
         #
-        logger.info("useCache %r featurePath %r", useCache, cofactorPath)
+        logger.info("useCache %r cofactorPath %r", useCache, cofactorPath)
         if useCache and self.__mU.exists(cofactorPath):
             fD = self.__mU.doImport(cofactorPath, fmt=fmt)
         else:
@@ -78,6 +80,9 @@ class DrugBankTargetCofactorProvider(StashableBase):
         # ---
         logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         return fD
+
+    def getCofactorDataDict(self):
+        return self.__fD["cofactors"]
 
     def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, lnmpObj=None):
         """Build target cofactor list for the matching entities in the input sequence match file.
@@ -224,3 +229,49 @@ class DrugBankTargetCofactorProvider(StashableBase):
         except Exception:
             pass
         return dD
+
+    def loadCofactorData(self, cfgOb, **kwargs):
+        """Load cofactor data to MongoDB.
+        """
+        ok = False
+        try:
+            tcDbP = TargetCofactorDbProvider(
+                cachePath=self.__cachePath,
+                cfgOb=cfgOb,
+                cofactorResourceName=self.__cofactorResourceName,
+                **kwargs
+            )
+            ok = tcDbP.loadCofactorData(self.__cofactorResourceName, self)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        #
+        logger.info("%r cofactor data DB load status (%r)", self.__cofactorResourceName, ok)
+        return ok
+
+
+class DrugBankTargetCofactorAccessor:
+    def __init__(self, cachePath, cfgOb=None, **kwargs):
+        """
+        Accessor class for fetching cofactor data from MongoDB.
+        """
+        self.__cofactorResourceName = "drugbank"
+        self.__cfgOb = cfgOb
+        self.__cachePath = cachePath
+        #
+        self.__tcDbP = TargetCofactorDbProvider(
+            cachePath=self.__cachePath,
+            cfgOb=self.__cfgOb,
+            cofactorResourceName=self.__cofactorResourceName,
+            **kwargs
+        )
+
+    def testCache(self, minCount=0):
+        docCount = self.__tcDbP.cofactorDbCount()
+        logger.info("Loaded %s cofactor DB count %d", self.__cofactorResourceName, docCount)
+        return docCount >= minCount
+
+    def reload(self):
+        return True
+
+    def getTargets(self, rcsbEntityId, dataFieldName="rcsb_cofactors", **kwargs):
+        return self.__tcDbP.fetchCofactorData(rcsbEntityId, dataFieldName, **kwargs)

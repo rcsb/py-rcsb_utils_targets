@@ -3,7 +3,8 @@
 #  Date:           15-Jun-2021 jdw
 #
 #  Updated:
-#  3-Mar-2023 aae Handle missing activityType in buildCofactorList
+#   3-Mar-2023 aae Handle missing activityType in buildCofactorList
+#  20-Aug-2024 dwp Add support for loading and accessing data on MongoDB
 #
 ##
 """
@@ -19,6 +20,7 @@ from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
 from rcsb.utils.targets.PharosTargetActivityProvider import PharosTargetActivityProvider
+from rcsb.utils.targets.TargetCofactorDbProvider import TargetCofactorDbProvider
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,7 @@ class PharosTargetCofactorProvider(StashableBase):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
         self.__dirName = "Pharos-cofactors"
+        self.__cofactorResourceName = "pharos"
         super(PharosTargetCofactorProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
@@ -80,6 +83,9 @@ class PharosTargetCofactorProvider(StashableBase):
             "Completed reload of (%d) cofactors with status (%r) at %s (%.4f seconds)", numCofactors, ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime
         )
         return fD
+
+    def getCofactorDataDict(self):
+        return self.__fD["cofactors"]
 
     def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, lnmpObj=None, maxActivity=5):
         """Build target cofactor list for the matching entities in the input sequence match file.
@@ -299,3 +305,49 @@ class PharosTargetCofactorProvider(StashableBase):
         except Exception:
             pass
         return dD
+
+    def loadCofactorData(self, cfgOb, **kwargs):
+        """Load cofactor data to MongoDB.
+        """
+        ok = False
+        try:
+            tcDbP = TargetCofactorDbProvider(
+                cachePath=self.__cachePath,
+                cfgOb=cfgOb,
+                cofactorResourceName=self.__cofactorResourceName,
+                **kwargs
+            )
+            ok = tcDbP.loadCofactorData(self.__cofactorResourceName, self)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        #
+        logger.info("%r cofactor data DB load status (%r)", self.__cofactorResourceName, ok)
+        return ok
+
+
+class PharosTargetCofactorAccessor:
+    def __init__(self, cachePath, cfgOb=None, **kwargs):
+        """
+        Accessor class for fetching cofactor data from MongoDB.
+        """
+        self.__cofactorResourceName = "pharos"
+        self.__cfgOb = cfgOb
+        self.__cachePath = cachePath
+        #
+        self.__tcDbP = TargetCofactorDbProvider(
+            cachePath=self.__cachePath,
+            cfgOb=self.__cfgOb,
+            cofactorResourceName=self.__cofactorResourceName,
+            **kwargs
+        )
+
+    def testCache(self, minCount=0):
+        docCount = self.__tcDbP.cofactorDbCount()
+        logger.info("Loaded %s cofactor DB count %d", self.__cofactorResourceName, docCount)
+        return docCount >= minCount
+
+    def reload(self):
+        return True
+
+    def getTargets(self, rcsbEntityId, dataFieldName="rcsb_cofactors", **kwargs):
+        return self.__tcDbP.fetchCofactorData(rcsbEntityId, dataFieldName, **kwargs)

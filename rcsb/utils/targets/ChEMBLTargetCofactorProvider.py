@@ -3,7 +3,7 @@
 #  Date:           15-Jun-2021 jdw
 #
 #  Updated:
-#
+#  20-Aug-2024 dwp Add support for loading and accessing data on MongoDB
 ##
 """
 Accessors for ChEMBL target cofactors.
@@ -20,6 +20,7 @@ from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.io.StashableBase import StashableBase
 from rcsb.utils.targets.ChEMBLTargetActivityProvider import ChEMBLTargetActivityProvider
 from rcsb.utils.targets.ChEMBLTargetProvider import ChEMBLTargetProvider
+from rcsb.utils.targets.TargetCofactorDbProvider import TargetCofactorDbProvider
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         #
         self.__cachePath = kwargs.get("cachePath", ".")
         self.__dirName = "ChEMBL-cofactors"
+        self.__cofactorResourceName = "chembl"
         super(ChEMBLTargetCofactorProvider, self).__init__(self.__cachePath, [self.__dirName])
         self.__dirPath = os.path.join(self.__cachePath, self.__dirName)
         #
@@ -71,13 +73,16 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         logger.info("useCache %r cofactorPath %r", useCache, cofactorPath)
         if useCache and self.__mU.exists(cofactorPath):
             fD = self.__mU.doImport(cofactorPath, fmt="json")
-            ok = True
+            ok = len(fD) > 0
         else:
             fU = FileUtil()
             fU.mkdir(dirPath)
         # ---
         logger.info("Completed reload with status (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
         return fD
+
+    def getCofactorDataDict(self):
+        return self.__fD["cofactors"]
 
     def buildCofactorList(self, sequenceMatchFilePath, crmpObj=None, lnmpObj=None, maxActivity=5):
         """Build target cofactor list for the matching entities in the input sequence match file.
@@ -242,11 +247,14 @@ class ChEMBLTargetCofactorProvider(StashableBase):
             eId = rD["entry_id"] + "_" + rD["entity_id"]
             qD.setdefault(eId, []).append(rD)
         #
-        fp = self.__getCofactorDataPath()
         tS = datetime.datetime.now().isoformat()
         # vS = datetime.datetime.now().strftime("%Y-%m-%d")
         vS = assignVersion
+        #
+        # Write out cofactor data set
+        fp = self.__getCofactorDataPath()
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "cofactors": qD}, fmt="json", indent=3)
+        #
         return ok
 
     def __addLocalIds(self, cfD, crmpObj=None):
@@ -296,3 +304,49 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         except Exception:
             pass
         return dD
+
+    def loadCofactorData(self, cfgOb, **kwargs):
+        """Load cofactor data to MongoDB.
+        """
+        ok = False
+        try:
+            tcDbP = TargetCofactorDbProvider(
+                cachePath=self.__cachePath,
+                cfgOb=cfgOb,
+                cofactorResourceName=self.__cofactorResourceName,
+                **kwargs
+            )
+            ok = tcDbP.loadCofactorData(self.__cofactorResourceName, self)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+        #
+        logger.info("%r cofactor data DB load status (%r)", self.__cofactorResourceName, ok)
+        return ok
+
+
+class ChEMBLTargetCofactorAccessor:
+    def __init__(self, cachePath, cfgOb=None, **kwargs):
+        """
+        Accessor class for fetching cofactor data from MongoDB.
+        """
+        self.__cofactorResourceName = "chembl"
+        self.__cfgOb = cfgOb
+        self.__cachePath = cachePath
+        #
+        self.__tcDbP = TargetCofactorDbProvider(
+            cachePath=self.__cachePath,
+            cfgOb=self.__cfgOb,
+            cofactorResourceName=self.__cofactorResourceName,
+            **kwargs
+        )
+
+    def testCache(self, minCount=0):
+        docCount = self.__tcDbP.cofactorDbCount()
+        logger.info("Loaded %s cofactor DB count %d", self.__cofactorResourceName, docCount)
+        return docCount >= minCount
+
+    def reload(self):
+        return True
+
+    def getTargets(self, rcsbEntityId, dataFieldName="rcsb_cofactors", **kwargs):
+        return self.__tcDbP.fetchCofactorData(rcsbEntityId, dataFieldName, **kwargs)

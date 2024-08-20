@@ -3,7 +3,7 @@
 #  Date:           12-Jun-2021 jdw
 #
 #  Updated:
-#
+#  20-Aug-2024 dwp Add support for loading and accessing data on MongoDB
 ##
 """
 Accessors for DrugBank target cofactors.

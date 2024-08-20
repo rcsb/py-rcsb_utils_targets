@@ -63,8 +63,8 @@ jobs:
       - script: which mmseqs
         displayName: 'Check mmseqs2'
       #
-      # - script: brew install mariadb
-      #   displayName: 'Install mariadb'
+      - script: brew install mariadb
+        displayName: 'Install mariadb'
     # ----------------------------------------------
     - ${{ if startsWith(parameters.os, 'linux') }}:
       - script: which apt

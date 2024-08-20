@@ -121,7 +121,10 @@ jobs:
           displayName: "Start Mongo service"
       #
     - ${{ if and(contains(parameters.fixtures, 'mongodb'), startsWith(parameters.os, 'macos')) }}:
-        - script: brew install mongodb-community@7.0
+        - script: |
+            brew tap mongodb/brew
+            brew update
+            brew install mongodb-community@7.0
           displayName: "Installing mongodb"
         #
         - script: brew services start mongodb-community@7.0

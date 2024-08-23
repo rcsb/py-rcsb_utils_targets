@@ -3,6 +3,7 @@
 #  Date:           20-Aug-2024 dwp
 #
 #  Updated:
+#  23-Aug-2024 dwp Use context manager for opening connections to ensure they close properly
 #
 ##
 """
@@ -14,6 +15,7 @@ import time
 
 from rcsb.db.mongo.Connection import Connection
 from rcsb.db.mongo.DocumentLoader import DocumentLoader
+from rcsb.db.mongo.MongoDbUtil import MongoDbUtil
 
 logger = logging.getLogger(__name__)
 
@@ -32,19 +34,15 @@ class TargetCofactorDbProvider:
         #
         self.__databaseName = kwargs.get("databaseName", "cofactor_exdb")
         self.__collectionName = kwargs.get("collectionName", self.__cofactorResourceName)
-        #
-        conn = Connection(cfgOb=self.__cfgOb, resourceName=self.__resourceName)
-        conn.openConnection()
-        self.__client = conn.getClientConnection()
-        self.__db = self.__client[self.__databaseName]
-        self.__collection = self.__db[self.__collectionName]
 
     def cofactorDbCount(self):
         """Count the number of documents in the cofactor collection.
         """
         count = 0
         try:
-            count = self.__collection.count_documents({})
+            with Connection(cfgOb=self.__cfgOb, resourceName=self.__resourceName) as client:
+                mg = MongoDbUtil(client)
+                count = mg.count(self.__databaseName, self.__collectionName)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return count
@@ -55,7 +53,10 @@ class TargetCofactorDbProvider:
         :param rcsb_id: The rcsb_id of the document to fetch.
         :return: The 'rcsb_cofactors' field if present, otherwise None.
         """
-        document = self.__collection.find_one({"rcsb_id": rcsbEntityId.upper()})
+        document = None
+        with Connection(cfgOb=self.__cfgOb, resourceName=self.__resourceName) as client:
+            mg = MongoDbUtil(client)
+            document = mg.fetchOne(self.__databaseName, self.__collectionName, "rcsb_id", rcsbEntityId.upper())
         if document and dataFieldName in document:
             return document[dataFieldName]
         else:

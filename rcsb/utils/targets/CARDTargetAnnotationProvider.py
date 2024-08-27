@@ -3,6 +3,7 @@
 #  Date:           6-Mar-2023 dwp
 #
 #  Updates:
+#  27-Aug-2024 dwp Update testCache and usage of CARDTargetOntologyProvider
 #
 ##
 """
@@ -38,11 +39,11 @@ class CARDTargetAnnotationProvider(StashableBase):
         #
 
     def testCache(self, minCount=590):
-        logger.info("CARD annotation count %d", len(self.__fD["annotations"]) if "annotations" in self.__fD else 0)
+        ok = False
         if self.__fD and "annotations" in self.__fD and len(self.__fD["annotations"]) > minCount:
-            return True
-        else:
-            return False
+            ok = True
+        logger.info("CARD annotation testCache status (%r) count %d", ok, len(self.__fD["annotations"]) if "annotations" in self.__fD else 0)
+        return ok
 
     def hasAnnotation(self, rcsbEntityId):
         return rcsbEntityId.upper() in self.__fD["annotations"]
@@ -72,6 +73,7 @@ class CARDTargetAnnotationProvider(StashableBase):
         logger.info("useCache %r annotationPath %r", useCache, annotationPath)
         if useCache and self.__mU.exists(annotationPath):
             fD = self.__mU.doImport(annotationPath, fmt="json")
+            ok = True
         else:
             fU = FileUtil()
             fU.mkdir(dirPath)
@@ -94,10 +96,13 @@ class CARDTargetAnnotationProvider(StashableBase):
         if not cardP.testCache():
             logger.warning("Skipping build of polymer entity annotation list because CARD Target data is missing.")
             return False
-        ontologyP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=False)
+        ontologyP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=True)
         if not ontologyP.testCache():
-            logger.warning("Skipping build of polymer entity annotation list because CARD Target Ontology data is missing.")
-            return False
+            ok = ontologyP.buildOntologyData()
+            ontologyP.reload()
+            if not (ok and ontologyP.testCache()):
+                logger.warning("Skipping build of polymer entity annotation list because CARD Target Ontology data is missing.")
+                return False
         mD = self.__mU.doImport(sequenceMatchFilePath, fmt="json")
         #
         refScheme = "PDB entity"

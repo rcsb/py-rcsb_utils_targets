@@ -50,6 +50,15 @@ class CARDTargetOntologyProviderTests(unittest.TestCase):
 
     def testFetchCARDTargetOntology(self):
         coP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=False)
+        ok = coP.buildOntologyData()
+        self.assertTrue(ok)
+        ok = coP.reload()
+        self.assertTrue(ok)
+        ok = coP.testCache()
+        self.assertTrue(ok)
+        #
+        coP = None
+        coP = CARDTargetOntologyProvider(cachePath=self.__cachePath, useCache=True)
         ok = coP.testCache()
         self.assertTrue(ok)
         aroIdL = ["ARO:3000096", "ARO:3000015", "ARO:3001110", "ARO:0000041", "ARO:0000039", "ARO:3000454"]

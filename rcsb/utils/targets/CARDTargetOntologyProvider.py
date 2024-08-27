@@ -7,6 +7,8 @@
 #                    Add treeNodeList building and exporting
 #   27-Apr-2023 dwp  Update tree node list generation
 #    2-May-2023 dwp  Remove depth field from lineage tree
+#   27-Aug-2024 dwp  Update reload method to follow behavior of CARDTargetAnnotationProvider,
+#                    such that resource data is loaded from stash during cache building workflow
 ##
 """
 Accessors for CARD ontologies.
@@ -40,10 +42,11 @@ class CARDTargetOntologyProvider(StashableBase):
         #
 
     def testCache(self, minCount=500):
+        ok = False
         if self.__oD and len(self.__oD) > minCount:
-            return True
-        else:
-            return False
+            ok = True
+        logger.info("CARD ontology testCache status (%r) count %d", ok, len(self.__oD))
+        return ok
 
     def getAssignmentVersion(self):
         return self.__version
@@ -67,13 +70,39 @@ class CARDTargetOntologyProvider(StashableBase):
         ok = self.testCache()
         return ok
 
+    def __getOntologyDataPath(self, dirPath):
+        return os.path.join(dirPath, "card-ontology-data.json")
+
     def __reload(self, dirPath, **kwargs):
+        startTime = time.time()
+        oD = {}
+        version = None
+        tnL = []
+        useCache = kwargs.get("useCache", True)
+        ok = False
+        ontologyDataPath = self.__getOntologyDataPath(dirPath)
+        #
+        logger.info("useCache %r ontologyDataPath %r", useCache, ontologyDataPath)
+        if useCache and self.__mU.exists(ontologyDataPath):
+            qD = self.__mU.doImport(ontologyDataPath, fmt="json")
+            version = qD["version"]
+            oD = qD["data"]
+            tnL = qD["treeNodeList"]
+            ok = True
+        else:
+            fU = FileUtil()
+            fU.mkdir(dirPath)
+        # ---
+        logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        return oD, tnL, version
+
+    def buildOntologyData(self, dirPath=None, **kwargs):
         oD = None
         version = None
-        startTime = time.time()
-        useCache = kwargs.get("useCache", True)
-        #
         ok = False
+        dirPath = dirPath if dirPath else self.__dirPath
+        startTime = time.time()
+        #
         fU = FileUtil()
         #
         ontologyDumpUrl = kwargs.get("OntologyDumpUrl", "https://card.mcmaster.ca/latest/ontology")
@@ -82,32 +111,25 @@ class CARDTargetOntologyProvider(StashableBase):
         ontologyDumpDirPath = os.path.join(dirPath, "dump-ontology")
         #
         fU.mkdir(dirPath)
-        ontologyDataPath = os.path.join(dirPath, "card-ontology-data.json")
+        ontologyDataPath = self.__getOntologyDataPath(dirPath)
         #
         # ---
-        # Load Ontology data
-        logger.info("useCache %r ontologyDumpPath %r", useCache, ontologyDumpPath)
-        if useCache and self.__mU.exists(ontologyDataPath):
-            qD = self.__mU.doImport(ontologyDataPath, fmt="json")
-            version = qD["version"]
-            oD = qD["data"]
-            tnL = qD["treeNodeList"]
-        else:
-            logger.info("Fetching url %s path %s", ontologyDumpUrl, ontologyDumpPath)
-            ok = fU.get(ontologyDumpUrl, ontologyDumpPath)
-            fU.mkdir(ontologyDumpDirPath)
-            fU.uncompress(ontologyDumpPath, outputDir=ontologyDumpDirPath)
-            fU.unbundleTarfile(os.path.join(ontologyDumpDirPath, ontologyDumpFileName[:-4]), dirPath=ontologyDumpDirPath)
-            logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
-            oD, tnL, version = self.__parseOntologyData(os.path.join(ontologyDumpDirPath, "aro.obo"))
-            #
-            tS = datetime.datetime.now().isoformat()
-            qD = {"version": version, "created": tS, "data": oD, "treeNodeList": tnL}
-            oD = qD["data"]
-            ok = self.__mU.doExport(ontologyDataPath, qD, fmt="json", indent=3)
-            logger.info("Export CARD ontology data (%d) status %r", len(oD), ok)
+        # Build Ontology data
+        logger.info("Fetching url %s path %s", ontologyDumpUrl, ontologyDumpPath)
+        ok = fU.get(ontologyDumpUrl, ontologyDumpPath)
+        fU.mkdir(ontologyDumpDirPath)
+        fU.uncompress(ontologyDumpPath, outputDir=ontologyDumpDirPath)
+        fU.unbundleTarfile(os.path.join(ontologyDumpDirPath, ontologyDumpFileName[:-4]), dirPath=ontologyDumpDirPath)
+        logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        oD, tnL, version = self.__parseOntologyData(os.path.join(ontologyDumpDirPath, "aro.obo"))
+        #
+        tS = datetime.datetime.now().isoformat()
+        qD = {"version": version, "created": tS, "data": oD, "treeNodeList": tnL}
+        oD = qD["data"]
+        ok = self.__mU.doExport(ontologyDataPath, qD, fmt="json", indent=3)
+        logger.info("Export CARD ontology data (%d) status %r", len(oD), ok)
 
-        return oD, tnL, version
+        return ok
 
     def __parseOntologyData(self, filePath):
         """Parse CARD ontology data

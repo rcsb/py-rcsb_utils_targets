@@ -1,5 +1,5 @@
 rcsb.db >= 1.721
-rcsb.utils.io >= 1.46
+rcsb.utils.io >= 1.48
 rcsb.utils.chemref >= 0.93
 rcsb.utils.config >= 0.40
 rcsb.utils.seq >= 0.82

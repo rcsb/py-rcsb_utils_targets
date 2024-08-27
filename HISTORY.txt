@@ -75,3 +75,4 @@
   20-Aug-2024  - V0.80 Add support for loading and accessing target cofactor data on MongoDB;
                        Add mock-data submodule
   23-Aug-2024  - V0.81 Add context manager for forming mongo connections in TargetCofactorDbProvider
+  26-Aug-2024  - V0.82 Revert back to persistent client connections

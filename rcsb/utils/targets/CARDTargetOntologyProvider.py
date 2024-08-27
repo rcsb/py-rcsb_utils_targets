@@ -75,9 +75,9 @@ class CARDTargetOntologyProvider(StashableBase):
 
     def __reload(self, dirPath, **kwargs):
         startTime = time.time()
-        oD = None
+        oD = {}
         version = None
-        tnL = None
+        tnL = []
         useCache = kwargs.get("useCache", True)
         ok = False
         ontologyDataPath = self.__getOntologyDataPath(dirPath)

@@ -1,5 +1,5 @@
 ##
-# File:    ChEMBLTargetCofactorProviderTests.py
+# File:    testChEMBLTargetCofactorProvider.py
 # Author:  J. Westbrook
 # Date:    15-Jun-2021
 # Version: 0.001

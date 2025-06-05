@@ -78,3 +78,4 @@
   26-Aug-2024  - V0.82 Revert back to persistent client connections;
                        Update CARDTargetOntologyProvider resource loading behavior
    9-Dec-2024  - V0.83 Update Azure pipelines to use latest macOS, Ubuntu, and python 3.10
+   5-Jun-2025  - V0.84 Update CARDTargetProvider and CARDTargetAnnotationProvider to handle/skip cases missing "AMR Gene Family" term

@@ -5,6 +5,8 @@
 #  Updates:
 #   14-Mar-2023 dwp  Add filterForHomologs() method to filter CARD data for only protein homolog models;
 #                    Remove unused getTargetDataPath() and getCofactorDataPath() methods
+#    5-Jun-2025 dwp  Add data validation step for assembling CARD model category information (in case no "AMR Gene Family" term exists);
+#                    Add getModel method (useful for testing/debugging)
 ##
 """
 Accessors for CARD target assignments.
@@ -42,6 +44,12 @@ class CARDTargetProvider:
 
     def hasModel(self, modelId):
         return modelId in self.__oD
+
+    def getModel(self, modelId):
+        try:
+            return self.__oD[modelId]
+        except Exception:
+            return None
 
     def getModelValue(self, modelId, key):
         try:
@@ -195,6 +203,13 @@ class CARDTargetProvider:
                                 acD.setdefault("drugClasses", []).append(catD["category_aro_name"])
                             if catD["category_aro_class_name"] == "Resistance Mechanism":
                                 acD["resistanceMechanism"] = catD["category_aro_name"]
+                    if "familyAccession" not in acD:
+                        logger.warning("CARD model missing category for AMR Gene Family (in source data) - skipping details for modelId %r", modelId)
+                        acD = {}
+                if not acD:
+                    logger.warning("Removing details from oD for modelId %r", modelId)
+                    _ = oD.pop(modelId)
+                    continue
                 oD[modelId].update(acD)
                 #
                 try:

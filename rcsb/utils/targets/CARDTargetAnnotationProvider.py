@@ -4,6 +4,7 @@
 #
 #  Updates:
 #  27-Aug-2024 dwp Update testCache and usage of CARDTargetOntologyProvider
+#   5-Jun-2025 dwp Update buildAnnotationList to use try/except in case of error
 #
 ##
 """
@@ -115,51 +116,54 @@ class CARDTargetAnnotationProvider(StashableBase):
                 continue
 
             for matchD in matchDL:
-                #
-                tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
-                seqIdPct = matchD["sequenceIdentity"]
-                bitScore = matchD["bitScore"]
-                nm = cardP.getModelValue(modelId, "modelName")
-                descr = cardP.getModelValue(modelId, "descr")
-                cvTermId = cardP.getModelValue(modelId, "cvTermId")
-                annotationId = "ARO:" + cardP.getModelValue(modelId, "accession")
-                annotationLineage = ontologyP.getLineage(annotationId)
-                familyCvTermId = cardP.getModelValue(modelId, "familyCvTermId")
-                familyName = cardP.getModelValue(modelId, "familyName")
-                familyAnnotationId = "ARO:" + cardP.getModelValue(modelId, "familyAccession")
-                familyDescription = cardP.getModelValue(modelId, "familyDescription")
-                drugClasses = cardP.getModelValue(modelId, "drugClasses")
-                resistanceMechanism = cardP.getModelValue(modelId, "resistanceMechanism")
-                familyAnnotationLineage = ontologyP.getLineage(familyAnnotationId)
-                rD = {
-                    "entry_id": entryId,
-                    "entity_id": entityId,
-                    # "type": "CARD",  # Assigned in DictMethodEntityHelper
-                    # "provenance_source": "matching CARD Protein Homolog Models (PHM)",  # Assigned in DictMethodEntityHelper
-                    "name": nm,
-                    "annotation_id": annotationId,
-                    "card_aro_cvterm_id": cvTermId,
-                    "description": descr,
-                    "seq_id_pct": seqIdPct,
-                    "bit_score": bitScore,
-                    "reference_scheme": refScheme,
-                    "assignment_version": assignVersion,
-                    "annotation_lineage": annotationLineage,
-                    "query_tax_name": matchD["queryTaxName"] if "queryTaxName" in matchD else None,
-                    "target_tax_name": matchD["targetTaxName"] if "targetTaxName" in matchD else None,
-                    "match_status": matchD["taxonomyMatchStatus"] if "taxonomyMatchStatus" in matchD else None,
-                    "lca_tax_name": matchD["lcaTaxName"] if "lcaTaxName" in matchD else None,
-                    "family_annotation_id": familyAnnotationId,
-                    "family_card_aro_cvterm_id": familyCvTermId,
-                    "family_name": familyName,
-                    "family_description": familyDescription,
-                    "card_aro_drug_class": drugClasses,
-                    "card_aro_resistance_mechanism": resistanceMechanism,
-                    "family_annotation_lineage": familyAnnotationLineage,
-                }
-                rDL.append(rD)
+                try:
+                    #
+                    tCmtD = self.__decodeComment(matchD["target"])
+                    entryId = tCmtD["entityId"].split("_")[0]
+                    entityId = tCmtD["entityId"].split("_")[1]
+                    seqIdPct = matchD["sequenceIdentity"]
+                    bitScore = matchD["bitScore"]
+                    nm = cardP.getModelValue(modelId, "modelName")
+                    descr = cardP.getModelValue(modelId, "descr")
+                    cvTermId = cardP.getModelValue(modelId, "cvTermId")
+                    annotationId = "ARO:" + cardP.getModelValue(modelId, "accession")
+                    annotationLineage = ontologyP.getLineage(annotationId)
+                    familyCvTermId = cardP.getModelValue(modelId, "familyCvTermId")
+                    familyName = cardP.getModelValue(modelId, "familyName")
+                    familyAnnotationId = "ARO:" + cardP.getModelValue(modelId, "familyAccession")
+                    familyDescription = cardP.getModelValue(modelId, "familyDescription")
+                    drugClasses = cardP.getModelValue(modelId, "drugClasses")
+                    resistanceMechanism = cardP.getModelValue(modelId, "resistanceMechanism")
+                    familyAnnotationLineage = ontologyP.getLineage(familyAnnotationId)
+                    rD = {
+                        "entry_id": entryId,
+                        "entity_id": entityId,
+                        # "type": "CARD",  # Assigned in DictMethodEntityHelper
+                        # "provenance_source": "matching CARD Protein Homolog Models (PHM)",  # Assigned in DictMethodEntityHelper
+                        "name": nm,
+                        "annotation_id": annotationId,
+                        "card_aro_cvterm_id": cvTermId,
+                        "description": descr,
+                        "seq_id_pct": seqIdPct,
+                        "bit_score": bitScore,
+                        "reference_scheme": refScheme,
+                        "assignment_version": assignVersion,
+                        "annotation_lineage": annotationLineage,
+                        "query_tax_name": matchD["queryTaxName"] if "queryTaxName" in matchD else None,
+                        "target_tax_name": matchD["targetTaxName"] if "targetTaxName" in matchD else None,
+                        "match_status": matchD["taxonomyMatchStatus"] if "taxonomyMatchStatus" in matchD else None,
+                        "lca_tax_name": matchD["lcaTaxName"] if "lcaTaxName" in matchD else None,
+                        "family_annotation_id": familyAnnotationId,
+                        "family_card_aro_cvterm_id": familyCvTermId,
+                        "family_name": familyName,
+                        "family_description": familyDescription,
+                        "card_aro_drug_class": drugClasses,
+                        "card_aro_resistance_mechanism": resistanceMechanism,
+                        "family_annotation_lineage": familyAnnotationLineage,
+                    }
+                    rDL.append(rD)
+                except Exception as e:
+                    logger.warning("Unable to process match data for modelId %r with exception %r", modelId, e)
         #
         qD = {}
         dD = {}

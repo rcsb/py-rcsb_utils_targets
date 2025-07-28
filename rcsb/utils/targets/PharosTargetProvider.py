@@ -6,6 +6,7 @@
 #   27-Feb-2023 dwp Update mysql loading command
 #   23-Mar-2023 aae Download sql file to separate dir
 #    5-May-2023 aae Check cache files exist in testCache()
+#   28-Jul-2025 dwp Update link to Pharos downlaod data from juniper.health.unm.edu to habanero.*
 ##
 """
 Accessors for Pharos target assignments.
@@ -74,8 +75,8 @@ class PharosTargetProvider(StashableBase):
 
     def __reload(self, targetsPath, sqlPath, reloadDb=False, fromDb=False, useCache=False, pharosDumpUrl=None, mysqlUser=None, mysqlPassword=None):
         startTime = time.time()
-        pharosDumpUrl = pharosDumpUrl if pharosDumpUrl else "http://juniper.health.unm.edu/tcrd/download/latest.sql.gz"
-        pharosReadmeUrl = "http://juniper.health.unm.edu/tcrd/download/latest.README"
+        pharosDumpUrl = pharosDumpUrl if pharosDumpUrl else "http://habanero.health.unm.edu/tcrd/download/latest.sql.gz"
+        pharosReadmeUrl = "http://habanero.health.unm.edu/tcrd/download/latest.README"
         ok = False
         fU = FileUtil()
         pharosDumpFileName = fU.getFileName(pharosDumpUrl)

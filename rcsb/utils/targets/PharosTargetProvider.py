@@ -6,7 +6,7 @@
 #   27-Feb-2023 dwp Update mysql loading command
 #   23-Mar-2023 aae Download sql file to separate dir
 #    5-May-2023 aae Check cache files exist in testCache()
-#   28-Jul-2025 dwp Update link to Pharos downlaod data from juniper.health.unm.edu to habanero.*
+#   28-Jul-2025 dwp Update link to Pharos download data from juniper.health.unm.edu to habanero.*
 ##
 """
 Accessors for Pharos target assignments.

@@ -20,6 +20,7 @@ __license__ = "Apache 2.0"
 import logging
 import os
 import unittest
+import requests
 
 from rcsb.utils.config.ConfigUtil import ConfigUtil
 from rcsb.utils.targets.PharosTargetProvider import PharosTargetProvider
@@ -150,6 +151,17 @@ class PharosTargetProviderTests(unittest.TestCase):
             logger.exception("Failing with %s", str(e))
             self.fail()
 
+    def testPharosDataSite(self):
+        try:
+            url = "http://habanero.health.unm.edu/tcrd/download/latest.README"
+            res = requests.get(url, timeout=30)
+            logger.info("Fetch url %r (response %r)", url, res.status_code)
+            self.assertEqual(res.status_code, 200)
+            self.assertGreater(len(res.text), 500)
+        except Exception as e:
+            logger.exception("Failing with %s", str(e))
+            self.fail()
+
 
 def pharosTargetSuite():
     suiteSelect = unittest.TestSuite()
@@ -157,6 +169,7 @@ def pharosTargetSuite():
     suiteSelect.addTest(PharosTargetProviderTests("testFetchAndLoadPharosTargets"))
     suiteSelect.addTest(PharosTargetProviderTests("testExportPharosTargetFasta"))
     suiteSelect.addTest(PharosTargetProviderTests("testExportPharosTargetFastaTax"))
+    suiteSelect.addTest(PharosTargetProviderTests("testPharosDataSite"))
     return suiteSelect
 
 

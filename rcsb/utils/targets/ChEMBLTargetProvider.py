@@ -94,6 +94,8 @@ class ChEMBLTargetProvider:
             url = os.path.join(chemblDbUrl, mappingFileName)
             ok = fU.get(url, chemblMappingPath)
             logger.info("Fetched %r url %s path %s", ok, url, chemblMappingPath)
+            if not ok:
+                raise ValueError("Fetching failed for ChEMBL target data")
             logger.info("Reading ChEMBL mapping file path %s", mappingFilePath)
             rowL = mU.doImport(chemblMappingPath, fmt="tdd", rowFormat="list")
             for row in rowL:

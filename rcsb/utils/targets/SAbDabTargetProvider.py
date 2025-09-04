@@ -115,6 +115,8 @@ class SAbDabTargetProvider(object):
         else:
             logger.info("Fetching url %s path %s", targetUrl, dumpPath)
             ok = fU.get(targetUrl, dumpPath)
+            if not ok:
+                raise ValueError("Fetching failed for SAbDab target data")
             #
             rDL = self.__mU.doImport(dumpPath, fmt="csv", rowFormat="dict")
             logger.debug("rD keys %r", list(rDL[0].keys()))

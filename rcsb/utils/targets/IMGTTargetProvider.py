@@ -83,7 +83,7 @@ class IMGTTargetProvider(StashableBase):
             okFetch = ok1 and ok2
             logger.info("Completed fetch (%r) at %s (%.4f seconds)", okFetch, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
             if not okFetch:
-                raise ValueError("Fetching failed for IMGT Target data")
+                raise ValueError("Fetching failed for IMGT target data")
             fU.unbundleTarfile(imgtDumpPath, dirPath=dirPath)
             # ---
             readmeLines = self.__mU.doImport(imgtReleasePath, fmt="list")

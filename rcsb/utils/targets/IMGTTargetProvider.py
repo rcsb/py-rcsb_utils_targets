@@ -2,9 +2,10 @@
 #  File:           IMGTTargetProvider.py
 #  Date:           5-Jul-2021 jdw
 #
-#  Updated:
+#  Updates:
 #   14-Mar-2023 dwp  Add timeout to IMGT data file fetch
 #    3-Jul-2023 aae  imgt.org no longer supports http
+#    3-Sep-2025 dwp  raise errors when fetching fails to prevent generation of empty data file
 #
 ##
 """
@@ -79,8 +80,11 @@ class IMGTTargetProvider(StashableBase):
             logger.info("Fetching url %s path %s", imgtDumpUrl, imgtDumpPath)
             ok1 = fU.get(imgtDumpUrl, imgtDumpPath)
             ok2 = fU.get(imgtReadmeUrl, imgtReleasePath)
+            okFetch = ok1 and ok2
+            logger.info("Completed fetch (%r) at %s (%.4f seconds)", okFetch, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+            if not okFetch:
+                raise ValueError("Fetching failed for IMGT target data")
             fU.unbundleTarfile(imgtDumpPath, dirPath=dirPath)
-            logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok1 and ok2, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
             # ---
             readmeLines = self.__mU.doImport(imgtReleasePath, fmt="list")
             self.__version = readmeLines[0].strip() if readmeLines else None
@@ -90,6 +94,9 @@ class IMGTTargetProvider(StashableBase):
             # ---
             tS = datetime.datetime.now().isoformat()
             # vS = datetime.datetime.now().strftime("%Y-%m-%d")
+            if len(chainD) < 2:
+                raise ValueError("Missing bulk IMGT target data (chainD length %r). Likely due to a download failure." % len(chainD))
+            #
             if testList:
                 imgtD = {"version": self.__version, "date": tS, "chains": chainD, "raw": rawD}
             else:
@@ -358,7 +365,7 @@ class IMGTTargetProvider(StashableBase):
         ret = None
         for line in lineList:
             if line.startswith(label):
-                ret = line[len(label) :]
+                ret = line[len(label):]
                 break
         return ret
 
@@ -378,17 +385,17 @@ class IMGTTargetProvider(StashableBase):
             if line[1:].startswith(startLabel1):
                 numD += 1
                 domain = line.split(" ")[0].strip()
-                description = line[len(startLabel1) + 1 :].strip()
+                description = line[len(startLabel1) + 1:].strip()
                 continue
             if line[1:].startswith(startLabel2):
                 numD += 1
                 domain = line.split(" ")[0].strip()
-                description = line[len(startLabel2) + 1 :].strip()
+                description = line[len(startLabel2) + 1:].strip()
                 continue
             if line[2:].startswith(startLabel3):
                 numD += 1
                 domain = line.split(" ")[0].strip()
-                description = line[len(startLabel3) + 1 :].strip()
+                description = line[len(startLabel3) + 1:].strip()
                 continue
             if domain and line.startswith(domain):
                 tD.setdefault((domain, description, numD), []).append(line)
@@ -397,11 +404,11 @@ class IMGTTargetProvider(StashableBase):
         for (domain, description, numD), cL in tD.items():
             for line in cL:
                 if line[1:].startswith(geneLabel1):
-                    qD.setdefault((domain + "|" + description + "|" + str(numD)), []).append(line[len(geneLabel1) + 1 :])
+                    qD.setdefault((domain + "|" + description + "|" + str(numD)), []).append(line[len(geneLabel1) + 1:])
                 if line[1:].startswith(geneLabel2):
-                    qD.setdefault((domain + "|" + description + "|" + str(numD)), []).append(line[len(geneLabel2) + 1 :])
+                    qD.setdefault((domain + "|" + description + "|" + str(numD)), []).append(line[len(geneLabel2) + 1:])
                 if line[2:].startswith(geneLabel3):
-                    qD.setdefault((domain + "|" + description + "|" + str(numD)), []).append(line[len(geneLabel3) + 1 :])
+                    qD.setdefault((domain + "|" + description + "|" + str(numD)), []).append(line[len(geneLabel3) + 1:])
         #
         # "Homo sapiens IGHG4*01 (96.4%), Homo sapiens IGHG4*03 (96.4%), Homo sapiens IGHG4*04 (96.4%)",
         for ky, cL in qD.items():
@@ -466,7 +473,7 @@ class IMGTTargetProvider(StashableBase):
             imgtRangeL = []
             try:
                 for k, v in indD.items():
-                    tS = mLine[k + 1 : v]
+                    tS = mLine[k + 1: v]
                     tL = tS.split("-")
                     iBeg = tL[0]
                     iEnd = tL[1]

@@ -91,10 +91,12 @@ class CARDTargetProvider:
         else:
             logger.info("Fetching url %s path %s", cardDumpUrl, cardDumpPath)
             ok = fU.get(cardDumpUrl, cardDumpPath)
+            logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+            if not ok:
+                raise ValueError("Fetching failed for CARD target data")
             fU.mkdir(cardDumpDirPath)
             fU.uncompress(cardDumpPath, outputDir=cardDumpDirPath)
             fU.unbundleTarfile(os.path.join(cardDumpDirPath, cardDumpFileName[:-4]), dirPath=cardDumpDirPath)
-            logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
             oD, version = self.__parseCardData(os.path.join(cardDumpDirPath, "card.json"))
             #
             # Filter for only protein homolog models (this can be removed if/when we decide to include all types of models)

@@ -81,4 +81,5 @@
    5-Jun-2025  - V0.84 Update CARDTargetProvider and CARDTargetAnnotationProvider to handle/skip cases missing "AMR Gene Family" term
   28-Jul-2025  - V0.85 Update URL to Pharos download data
    3-Sep-2025  - V0.86 Update IMGTTargetProvider and other TargetProviders to fail upon download failure
+   4-Sep-2025  - V0.87 Bump version to force new build (previous version built prematurely)
    

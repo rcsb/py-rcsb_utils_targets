@@ -5,6 +5,7 @@
 #  Updated:
 #   9-Feb-2023 aae  Update ChEMBL baseVersion to 31
 #  18-Jul-2023 dwp  Update ChEMBL baseVersion to 33
+#   3-Sep-2025 dwp  Update ChEMBL baseVersion to 35
 ##
 """
 Accessors for ChEMBL target assignments.
@@ -36,7 +37,7 @@ class ChEMBLTargetProvider:
         #
         self.__cachePath = cachePath
         self.__dirPath = os.path.join(self.__cachePath, "ChEMBL-targets")
-        baseVersion = 34
+        baseVersion = 35
         self.__version = baseVersion
         self.__mapD = self.__reload(self.__dirPath, baseVersion, useCache, **kwargs)
         #
@@ -137,7 +138,7 @@ class ChEMBLTargetProvider:
             #
             for seqId, sD in fD.items():
                 chemblId = seqId.strip().split(" ")[0].strip()
-                unpId = seqId[seqId.find("[") + 1 : seqId.find("]")]
+                unpId = seqId[seqId.find("[") + 1: seqId.find("]")]
                 seq = sD["sequence"]
                 cD = {"sequence": seq, "uniprotId": unpId, "chemblId": chemblId}
                 if addTaxonomy:
@@ -189,7 +190,7 @@ class ChEMBLTargetProvider:
                 act = new_client.activity  # pylint: disable=no-member
                 act.set_format("json")
                 actDL = (
-                    act.filter(target_chembl_id__in=targetChEMBLIdList[ii : ii + chunkSize]).filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"]).filter(standard_value__isnull=False)
+                    act.filter(target_chembl_id__in=targetChEMBLIdList[ii: ii + chunkSize]).filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"]).filter(standard_value__isnull=False)
                 )
                 if actDL:
                     for actD in actDL:
@@ -233,7 +234,7 @@ class ChEMBLTargetProvider:
             for ii in range(0, len(targetChEMBLIdList), chunkSize):
                 mch = new_client.mechanism  # pylint: disable=no-member
                 mch.set_format("json")
-                mDL = mch.filter(target_chembl_id__in=targetChEMBLIdList[ii : ii + chunkSize])
+                mDL = mch.filter(target_chembl_id__in=targetChEMBLIdList[ii: ii + chunkSize])
                 if mDL:
                     logger.info("mDL (%d)", len(mDL))
                     for mD in mDL:

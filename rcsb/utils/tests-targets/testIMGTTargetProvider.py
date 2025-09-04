@@ -48,6 +48,7 @@ class IMGTTargetProviderTests(unittest.TestCase):
         endTime = time.time()
         logger.info("Completed %s at %s (%.4f seconds)", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - self.__startTime)
 
+    @unittest.skipIf(True, "Avoid re-downloading large file - requires that testIMGTTargetFeatureProvider.py is run BEFORE this!")
     def testAPrepTargetData(self):
         imgtP = IMGTTargetProvider(self.__cachePath, useCache=False)
         ok = imgtP.testCache()

@@ -153,7 +153,7 @@ class IMGTTargetFeatureProvider(StashableBase):
         rDL = []
         imgtP = IMGTTargetProvider(cachePath=self.__cachePath, useCache=useCache)
         if not imgtP.testCache():
-            logger.warning("Skipping build of polymer instance feature list because IMGT Target data is missing.")
+            logger.error("Skipping build of polymer instance feature list because IMGT Target data is missing.")
             return False
         #
         provenanceSource = "IMGT"

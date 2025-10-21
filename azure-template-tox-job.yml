@@ -15,169 +15,163 @@ parameters:
   fixtures: ""
 
 jobs:
-- job: ${{ format('build_test_{0}_{1}', parameters.tox, parameters.os) }}
-  timeoutInMinutes: 0
-  pool:
-    ${{ if eq(parameters.os, 'macos') }}:
-      vmImage: 'macOS-15'
-    ${{ if eq(parameters.os, 'linux') }}:
-      vmImage: 'ubuntu-latest'
+  - job: ${{ format('build_test_{0}_{1}', parameters.tox, parameters.os) }}
+    pool:
+      ${{ if eq(parameters.os, 'macos') }}:
+        vmImage: "macOS-15"
+      ${{ if eq(parameters.os, 'linux') }}:
+        vmImage: "ubuntu-latest"
 
-  variables:
-    - group: py-shared-variables
+    variables:
+      - group: py-shared-variables
 
-  steps:
-    #
-    # ensure the required Python versions are available
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: ${{ parameters.python }}
-        addToPath: true
-      displayName: setup python
-    #
-    - checkout: self
-      submodules: true
-    #
-    - ${{ if startsWith(parameters.os, 'macos') }}:
-      - bash: |
-          set -e
-          ls -la /Applications/Xcode*
-          sudo xcode-select --switch /Applications/Xcode_16.app/Contents/Developer
-          which g++
-          c++ --version
-        displayName: "setup Xcode"
+    steps:
       #
-      - script: which brew
-        displayName: 'Check package manager'
-      - script: brew install flex
-        displayName: 'Install flex'
-      - script: which flex
-        displayName: 'Check flex'
-      - script: brew install bison
-        displayName: 'Install bison'
-      - script: which bison
-        displayName: 'Check bison'
+      # ensure the required Python versions are available
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: ${{ parameters.python }}
+          addToPath: true
+        displayName: setup python
       #
-      - script: brew install mmseqs2
-        displayName: 'Install mmseqs2'
-      - script: which mmseqs
-        displayName: 'Check mmseqs2'
+      - checkout: self
+        submodules: true
+        fetchDepth: 1
       #
-      - script: brew install mariadb
-        displayName: 'Install mariadb'
-    # ----------------------------------------------
-    - ${{ if startsWith(parameters.os, 'linux') }}:
-      - script: which apt
-        displayName: 'Installing OS dependencies'
-      - script: apt-cache policy | grep http | awk '{print $2 $3}' | sort -u
-        displayName: 'Checking for repos'
-      #
-      - script: sudo apt-get install flex
-        displayName: 'Install flex'
-      - script: sudo apt-get install bison
-        displayName: 'Install bison'
-  #
-    - ${{ if and(contains(parameters.fixtures, 'mmseqs2'), startsWith(parameters.os, 'linux')) }}:
-      - bash: |
-          [ $(uname -m) = "x86_64" ] && echo "64bit: Yes" || echo "64bit: No"
-          grep -q sse4_1 /proc/cpuinfo && echo "SSE4.1: Yes" || echo "SSE4.1: No"
-          grep -q avx2 /proc/cpuinfo && echo "AVX2: Yes" || echo "AVX2: No"
-        displayName: 'Check architecture'
-      - bash: |
-          echo "Downloading latest MMseqs2 static build"
-          attempt=1
-          while [[ $attempt -le 5 ]]; do
-              wget https://mmseqs.com/latest/mmseqs-linux-avx2.tar.gz
-              if [[ $? -eq 0 ]]; then
-                  echo "Download successful."
-                  break
-              else
-                  echo "Download failed. Retrying in 5 seconds..."
-                  sleep 5
-                  attempt=$((attempt + 1))
-              fi
-          done
-          tar xvzf mmseqs-linux-avx2.tar.gz
-          sudo cp mmseqs/bin/mmseqs /usr/local/bin/mmseqs
-        displayName: 'Install mmseqs2 binary'
+      - ${{ if startsWith(parameters.os, 'macos') }}:
+          - bash: |
+              set -e
+              ls -la /Applications/Xcode*
+              sudo xcode-select --switch /Applications/Xcode_16.app/Contents/Developer
+              which g++
+              c++ --version
+            displayName: "setup Xcode"
+          #
+          - script: which brew
+            displayName: "Check package manager"
+          - script: brew install flex
+            displayName: "Install flex"
+          - script: which flex
+            displayName: "Check flex"
+          - script: brew install bison
+            displayName: "Install bison"
+          - script: which bison
+            displayName: "Check bison"
+          #
+          - script: brew install mmseqs2
+            displayName: 'Install mmseqs2'
+          - script: which mmseqs
+            displayName: 'Check mmseqs2'
+          #
+          - script: brew install mariadb
+            displayName: 'Install mariadb'
+      # ----------------------------------------------
+      - ${{ if startsWith(parameters.os, 'linux') }}:
+          - script: which apt
+            displayName: "Installing OS dependencies"
+          - script: apt-cache policy | grep http | awk '{print $2 $3}' | sort -u
+            displayName: "Checking for repos"
+          #
+          - script: sudo apt-get install flex
+            displayName: "Install flex"
+          - script: sudo apt-get install bison
+            displayName: "Install bison"
     #
-    # Mongo install
-    - ${{ if and(contains(parameters.fixtures, 'mongodb'), startsWith(parameters.os, 'linux')) }}:
-        # Mongo install
-        - script: |
-            sudo apt-get install gnupg curl
-            curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
-            sudo apt list --installed | grep mongodb
-            echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
-            sudo apt-get update
-            sudo apt-get install -y mongodb-org
-            sudo apt list --installed | grep mongo
-          displayName: "Installing mongodb"
+      - ${{ if and(contains(parameters.fixtures, 'mmseqs2'), startsWith(parameters.os, 'linux')) }}:
+        - bash: |
+            [ $(uname -m) = "x86_64" ] && echo "64bit: Yes" || echo "64bit: No"
+            grep -q sse4_1 /proc/cpuinfo && echo "SSE4.1: Yes" || echo "SSE4.1: No"
+            grep -q avx2 /proc/cpuinfo && echo "AVX2: Yes" || echo "AVX2: No"
+          displayName: 'Check architecture'
+        - bash: |
+            echo "Downloading latest MMseqs2 static build"
+            attempt=1
+            while [[ $attempt -le 5 ]]; do
+                wget https://mmseqs.com/latest/mmseqs-linux-avx2.tar.gz
+                if [[ $? -eq 0 ]]; then
+                    echo "Download successful."
+                    break
+                else
+                    echo "Download failed. Retrying in 5 seconds..."
+                    sleep 5
+                    attempt=$((attempt + 1))
+                fi
+            done
+            tar xvzf mmseqs-linux-avx2.tar.gz
+            sudo cp mmseqs/bin/mmseqs /usr/local/bin/mmseqs
+          displayName: 'Install mmseqs2 binary'
+      #
+      # Mongo install
+      - ${{ if and(contains(parameters.fixtures, 'mongodb'), startsWith(parameters.os, 'linux')) }}:
+          # Mongo install
+          - script: |
+              sudo apt-get install gnupg curl
+              curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
+              sudo apt list --installed | grep mongodb
+              echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+              sudo apt-get update
+              sudo apt-get install -y mongodb-org
+              sudo apt list --installed | grep mongo
+            displayName: "Installing mongodb"
+          #
+          - script: |
+              sudo service mongod start
+              sudo ss -tulpn
+            displayName: "Start Mongo service"
         #
-        - script: |
-            sudo service mongod start
-            sudo ss -tulpn
-          displayName: "Start Mongo service"
-      #
-    - ${{ if and(contains(parameters.fixtures, 'mongodb'), startsWith(parameters.os, 'macos')) }}:
-        - script: |
-            brew tap mongodb/brew
-            brew update
-            brew install mongodb-community@5.0
-          displayName: "Installing mongodb"
+      - ${{ if and(contains(parameters.fixtures, 'mongodb'), startsWith(parameters.os, 'macos')) }}:
+          - script: |
+              brew tap mongodb/brew
+              brew update
+              brew install mongodb-community@5.0
+            displayName: "Installing mongodb"
+          #
+          - script: brew services start mongodb-community@5.0
+            displayName: "Start Mongo service"
+          #
+          - script: brew services list
+            displayName: "Check mongodb service"
         #
-        - script: brew services start mongodb-community@5.0
-          displayName: "Start Mongo service"
+      #
+      - script: 'python -c "import sys; print(sys.version); print(sys.executable)"'
+        displayName: show python information
+      #
+      - script: python -m pip install --upgrade pip tox
+        displayName: "Install tools"
         #
-        - script: brew services list
-          displayName: "Check mongodb service"
+      - script: pip install .[tests]
+        displayName: "Install dependencies"
       #
-    #
-    - script: "python -c \"import sys; print(sys.version); print(sys.executable)\""
-      displayName: show python information
-    #
-    - script: python -m pip install --upgrade pip tox
-      displayName: 'Install tools'
+      - ${{ if startsWith(parameters.tox, 'py') }}:
+          - script: |
+              export CONFIG_SUPPORT_TOKEN_ENV=$(VAR_CONFIG_SUPPORT_TOKEN_ENV)
+              ${{ format('python -m tox -e {0}', parameters.tox) }}
+            displayName: "Running tox task"
+      - ? ${{ if and(not(startsWith(parameters.tox, 'py')), startsWith(parameters.python, '3.13')) }}
+        : - script: |
+              export CONFIG_SUPPORT_TOKEN_ENV=$(VAR_CONFIG_SUPPORT_TOKEN_ENV)
+              ${{ format('python -m tox -e {0}-py313', parameters.tox) }}
+            displayName: "Running tox task"
       #
-    - script: pip install -r requirements.txt
-      displayName: 'Install dependencies'
-    #
-    - ${{ if startsWith(parameters.tox, 'py') }}:
-      - script: |
-          export CONFIG_SUPPORT_TOKEN_ENV=$(VAR_CONFIG_SUPPORT_TOKEN_ENV)
-          ${{ format('python -m tox -e {0}', parameters.tox) }}
-        displayName: 'Running tox task'
-    - ${{ if and(not(startsWith(parameters.tox, 'py')), startsWith(parameters.python, '3.10')) }}:
-      - script: |
-          export CONFIG_SUPPORT_TOKEN_ENV=$(VAR_CONFIG_SUPPORT_TOKEN_ENV)
-          ${{ format('python -m tox -e {0}-py310', parameters.tox) }}
-        displayName: 'Running tox task'
-    - ${{ if and(not(startsWith(parameters.tox, 'py')), startsWith(parameters.python, '3.9')) }}:
-      - script: |
-          export CONFIG_SUPPORT_TOKEN_ENV=$(VAR_CONFIG_SUPPORT_TOKEN_ENV)
-          ${{ format('python -m tox -e {0}-py39', parameters.tox) }}
-        displayName: 'Running tox task'
-    #
-    #  Build artifacts if this is a test target (i.e. labeled as py##)
-    #
-    - ${{ if startsWith(parameters.tox, 'py') }}:
-      - script: pip install --upgrade pip twine setuptools wheel
-        displayName: "Acquire build tools"
-      - script: python setup.py  sdist --dist-dir "$(System.DefaultWorkingDirectory)/dist"
-        displayName: "Build source dist"
-      - script: python setup.py  bdist_wheel --dist-dir "$(System.DefaultWorkingDirectory)/dist"
-        displayName: "Build wheel"
-    #
-      - script: python setup.py  sdist --dist-dir "$(System.DefaultWorkingDirectory)/udist"
-        displayName: "Build source dist"
       #
-      # Check the install artifacts
-      - script: ls -lR "$(System.DefaultWorkingDirectory)/dist" "$(System.DefaultWorkingDirectory)/udist"
-        displayName: "Listing of installed software"
+      #  Build artifacts if this is a test target (i.e. labeled as py##)
       #
-      - publish: $(System.DefaultWorkingDirectory)/dist
-        artifact: ${{ format('sw_{0}_{1}', parameters.tox, parameters.os) }}
-      #
-      - publish: $(System.DefaultWorkingDirectory)/udist
-        artifact: ${{ format('sw_u_{0}_{1}', parameters.tox, parameters.os) }}
-      #
+      - ${{ if startsWith(parameters.tox, 'py') }}:
+          - script: pip install --upgrade pip build twine
+            displayName: "Acquire build tools"
+          - script: python -m build --sdist --wheel --outdir "$(System.DefaultWorkingDirectory)/dist"
+            displayName: "Build source and wheel distributions"
+          - script: python -m build --sdist --outdir "$(System.DefaultWorkingDirectory)/udist"
+            displayName: "Build source distribution to udist"
+
+          #
+          # Check the install artifacts
+          - script: ls -lR "$(System.DefaultWorkingDirectory)/dist" "$(System.DefaultWorkingDirectory)/udist"
+            displayName: "Listing of installed software"
+          #
+          - publish: $(System.DefaultWorkingDirectory)/dist
+            artifact: ${{ format('sw_{0}_{1}', parameters.tox, parameters.os) }}
+          #
+          - publish: $(System.DefaultWorkingDirectory)/udist
+            artifact: ${{ format('sw_u_{0}_{1}', parameters.tox, parameters.os) }}
+        #

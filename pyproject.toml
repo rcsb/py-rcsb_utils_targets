@@ -21,7 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "rcsb.db >= 1.721",
+    "rcsb.db >= 1.809",
     "rcsb.utils.io >= 1.51",
     "rcsb.utils.chemref >= 0.93",
     "rcsb.utils.config >= 0.40",

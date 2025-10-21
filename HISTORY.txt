@@ -82,4 +82,5 @@
   28-Jul-2025  - V0.85 Update URL to Pharos download data
    3-Sep-2025  - V0.86 Update IMGTTargetProvider and other TargetProviders to fail upon download failure
    4-Sep-2025  - V0.87 Bump version to force new build (previous version built prematurely)
+  21-Oct-2025  - V0.88 Adjust chunkSize for cofactor loading;
    

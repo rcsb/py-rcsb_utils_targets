@@ -99,8 +99,12 @@ class PharosTargetProvider(StashableBase):
                 ok = True
             else:
                 logger.info("Fetching url %s path %s", pharosDumpUrl, pharosDumpPath)
-                ok1 = fU.get(pharosDumpUrl, pharosDumpPath)
-                ok2 = fU.get(pharosReadmeUrl, pharosReadmePath)
+                ok1 = ok2 = False
+                try:
+                    ok1 = fU.get(pharosDumpUrl, pharosDumpPath)
+                    ok2 = fU.get(pharosReadmeUrl, pharosReadmePath)
+                except Exception:
+                    logger.error("Failed to fetch Pharos TCRD data from source %r", pharosDumpUrl)
                 if ok1 and ok2:
                     logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok1 and ok2, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
                 else:

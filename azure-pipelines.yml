@@ -4,8 +4,8 @@
 #       8-Jul-2019 jdw templatize
 #       9-Jul-2019 jdw add publish jobs
 #      21-Jul-2019 jdw update to Py38
-#      24-Nov-2020 jdw update to py39 remove py27
-#      10-Oct-2024 mjt update to py310 remove py39
+#      28-Oct-2020 jdw update to Py39
+#       9-Dec-2024 dwp update to py310
 #
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 

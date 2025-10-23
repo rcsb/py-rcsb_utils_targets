@@ -29,7 +29,7 @@ class TargetCofactorDbProvider:
         self.__cfgOb = cfgOb
         self.__cofactorResourceName = cofactorResourceName  # "chembl", "pharos", or "drugbank"
         self.__numProc = kwargs.get("numProc", 6)
-        self.__chunkSize = kwargs.get("chunkSize", 10)
+        self.__chunkSize = kwargs.get("chunkSize", 50)
         self.__resourceName = "MONGO_DB"
         #
         self.__databaseName = kwargs.get("databaseName", "cofactor_exdb")

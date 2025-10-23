@@ -315,6 +315,7 @@ class PharosTargetCofactorProvider(StashableBase):
                 cachePath=self.__cachePath,
                 cfgOb=cfgOb,
                 cofactorResourceName=self.__cofactorResourceName,
+                chunkSize=100,
                 **kwargs
             )
             ok = tcDbP.loadCofactorData(self.__cofactorResourceName, self)

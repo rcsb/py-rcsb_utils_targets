@@ -58,7 +58,7 @@ class ChEMBLTargetActivityProviderTests(unittest.TestCase):
             ctP = ChEMBLTargetActivityProvider(cachePath=self.__cachePath, useCache=False)
             chemblId = "CHEMBL1421"
             name, inchiKey, _ = ctP.getMoleculeDetails(chemblId)
-            self.assertEqual(name, "DASATINIB")
+            self.assertEqual(name, "DASATINIB ANHYDROUS")
             self.assertEqual(inchiKey, "ZBNZXTGUTAYRHI-UHFFFAOYSA-N")
         except Exception as e:
             logger.exception("Failing with %s", str(e))

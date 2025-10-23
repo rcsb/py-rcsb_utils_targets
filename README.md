@@ -17,14 +17,9 @@ git clone --recurse-submodules https://github.com/rcsb/py-rcsb_utils_targets.git
 ```
 
 Optionally, run test suite (Python versions 3.9) using
-[setuptools](https://setuptools.readthedocs.io/en/latest/) or
 [tox](http://tox.readthedocs.io/en/latest/example/platform.html):
 
 ```bash
-python setup.py test
-
-or simply run
-
 tox
 ```
 

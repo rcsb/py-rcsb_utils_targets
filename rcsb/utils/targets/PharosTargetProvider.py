@@ -7,6 +7,7 @@
 #   23-Mar-2023 aae Download sql file to separate dir
 #    5-May-2023 aae Check cache files exist in testCache()
 #   28-Jul-2025 dwp Update link to Pharos download data from juniper.health.unm.edu to habanero.*
+#   23-Oct-2025 dwp Add fallback site for Pharos TCRD data
 ##
 """
 Accessors for Pharos target assignments.
@@ -76,7 +77,9 @@ class PharosTargetProvider(StashableBase):
     def __reload(self, targetsPath, sqlPath, reloadDb=False, fromDb=False, useCache=False, pharosDumpUrl=None, mysqlUser=None, mysqlPassword=None):
         startTime = time.time()
         pharosDumpUrl = pharosDumpUrl if pharosDumpUrl else "http://habanero.health.unm.edu/tcrd/download/latest.sql.gz"
+        pharosDumpUrlFallback = "https://unmtid-dbs.net/download/TCRD/latest.sql.gz"
         pharosReadmeUrl = "http://habanero.health.unm.edu/tcrd/download/latest.README"
+        pharosReadmeUrlFallback = "https://unmtid-dbs.net/download/TCRD/latest.README"
         ok = False
         fU = FileUtil()
         pharosDumpFileName = fU.getFileName(pharosDumpUrl)
@@ -97,9 +100,23 @@ class PharosTargetProvider(StashableBase):
                 ok = True
             else:
                 logger.info("Fetching url %s path %s", pharosDumpUrl, pharosDumpPath)
-                ok1 = fU.get(pharosDumpUrl, pharosDumpPath)
-                ok2 = fU.get(pharosReadmeUrl, pharosReadmePath)
-                logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok1 and ok2, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+                ok1 = ok2 = False
+                try:
+                    ok1 = fU.get(pharosDumpUrl, pharosDumpPath)
+                    ok2 = fU.get(pharosReadmeUrl, pharosReadmePath)
+                except Exception:
+                    logger.error("Failed to fetch Pharos TCRD data from source %r", pharosDumpUrl)
+                if ok1 and ok2:
+                    logger.info("Completed fetch (%r) at %s (%.4f seconds)", ok1 and ok2, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+                else:
+                    logger.info("Failed fetch from primary pharos TCRD data source (%s and %s)", pharosDumpUrl, pharosReadmeUrl)
+                    logger.info("Retrying with fallback (%s and %s)", pharosDumpUrlFallback, pharosReadmeUrlFallback)
+                    ok1 = fU.get(pharosDumpUrlFallback, pharosDumpPath)
+                    ok2 = fU.get(pharosReadmeUrlFallback, pharosReadmePath)
+                    logger.info("Completed fetch from fallback (%r) at %s (%.4f seconds)", ok1 and ok2, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+                    if not ok1 and ok2:
+                        logger.error("Failed to fetch Pharos TCRD data from both primary and fallback sources!")
+                        raise ValueError("Failed to fetch Pharos TCRD data from both primary and fallback sources!")
             # ---
             readmeLines = self.__mU.doImport(pharosReadmePath, fmt="list")
             self.__version = readmeLines[0].split(" ")[1][1:] if readmeLines else "6"

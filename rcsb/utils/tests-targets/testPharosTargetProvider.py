@@ -175,10 +175,10 @@ class PharosTargetProviderTests(unittest.TestCase):
 
 def pharosTargetSuite():
     suiteSelect = unittest.TestSuite()
-    # suiteSelect.addTest(PharosTargetProviderTests("testFetchPharosTargets"))
-    # suiteSelect.addTest(PharosTargetProviderTests("testFetchAndLoadPharosTargets"))
-    # suiteSelect.addTest(PharosTargetProviderTests("testExportPharosTargetFasta"))
-    # suiteSelect.addTest(PharosTargetProviderTests("testExportPharosTargetFastaTax"))
+    suiteSelect.addTest(PharosTargetProviderTests("testFetchPharosTargets"))
+    suiteSelect.addTest(PharosTargetProviderTests("testFetchAndLoadPharosTargets"))
+    suiteSelect.addTest(PharosTargetProviderTests("testExportPharosTargetFasta"))
+    suiteSelect.addTest(PharosTargetProviderTests("testExportPharosTargetFastaTax"))
     suiteSelect.addTest(PharosTargetProviderTests("testPharosDataSite"))
     return suiteSelect
 

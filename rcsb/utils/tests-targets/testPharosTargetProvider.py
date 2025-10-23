@@ -154,10 +154,16 @@ class PharosTargetProviderTests(unittest.TestCase):
     def testPharosDataSite(self):
         try:
             url = "http://habanero.health.unm.edu/tcrd/download/latest.README"
+            urlFallback = "https://unmtid-dbs.net/download/TCRD/latest.README"
             res = requests.get(url, timeout=30)
-            logger.info("Fetch url %r (response %r)", url, res.status_code)
-            self.assertEqual(res.status_code, 200)
-            self.assertGreater(len(res.text), 500)
+            logger.info("Fetch url %r (response %r, len %r)", url, res.status_code, len(res.text))
+            ok1 = (res.status_code == 200) and (len(res.text) > 500)
+            #
+            res = requests.get(urlFallback, timeout=30)
+            logger.info("Fetch fallback url %r (response %r, len %r)", urlFallback, res.status_code, len(res.text))
+            ok2 = (res.status_code == 200) and (len(res.text) > 500)
+            #
+            self.assertTrue(ok1 and ok2)
         except Exception as e:
             logger.exception("Failing with %s", str(e))
             self.fail()

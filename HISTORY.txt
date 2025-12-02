@@ -85,3 +85,4 @@
   21-Oct-2025  - V0.88 Adjust chunkSize for cofactor loading;
                        Add fallback url source for Pharos TCRD data;
                        Switch to 'pyproject.toml' file and update test pipelines to python 3.13
+   2-Dec-2025  - V0.89 Switch from setuptools to hatch build system

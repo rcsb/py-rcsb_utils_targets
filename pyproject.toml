@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "rcsb.utils.targets"
 description = "RCSB Python Wrapper Module for Target Utilities"
-version = "0.89"
+version = "0.90"
 readme = "README.md"
 authors = [
     { name="John Westbrook", email="john.westbrook@rcsb.org" }

@@ -20,14 +20,13 @@ from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
 from rcsb.utils.seq.UniProtIdMappingProvider import UniProtIdMappingProvider
 
+logger = logging.getLogger(__name__)
+
 # pylint: disable=ungrouped-imports
 try:
     from chembl_webresource_client.new_client import new_client  # fails when service is down
-except Exception:
-    pass
-
-
-logger = logging.getLogger(__name__)
+except Exception as e:
+    logger.error("Failed to import chembl_webresource_client with exception %r", e)
 
 
 class ChEMBLTargetProvider:

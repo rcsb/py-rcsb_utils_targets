@@ -6,6 +6,7 @@
 #   14-Mar-2023 dwp  Add timeout to IMGT data file fetch
 #    3-Jul-2023 aae  imgt.org no longer supports http
 #    3-Sep-2025 dwp  raise errors when fetching fails to prevent generation of empty data file
+#   20-Feb-2026 dwp  Add fallback download
 #
 ##
 """
@@ -70,6 +71,7 @@ class IMGTTargetProvider(StashableBase):
             self.__version = imgtD["version"]
         else:
             imgtDumpUrl = imgtDumpUrl if imgtDumpUrl else "https://www.imgt.org/download/3Dstructure-DB/IMGT3DFlatFiles.tgz"
+            imgtDumpUrlFallback = "https://zenodo.org/records/18718163/files/IMGT3DFlatFiles.tgz?download=1"
             imgtReadmeUrl = "https://www.imgt.org/download/3Dstructure-DB/RELEASE"
             imgtDumpFileName = fU.getFileName(imgtDumpUrl)
             imgtDumpPath = os.path.join(dirPath, imgtDumpFileName)
@@ -79,6 +81,9 @@ class IMGTTargetProvider(StashableBase):
             #
             logger.info("Fetching url %s path %s", imgtDumpUrl, imgtDumpPath)
             ok1 = fU.get(imgtDumpUrl, imgtDumpPath)
+            if not ok1:
+                logger.info("Fetching fallback file %r", imgtDumpUrlFallback)
+                ok1 = fU.get(imgtDumpUrlFallback, imgtDumpPath)
             ok2 = fU.get(imgtReadmeUrl, imgtReleasePath)
             okFetch = ok1 and ok2
             logger.info("Completed fetch (%r) at %s (%.4f seconds)", okFetch, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)

@@ -87,3 +87,4 @@
                        Switch to 'pyproject.toml' file and update test pipelines to python 3.13
    2-Dec-2025  - V0.89 Switch from setuptools to hatch build system
   18-Feb-2026  - V0.90 Add error logging to failed chembl_webresource_client import
+  20-Feb-2026  - V0.91 Add fallback for IMGT data

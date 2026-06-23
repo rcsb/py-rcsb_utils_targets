@@ -122,6 +122,10 @@ jobs:
       - ${{ if and(contains(parameters.fixtures, 'mongodb'), startsWith(parameters.os, 'macos')) }}:
           - script: |
               brew tap mongodb/brew
+              brew trust mongodb/brew
+              brew trust aws/tap
+              brew trust azure/bicep
+              brew trust hashicorp/tap
               brew update
               brew install mongodb-community@8.0
             displayName: "Installing mongodb"

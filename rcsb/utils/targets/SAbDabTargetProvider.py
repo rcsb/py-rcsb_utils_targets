@@ -6,6 +6,7 @@
 #   9-Feb-2023 aae  Find Highest_Clin_Trial column regardless of month
 #   1-Jul-2024 dwp  Update SAbDab data parsing (following change in source data headers)
 #  22-Jul-2024 dwp  Re-update SAbDab data parsing (following change in source data headers)
+#   2-Jul-2026 dwp  Use backup sabdab summary file during transition phase to SAbDab2
 ##
 """
 Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data.
@@ -169,7 +170,7 @@ class SAbDabTargetProvider(object):
         startTime = time.time()
         aD = {}
         try:
-            targetUrl = kwargs.get("assignmentUrl", "http://opig.stats.ox.ac.uk/webapps/newsabdab/sabdab/summary/all")
+            targetUrl = kwargs.get("assignmentUrl", "https://raw.githubusercontent.com/rcsb/py-rcsb_exdb_assets_stash/refs/heads/development/stash/SAbDab-backup/sabdab_summary_all.tsv")
             fU = FileUtil()
             dumpFileName = "sabdab_summary_all.tsv"
             #

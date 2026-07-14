@@ -119,8 +119,8 @@ class CARDTargetAnnotationProvider(StashableBase):
                 try:
                     #
                     tCmtD = self.__decodeComment(matchD["target"])
-                    entryId = tCmtD["entityId"].split("_")[0]
-                    entityId = tCmtD["entityId"].split("_")[1]
+                    entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                    entityId = tCmtD["entityId"].split("_")[-1]
                     seqIdPct = matchD["sequenceIdentity"]
                     bitScore = matchD["bitScore"]
                     nm = cardP.getModelValue(modelId, "modelName")

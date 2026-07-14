@@ -103,6 +103,7 @@ class SAbDabTargetProvider(object):
         targetUrl = kwargs.get(
             "targetUrl",
             "https://raw.githubusercontent.com/rcsb/py-rcsb_exdb_assets_stash/refs/heads/development/stash/SAbDab-backup/TheraSAbDab_SeqStruc_OnlineDownload.csv"
+            # New URL? -> https://opig.stats.ox.ac.uk/webapps/sabdab-sabpred/static/downloads/TheraSAbDab_SeqStruc_OnlineDownload.csv
         )
         #
         ok = False

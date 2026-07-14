@@ -151,8 +151,8 @@ class SAbDabTargetFeatureProvider(StashableBase):
             chainType = qCmtD["chain"]
             for matchD in matchDL:
                 tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
+                entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                entityId = tCmtD["entityId"].split("_")[-1]
                 iD[(thName, chainType, entryId)] = entityId
         logger.info("Match index length (%d)", len(iD))
         for (thName, chainType, entryId), entityId in iD.items():
@@ -179,8 +179,8 @@ class SAbDabTargetFeatureProvider(StashableBase):
                     fpL = [{"beg_seq_id": matchD["targetBegin"], "end_seq_id": matchD["targetEnd"]}]
                 #
                 tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
+                entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                entityId = tCmtD["entityId"].split("_")[-1]
                 if (thName, chainType, entryId, entityId) not in fullMatchD:
                     continue
                 ii = 1

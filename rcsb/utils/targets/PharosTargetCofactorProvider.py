@@ -150,8 +150,8 @@ class PharosTargetCofactorProvider(StashableBase):
             if lnmpObj:
                 for matchD in matchDL:
                     tCmtD = self.__decodeComment(matchD["target"])
-                    entryId = tCmtD["entityId"].split("_")[0]
-                    entityId = tCmtD["entityId"].split("_")[1]
+                    entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                    entityId = tCmtD["entityId"].split("_")[-1]
                     rcsbEntityId = entryId + "_" + entityId
                     chemCompIdList = lnmpObj.getLigandNeighbors(rcsbEntityId)
                     chemCompNeighborsD.update({k: True for k in chemCompIdList})
@@ -160,8 +160,8 @@ class PharosTargetCofactorProvider(StashableBase):
             # --
             for matchD in matchDL:
                 tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
+                entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                entityId = tCmtD["entityId"].split("_")[-1]
                 rcsbEntityId = entryId + "_" + entityId
                 #
                 taDL = chaP.getTargetActivity(pharosId)

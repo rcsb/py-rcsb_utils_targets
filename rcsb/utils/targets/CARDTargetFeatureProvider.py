@@ -111,8 +111,8 @@ class CARDTargetFeatureProvider(StashableBase):
                 else:
                     fpL = [{"beg_seq_id": matchD["targetBegin"], "end_seq_id": matchD["targetEnd"]}]
                 tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
+                entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                entityId = tCmtD["entityId"].split("_")[-1]
                 nm = cardP.getModelValue(modelId, "modelName")
                 descr = cardP.getModelValue(modelId, "descr")
                 featureId = cardP.getModelValue(modelId, "cvTermId")

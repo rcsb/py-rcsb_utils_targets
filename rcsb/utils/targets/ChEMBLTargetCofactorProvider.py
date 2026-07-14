@@ -154,16 +154,16 @@ class ChEMBLTargetCofactorProvider(StashableBase):
                 if lnmpObj:
                     for matchD in matchDL:
                         tCmtD = self.__decodeComment(matchD["target"])
-                        entryId = tCmtD["entityId"].split("_")[0]
-                        entityId = tCmtD["entityId"].split("_")[1]
+                        entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                        entityId = tCmtD["entityId"].split("_")[-1]
                         rcsbEntityId = entryId + "_" + entityId
                         chemCompIdList = lnmpObj.getLigandNeighbors(rcsbEntityId)
                         chemCompNeighborsD.update({k: True for k in chemCompIdList})
                 # --
                 for matchD in matchDL:
                     tCmtD = self.__decodeComment(matchD["target"])
-                    entryId = tCmtD["entityId"].split("_")[0]
-                    entityId = tCmtD["entityId"].split("_")[1]
+                    entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                    entityId = tCmtD["entityId"].split("_")[-1]
                     #
                     taDL = chaP.getTargetActivity(chemblId)
                     logger.debug("Target %r has (%d) activity records", chemblId, len(taDL))

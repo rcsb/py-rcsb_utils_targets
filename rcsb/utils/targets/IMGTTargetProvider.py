@@ -199,7 +199,7 @@ class IMGTTargetProvider(StashableBase):
                 break
             logger.debug("Processing file %r", fp)
             _, fn = os.path.split(fp)
-            pdbId = fn[5:9].lower()
+            pdbId = fn[5:9].lower()  # TODO: Adjust for extended IDs
             if testList and pdbId not in testList:
                 continue
             idList.append(pdbId)

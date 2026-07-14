@@ -47,11 +47,11 @@ class CARDTargetAnnotationProvider(StashableBase):
         return ok
 
     def hasAnnotation(self, rcsbEntityId):
-        return rcsbEntityId.upper() in self.__fD["annotations"]
+        return rcsbEntityId in self.__fD["annotations"]
 
     def getAnnotation(self, rcsbEntityId):
         try:
-            return self.__fD["annotations"][rcsbEntityId.upper()]
+            return self.__fD["annotations"][rcsbEntityId]
         except Exception:
             pass
         return None

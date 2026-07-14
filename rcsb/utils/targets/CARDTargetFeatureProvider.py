@@ -44,11 +44,11 @@ class CARDTargetFeatureProvider(StashableBase):
             return False
 
     def hasFeatures(self, rcsbEntityId):
-        return rcsbEntityId.upper() in self.__fD["features"]
+        return rcsbEntityId in self.__fD["features"]
 
     def getFeatures(self, rcsbEntityId):
         try:
-            return self.__fD["features"][rcsbEntityId.upper()]
+            return self.__fD["features"][rcsbEntityId]
         except Exception:
             pass
         return []

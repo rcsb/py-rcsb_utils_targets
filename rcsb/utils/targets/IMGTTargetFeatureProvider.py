@@ -172,8 +172,8 @@ class IMGTTargetFeatureProvider(StashableBase):
         ii = 1
         #
         for chainId, chD in chainD.items():
-            entryId = chainId[:4]
-            authAsymId = chainId.split("_")[1]
+            entryId = "_".join(chainId.split("_")[0:-1])
+            authAsymId = chainId.split("_")[-1]
             # descriptive features -
             for fTup in fTupL:
                 rD = {
@@ -241,8 +241,8 @@ class IMGTTargetFeatureProvider(StashableBase):
         #
         qD = {}
         for rD in rDL:
-            eId = rD["entry_id"] + "." + rD["auth_asym_id"]
-            qD.setdefault(eId, []).append(rD)
+            instId = rD["entry_id"] + "." + rD["auth_asym_id"]
+            qD.setdefault(instId, []).append(rD)
         #
         logger.info("IMGT antibody chain features (%d)", len(qD))
         #

@@ -48,11 +48,11 @@ class PharosTargetCofactorProvider(StashableBase):
             return False
 
     def hasTarget(self, rcsbEntityId):
-        return rcsbEntityId.upper() in self.__fD["cofactors"]
+        return rcsbEntityId in self.__fD["cofactors"]
 
     def getTargets(self, rcsbEntityId):
         try:
-            return self.__fD["cofactors"][rcsbEntityId.upper()]
+            return self.__fD["cofactors"][rcsbEntityId]
         except Exception:
             return []
 

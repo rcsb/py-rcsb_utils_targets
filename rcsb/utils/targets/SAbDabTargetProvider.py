@@ -16,6 +16,9 @@ import datetime
 import logging
 import os.path
 import time
+import json
+import re
+import requests
 
 from rcsb.utils.io.FileUtil import FileUtil
 from rcsb.utils.io.MarshalUtil import MarshalUtil
@@ -102,8 +105,12 @@ class SAbDabTargetProvider(object):
         useCache = kwargs.get("useCache", True)
         targetUrl = kwargs.get(
             "targetUrl",
-            "https://raw.githubusercontent.com/rcsb/py-rcsb_exdb_assets_stash/refs/heads/development/stash/SAbDab-backup/TheraSAbDab_SeqStruc_OnlineDownload.csv"
+            "https://opig.stats.ox.ac.uk/webapps/sabdab-sabpred/static/downloads/TheraSAbDab_SeqStruc_OnlineDownload.csv"
         )
+        targetFallbackUrl = "https://raw.githubusercontent.com/rcsb/py-rcsb_exdb_assets_stash/refs/heads/development/stash/SAbDab-backup/TheraSAbDab_SeqStruc_OnlineDownload.csv"
+        #
+        # TODO: need to update UI links to SabDab
+        # e.g., https://www.rcsb.org/annotations/1BEY#antibodyTheraSAbDab
         #
         ok = False
         fU = FileUtil()
@@ -120,7 +127,10 @@ class SAbDabTargetProvider(object):
             logger.info("Fetching url %s path %s", targetUrl, dumpPath)
             ok = fU.get(targetUrl, dumpPath)
             if not ok:
-                raise ValueError("Fetching failed for SAbDab target data")
+                logger.error("Fetching failed for Thera-SAbDab target data. Trying fallback.")
+                ok = fU.get(targetFallbackUrl, dumpPath)
+                if not ok:
+                    raise ValueError("Fetching failed for fallback Thera-SAbDab target data")
             #
             rDL = self.__mU.doImport(dumpPath, fmt="csv", rowFormat="dict")
             logger.debug("rD keys %r", list(rDL[0].keys()))
@@ -161,47 +171,165 @@ class SAbDabTargetProvider(object):
         return oD["identifiers"], oD["assignments"], dumpPath, oD["version"]
 
     def __reloadAssignments(self, dirPath, **kwargs):
-        """Fetch and read
+        """Fetch and read SAbDab antibody assignment data.
+
+        The SAbDab JSON format contains one record per PDB/model and
+        nested heavy/light chain and antigen instance information.
 
         Args:
-            dirPath ([type]): [description]
+            dirPath (str): Local directory in which to store the downloaded data.
 
         Returns:
-            [type]: [description]
-
+            dict: Assignment records keyed by '<pdb_id>.<auth_asym_id>'.
         """
         startTime = time.time()
         aD = {}
+        ok = False
+
         try:
-            targetUrl = kwargs.get("assignmentUrl", "https://raw.githubusercontent.com/rcsb/py-rcsb_exdb_assets_stash/refs/heads/development/stash/SAbDab-backup/sabdab_summary_all.tsv")
+            targetUrl = kwargs.get("assignmentUrl", "https://sabdab.opig.stats.ox.ac.uk/api/rcsb-pdb-annotations")
+
             fU = FileUtil()
-            dumpFileName = "sabdab_summary_all.tsv"
-            #
+            dumpFileName = "sabdab_summary_all.json"
+
             fU.mkdir(dirPath)
             dumpPath = os.path.join(dirPath, dumpFileName)
+
             logger.info("Fetching url %s path %s", targetUrl, dumpPath)
-            ok = fU.get(targetUrl, dumpPath)
-            rDL = self.__mU.doImport(dumpPath, fmt="tdd", rowFormat="dict")
+            response = requests.get(
+                targetUrl,
+                headers={"Accept-Encoding": "gzip"},
+                timeout=60,
+            )
+            response.raise_for_status()
+            rDL = response.json()
+            with open(dumpPath, "w", encoding="utf-8") as f:
+                json.dump(rDL, f, indent=2, ensure_ascii=False)
             logger.info("SAbDab raw records (%d)", len(rDL))
-            logger.debug("rD keys %r", list(rDL[0].keys()))
-            kyHL = ["pdb", "Hchain", "model", "antigen_chain", "antigen_type", "antigen_het_name", "antigen_name", "heavy_subclass"]
-            kyLL = ["pdb", "Lchain", "model", "antigen_chain", "antigen_type", "antigen_het_name", "antigen_name", "light_subclass", "light_ctype"]
-            #
+            if rDL:
+                logger.debug("rD keys %r", list(rDL[0].keys()))
+
             for rD in rDL:
-                pdbId = rD["pdb"] if rD["pdb"] and rD["pdb"] != "NA" else None
-                authAsymIdH = rD["Hchain"] if rD["Hchain"] and rD["Hchain"] != "NA" else None
-                authAsymIdL = rD["Lchain"] if rD["Lchain"] and rD["Lchain"] != "NA" else None
-                if pdbId and authAsymIdH:
-                    aD[pdbId + "." + authAsymIdH] = {k: v for k, v in rD.items() if v and v != "NA" and k in kyHL}
-                if pdbId and authAsymIdL:
-                    aD[pdbId + "." + authAsymIdL] = {k: v for k, v in rD.items() if v and v != "NA" and k in kyLL}
+                #
+                # Convert "pdb_00009m5h" -> "9m5h"
+                #
+                pdbId = rD.get("PDB ID")
+                if pdbId:
+                    pdbId = pdbId.removeprefix("pdb_")
+                    # Also handle the zero-padded PDB IDs used by SAbDab.
+                    pdbId = pdbId.lstrip("0") or "0"
+
+                if not pdbId:
+                    continue
+
+                model = rD.get("model")
+
+                #
+                # Collect antigen information.  The old TSV represented
+                # multiple antigen chains as pipe-delimited values.
+                #
+                antigenInstances = rD.get("antigen_instances") or []
+
+                # antigenChains = []
+                # antigenTypes = []
+                antigenNames = []
+
+                for antigenD in antigenInstances:
+                    # labelAsymId = antigenD.get("PDB label_asym_id")
+                    # if labelAsymId:
+                    #     antigenChains.append(str(labelAsymId))
+
+                    # entityType = antigenD.get("entity type")
+                    # if entityType:
+                    #     antigenTypes.append(str(entityType).lower())
+
+                    antigenName = antigenD.get("antigen name")
+                    if antigenName:
+                        antigenNames.append(str(antigenName))
+
+                #
+                # Remove duplicate values while preserving their order.
+                #
+                # antigenChains = list(dict.fromkeys(antigenChains))
+                # antigenTypes = list(dict.fromkeys(antigenTypes))
+                antigenNames.sort()
+                antigenNames = list(set(antigenNames))
+
+                # antigenChain = " | ".join(antigenChains) if antigenChains else None
+                # antigenType = " | ".join(antigenTypes) if antigenTypes else None
+                antigenName = " | ".join(antigenNames) if antigenNames else None
+
+                #
+                # Common fields corresponding to the old TSV.
+                #
+                commonD = {
+                    "pdb": pdbId,
+                    "model": model,
+                    # "antigen_label_asym": antigenChain,
+                    # "antigen_chain": antigenChain,
+                    # "antigen_type": antigenType,
+                    "antigen_name": antigenName,
+                }
+
+                #
+                # Heavy-chain assignment.
+                #
+                heavyD = rD.get("heavy chain")
+                if heavyD:
+                    authAsymIdH = heavyD.get("PDB auth_asym_id")
+                    if authAsymIdH:
+                        assignmentD = dict(commonD)
+                        # TODO: CHange labeling of "subclass" to "subgroup" (both here and on UI Annotations!)
+                        # Actually, unfortunately, this would require adjusting the schema ("SABDAB_ANTIBODY_LIGHT_CHAIN_SUBCLASS")
+                        # so instead, keep subclass here but change the label on the Annotations page to be "subgroup"
+                        heavySubclass = heavyD.get("V gene subgroup")
+                        if heavySubclass:
+                            # remove parenthetical organisms (e.g., "IGLV1 (Homsap),IGKV3 (Homsap)")
+                            heavySubclassExtract = re.sub(r"\s*\([^)]*\)", "", heavySubclass)
+                            assignmentD["heavy_subclass"] = heavySubclassExtract
+
+                        aD[pdbId + "." + authAsymIdH] = assignmentD
+
+                #
+                # Light-chain assignment.
+                #
+                lightD = rD.get("light chain")
+                if lightD:
+                    authAsymIdL = lightD.get("PDB auth_asym_id")
+                    if authAsymIdL:
+                        assignmentD = dict(commonD)
+                        # TODO: CHange labeling of "subclass" to "subgroup" (both here and on UI Annotations!)
+                        # Actually, unfortunately, this would require adjusting the schema ("SABDAB_ANTIBODY_LIGHT_CHAIN_SUBCLASS")
+                        # so instead, keep subclass here but change the label on the Annotations page to be "subgroup"
+                        lightSubclass = lightD.get("V gene subgroup")
+                        if lightSubclass:
+                            # remove parenthetical organisms (e.g., "IGLV1 (Homsap),IGKV3 (Homsap)")
+                            lightSubclassExtract = re.sub(r"\s*\([^)]*\)", "", lightSubclass)
+                            assignmentD["light_subclass"] = lightSubclassExtract
+
+                        lightCtype = lightD.get("chain type")
+                        if lightCtype:
+                            if lightCtype == "λ":
+                                lightCtype = "Lambda"
+                            elif lightCtype == "κ":
+                                lightCtype = "Kappa"
+                            assignmentD["light_ctype"] = lightCtype
+
+                        aD[pdbId + "." + authAsymIdL] = assignmentD
 
             logger.info("Fetched (%d) SAbDab assignment records.", len(aD))
-            #
+            ok = len(aD) > 0
+
         except Exception as e:
             logger.exception("Failing with %s", str(e))
 
-        logger.info("Completed reload (%r) at %s (%.4f seconds)", ok, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), time.time() - startTime)
+        logger.info(
+            "Completed reload (%r) at %s (%.4f seconds)",
+            ok,
+            time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
+            time.time() - startTime,
+        )
+
         return aD
 
     def exportFasta(self, fastaPath):

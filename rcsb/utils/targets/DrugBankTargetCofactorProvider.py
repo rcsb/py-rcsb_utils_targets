@@ -90,7 +90,7 @@ class DrugBankTargetCofactorProvider(StashableBase):
         Args:
             sequenceMatchFilePath (str): sequence match output file path
             crmpObj (obj, optional): instance of ChemRefMappingProviderObj(). Defaults to None
-            lnmpObj (obj, optional): instance of LigandNeighborMappingProviderObj(). Defaults to None.
+            lnmpObj (obj, optional): instance of LigandNeighborMappingProvider(). Defaults to None.
 
         Returns:
             bool: True for success or False otherwise

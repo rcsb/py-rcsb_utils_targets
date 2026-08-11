@@ -93,7 +93,7 @@ class PharosTargetCofactorProvider(StashableBase):
         Args:
             sequenceMatchFilePath (str): sequence match output file path
             crmpObj (obj, optional): instance of ChemRefMappingProviderObj(). Defaults to None.
-            lnmpObj (obj, optional): instance of LigandNeighborMappingProviderObj(). Defaults to None.
+            lnmpObj (obj, optional): instance of LigandNeighborMappingProvider(). Defaults to None.
             maxActivity (int, optional): maximum number of prioritized activity records per target. Defaults to 5.
 
         Returns:

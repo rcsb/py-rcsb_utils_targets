@@ -188,19 +188,14 @@ class SAbDabTargetProvider(object):
 
         try:
             targetUrl = kwargs.get("assignmentUrl", "https://sabdab.opig.stats.ox.ac.uk/api/rcsb-pdb-annotations")
+            # TODO: create a fallback JSON file and post to stash
 
             fU = FileUtil()
             dumpFileName = "sabdab_summary_all.json"
-
             fU.mkdir(dirPath)
             dumpPath = os.path.join(dirPath, dumpFileName)
-
             logger.info("Fetching url %s path %s", targetUrl, dumpPath)
-            response = requests.get(
-                targetUrl,
-                headers={"Accept-Encoding": "gzip"},
-                timeout=60,
-            )
+            response = requests.get(targetUrl, headers={"Accept-Encoding": "gzip"}, timeout=60)
             response.raise_for_status()
             rDL = response.json()
             with open(dumpPath, "w", encoding="utf-8") as f:
@@ -210,78 +205,44 @@ class SAbDabTargetProvider(object):
                 logger.debug("rD keys %r", list(rDL[0].keys()))
 
             for rD in rDL:
-                #
-                # Convert "pdb_00009m5h" -> "9m5h"
-                #
+                # Convert extended ID "pdb_00009m5h" -> short ID "9m5h"
+                # TODO: Stop doing this conversion when switching to Beta-Archive loading for extended IDs
                 pdbId = rD.get("PDB ID")
-                if pdbId:
-                    pdbId = pdbId.removeprefix("pdb_")
-                    # Also handle the zero-padded PDB IDs used by SAbDab.
-                    pdbId = pdbId.lstrip("0") or "0"
-
+                if pdbId and pdbId.startswith("pdb_0000"):
+                    pdbId = pdbId.removeprefix("pdb_0000")
                 if not pdbId:
                     continue
 
                 model = rD.get("model")
 
-                #
-                # Collect antigen information.  The old TSV represented
-                # multiple antigen chains as pipe-delimited values.
-                #
+                # Collect antigen information
                 antigenInstances = rD.get("antigen_instances") or []
-
-                # antigenChains = []
-                # antigenTypes = []
                 antigenNames = []
 
                 for antigenD in antigenInstances:
-                    # labelAsymId = antigenD.get("PDB label_asym_id")
-                    # if labelAsymId:
-                    #     antigenChains.append(str(labelAsymId))
-
-                    # entityType = antigenD.get("entity type")
-                    # if entityType:
-                    #     antigenTypes.append(str(entityType).lower())
-
                     antigenName = antigenD.get("antigen name")
                     if antigenName:
                         antigenNames.append(str(antigenName))
 
-                #
                 # Remove duplicate values while preserving their order.
-                #
-                # antigenChains = list(dict.fromkeys(antigenChains))
-                # antigenTypes = list(dict.fromkeys(antigenTypes))
                 antigenNames.sort()
                 antigenNames = list(set(antigenNames))
-
-                # antigenChain = " | ".join(antigenChains) if antigenChains else None
-                # antigenType = " | ".join(antigenTypes) if antigenTypes else None
                 antigenName = " | ".join(antigenNames) if antigenNames else None
 
-                #
-                # Common fields corresponding to the old TSV.
-                #
                 commonD = {
                     "pdb": pdbId,
                     "model": model,
-                    # "antigen_label_asym": antigenChain,
-                    # "antigen_chain": antigenChain,
-                    # "antigen_type": antigenType,
                     "antigen_name": antigenName,
                 }
 
-                #
-                # Heavy-chain assignment.
-                #
+                # Heavy-chain assignment
                 heavyD = rD.get("heavy chain")
                 if heavyD:
                     authAsymIdH = heavyD.get("PDB auth_asym_id")
                     if authAsymIdH:
                         assignmentD = dict(commonD)
-                        # TODO: CHange labeling of "subclass" to "subgroup" (both here and on UI Annotations!)
-                        # Actually, unfortunately, this would require adjusting the schema ("SABDAB_ANTIBODY_LIGHT_CHAIN_SUBCLASS")
-                        # so instead, keep subclass here but change the label on the Annotations page to be "subgroup"
+                        # TODO: Change labeling of "subclass" to "subgroup" on Annotations UI page
+                        # Unfortunately, can't easily change the internal labeling since it's defined in the schema ("SABDAB_ANTIBODY_LIGHT_CHAIN_SUBCLASS")
                         heavySubclass = heavyD.get("V gene subgroup")
                         if heavySubclass:
                             # remove parenthetical organisms (e.g., "IGLV1 (Homsap),IGKV3 (Homsap)")
@@ -290,17 +251,12 @@ class SAbDabTargetProvider(object):
 
                         aD[pdbId + "." + authAsymIdH] = assignmentD
 
-                #
-                # Light-chain assignment.
-                #
+                # Light-chain assignment
                 lightD = rD.get("light chain")
                 if lightD:
                     authAsymIdL = lightD.get("PDB auth_asym_id")
                     if authAsymIdL:
                         assignmentD = dict(commonD)
-                        # TODO: CHange labeling of "subclass" to "subgroup" (both here and on UI Annotations!)
-                        # Actually, unfortunately, this would require adjusting the schema ("SABDAB_ANTIBODY_LIGHT_CHAIN_SUBCLASS")
-                        # so instead, keep subclass here but change the label on the Annotations page to be "subgroup"
                         lightSubclass = lightD.get("V gene subgroup")
                         if lightSubclass:
                             # remove parenthetical organisms (e.g., "IGLV1 (Homsap),IGKV3 (Homsap)")

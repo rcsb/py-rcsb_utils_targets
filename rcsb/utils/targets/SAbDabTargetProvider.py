@@ -103,6 +103,7 @@ class SAbDabTargetProvider(object):
         startTime = time.time()
         oD = {}
         useCache = kwargs.get("useCache", True)
+        # TODO: Ask Ben if this file will continue to persist/be updated; if not, what's the replacement?
         targetUrl = kwargs.get(
             "targetUrl",
             "https://opig.stats.ox.ac.uk/webapps/sabdab-sabpred/static/downloads/TheraSAbDab_SeqStruc_OnlineDownload.csv"

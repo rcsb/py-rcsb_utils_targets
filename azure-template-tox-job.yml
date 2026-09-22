@@ -1,11 +1,12 @@
 # File: azure-template-tox-job.yml
 # Date: 8-Jul-2019 jdw split out from original pipeline
-# Supports: fixtures=mysql,mongodb (linux)
+# Supports: fixtures=mmseqs2,mongodb (linux, macos)
 #
 # Updates:
 #  6-Aug-2019  jdw build source and binary wheels by default.
 # 13-Aug-2019  jdw export config support token prior to launching tox runner
 #  9-Sep-2019  jdw set unlimited timeout
+# 22-Sep-2026  dwp install MongoDB on macOS from official tarball (Homebrew 6 dropped Intel bottles)
 #
 ##
 parameters:
@@ -120,20 +121,56 @@ jobs:
             displayName: "Start Mongo service"
         #
       - ${{ if and(contains(parameters.fixtures, 'mongodb'), startsWith(parameters.os, 'macos')) }}:
-          - script: |
-              brew tap mongodb/brew
-              brew trust mongodb/brew
-              brew trust aws/tap
-              brew trust azure/bicep
-              brew trust hashicorp/tap
-              brew update
-              brew install mongodb-community@8.0
+          # Homebrew 6.0 no longer provides bottles for Intel (x86_64) macOS, so `brew install mongodb-community`
+          # now compiles its dependencies (openssl@3, node, ...) from source and exceeds the job timeout.
+          # Install MongoDB's official prebuilt macOS tarball instead (the same artifact the mongodb/brew formula uses).
+          - bash: |
+              set -euo pipefail
+              MONGO_SERIES="8.0"
+              MONGO_FALLBACK_VERSION="8.0.28"
+              case "$(uname -m)" in
+                x86_64) MONGO_ARCH="x86_64" ;;
+                arm64)  MONGO_ARCH="arm64" ;;
+                *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
+              esac
+              # Resolve the latest production release in the series, falling back to a pinned version
+              MONGO_VERSION=$(curl -fsSL --retry 3 https://downloads.mongodb.org/full.json | python -c '
+              import json, sys
+              series, arch = sys.argv[1], sys.argv[2]
+              vL = []
+              for v in json.load(sys.stdin).get("versions", []):
+                  if not (v.get("production_release") and v.get("version", "").startswith(series + ".")):
+                      continue
+                  if any(d.get("target") == "macos" and d.get("arch") == arch for d in v.get("downloads", [])):
+                      vL.append(v["version"])
+              print(max(vL, key=lambda x: tuple(int(p) for p in x.split("."))) if vL else "")
+              ' "$MONGO_SERIES" "$MONGO_ARCH") || MONGO_VERSION=""
+              MONGO_VERSION="${MONGO_VERSION:-$MONGO_FALLBACK_VERSION}"
+              MONGO_URL="https://fastdl.mongodb.org/osx/mongodb-macos-${MONGO_ARCH}-${MONGO_VERSION}.tgz"
+              echo "Downloading ${MONGO_URL}"
+              curl -fsSL --retry 5 --retry-delay 5 -o "$(Agent.TempDirectory)/mongodb.tgz" "$MONGO_URL"
+              MONGO_HOME="$(Agent.ToolsDirectory)/mongodb"
+              mkdir -p "$MONGO_HOME"
+              tar -xzf "$(Agent.TempDirectory)/mongodb.tgz" -C "$MONGO_HOME" --strip-components 1
+              "$MONGO_HOME/bin/mongod" --version
+              echo "##vso[task.prependpath]$MONGO_HOME/bin"
             displayName: "Installing mongodb"
           #
-          - script: brew services start mongodb-community@8.0
+          - bash: |
+              set -euo pipefail
+              MONGO_DATA="$(Agent.TempDirectory)/mongodb-data"
+              mkdir -p "$MONGO_DATA/db"
+              mongod --dbpath "$MONGO_DATA/db" --logpath "$MONGO_DATA/mongod.log" --bind_ip 127.0.0.1 --port 27017 --fork
             displayName: "Start Mongo service"
           #
-          - script: brew services list
+          - bash: |
+              for i in $(seq 1 30); do
+                if nc -z 127.0.0.1 27017; then echo "mongod is listening on port 27017"; exit 0; fi
+                sleep 2
+              done
+              echo "mongod is not listening on port 27017"
+              tail -n 100 "$(Agent.TempDirectory)/mongodb-data/mongod.log" || true
+              exit 1
             displayName: "Check mongodb service"
         #
       #

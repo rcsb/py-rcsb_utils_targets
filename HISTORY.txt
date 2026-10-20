@@ -97,3 +97,6 @@
                        (e.g., pdb_00004hhb.A), with validation, gzipped stash fallbacks and source tracking for
                        SAbDab and Thera-SAbDab data; use the SAbDab2 data date as the SAbDab assignment/feature version.
                        NOTE: requires rcsb.utils.dictionary >= 1.43 in the loaders before SAbDab feature data is rebuilt
+  20-Oct-2026  - V0.94 TargetCofactorDbProvider: open the persistent MongoDB client lazily, once per process, so no client
+                       is inherited by forked loader workers; use a short-lived connection for document counts
+                       (cofactorDbCount() now returns -1 if the collection can't be reached)

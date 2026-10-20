@@ -7,6 +7,8 @@
 #  26-Aug-2024 dwp Revert back to persistent client connections
 #  14-Jul-2026 dwp Stop forcing upper case entity IDs when loading and fetching cofactor data, to handle short or
 #                  extended PDB IDs
+#  20-Oct-2026 dwp Open the persistent client lazily, once per process, so that no client is carried across a
+#                  fork into multiprocessing workers; use a short-lived connection for document counts
 #
 ##
 """
@@ -14,6 +16,7 @@ Provider/accessors for target cofactors data to/from MongoDB.
 """
 
 import logging
+import os
 import time
 
 from rcsb.db.mongo.Connection import Connection
@@ -37,18 +40,46 @@ class TargetCofactorDbProvider:
         self.__databaseName = kwargs.get("databaseName", "cofactor_exdb")
         self.__collectionName = kwargs.get("collectionName", self.__cofactorResourceName)
         #
-        conn = Connection(cfgOb=self.__cfgOb, resourceName=self.__resourceName)
-        conn.openConnection()
-        self.__client = conn.getClientConnection()
-        self.__db = self.__client[self.__databaseName]
-        self.__collection = self.__db[self.__collectionName]
+        # The persistent client is opened on first use in each process (see __getCollection())
+        self.__client = None
+        self.__clientPid = None
+
+    def __getCollection(self):
+        """Return the cofactor collection, opening a persistent client on first use in the current process.
+
+        Loaders create this provider in the parent process and then fork worker processes (MultiProcUtil), and
+        a MongoClient shouldn't be carried across a fork. Tying the client to the process ID gives each worker
+        its own client, opened once and reused for all of that worker's lookups.
+        """
+        pid = os.getpid()
+        if self.__client is None or self.__clientPid != pid:
+            # Drop (don't close) a client inherited from a parent process, since closing it here would act on the
+            # parent's copy of the client state
+            self.__client = None
+            conn = Connection(cfgOb=self.__cfgOb, resourceName=self.__resourceName)
+            conn.openConnection()
+            client = conn.getClientConnection()
+            if client is None:
+                raise ConnectionError("Unable to connect to resource %s" % self.__resourceName)
+            self.__client = client
+            self.__clientPid = pid
+        return self.__client[self.__databaseName][self.__collectionName]
 
     def cofactorDbCount(self):
         """Count the number of documents in the cofactor collection.
+
+        Uses a short-lived connection, so that checking the collection (e.g., in testCache()) leaves no open client
+        behind to be inherited by forked worker processes.
+
+        Returns:
+            int: document count, or -1 if the collection can't be reached
         """
-        count = 0
+        count = -1
         try:
-            count = self.__collection.count_documents({})
+            with Connection(cfgOb=self.__cfgOb, resourceName=self.__resourceName) as client:
+                if client is None:
+                    raise ConnectionError("Unable to connect to resource %s" % self.__resourceName)
+                count = client[self.__databaseName][self.__collectionName].count_documents({})
         except Exception as e:
             logger.exception("Failing with %s", str(e))
         return count
@@ -61,7 +92,7 @@ class TargetCofactorDbProvider:
         """
         data = []
         try:
-            document = self.__collection.find_one({"rcsb_id": rcsbEntityId})
+            document = self.__getCollection().find_one({"rcsb_id": rcsbEntityId})
             if document and dataFieldName in document:
                 data = document[dataFieldName]
         except Exception as e:

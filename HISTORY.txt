@@ -91,7 +91,8 @@
    2-Jul-2026  - V0.92 Use fallback for SAbDab and TheraSAbDab data until transition to SAbDab2
   20-Oct-2026  - V0.93 Support extended PDB IDs (RO-5076): split entity/instance IDs on the last underscore
                        (CARD, ChEMBL, DrugBank, Pharos, IMGT); stop forcing upper case entity IDs (CARD, ChEMBL,
-                       DrugBank, Pharos, and TargetCofactorDbProvider);
+                       DrugBank, Pharos, and TargetCofactorDbProvider); parse IMGT flat file names without assuming
+                       4-character PDB IDs (IMGT IDs are kept as provided by IMGT);
                        switch SAbDab assignments to the SAbDab2 JSON API, keyed by lower case extended ID
                        (e.g., pdb_00004hhb.A), with validation, gzipped stash fallbacks and source tracking for
                        SAbDab and Thera-SAbDab data; use the SAbDab2 data date as the SAbDab assignment/feature version.

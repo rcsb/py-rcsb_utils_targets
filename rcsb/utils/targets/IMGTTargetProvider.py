@@ -7,6 +7,8 @@
 #    3-Jul-2023 aae  imgt.org no longer supports http
 #    3-Sep-2025 dwp  raise errors when fetching fails to prevent generation of empty data file
 #   20-Feb-2026 dwp  Add fallback download
+#   20-Oct-2026 dwp  Get the entry ID from the full flat file name (not a fixed 4-character slice), so file names
+#                    with short or extended PDB IDs are both handled; document that chain keys are kept as provided by IMGT
 #
 ##
 """
@@ -54,6 +56,8 @@ class IMGTTargetProvider(StashableBase):
         return self.__version
 
     def getChains(self):
+        """Return IMGT chain details keyed by IMGT chain ID, as provided by IMGT in REMARK 410
+        ('<entryId>_<authAsymId>', currently with a lower case short PDB ID, e.g. '12e8_M')."""
         return self.__imgtD["chains"]
 
     def __reload(self, dirPath, useCache=False, imgtDumpUrl=None, testList=None, maxCount=None):
@@ -199,7 +203,7 @@ class IMGTTargetProvider(StashableBase):
                 break
             logger.debug("Processing file %r", fp)
             _, fn = os.path.split(fp)
-            pdbId = fn[5:9].lower()  # TODO: Adjust for extended IDs
+            pdbId = self.__getEntryIdFromFileName(fn)
             if testList and pdbId not in testList:
                 continue
             idList.append(pdbId)
@@ -224,6 +228,17 @@ class IMGTTargetProvider(StashableBase):
         logger.info("Missing (%d) %r", len(mL), mL)
         #
         return chainD, rawD
+
+    @staticmethod
+    def __getEntryIdFromFileName(fileName):
+        """Return the lower case entry ID from an IMGT flat file name (e.g., 'IMGT-12E8.pdb.gz' -> '12e8').
+
+        Only the file name prefix and suffix are removed, so short or extended PDB IDs are both handled.
+        (Used for test selection, logging and the raw data keys; chain keys come from the file content.)
+        """
+        entryId = fileName[: -len(".pdb.gz")] if fileName.endswith(".pdb.gz") else fileName
+        entryId = entryId[len("IMGT-"):] if entryId.startswith("IMGT-") else entryId
+        return entryId.lower()
 
     def __imgtRemarkParser(self, pdbId, ifh):
         """IMGT REMARK 410 Parser

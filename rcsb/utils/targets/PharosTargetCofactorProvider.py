@@ -5,6 +5,8 @@
 #  Updated:
 #   3-Mar-2023 aae Handle missing activityType in buildCofactorList
 #  20-Aug-2024 dwp Add support for loading and accessing data on MongoDB
+#  14-Jul-2026 dwp Split entity IDs on the last underscore and stop forcing upper case entity IDs, to handle short or
+#                  extended PDB IDs
 #
 ##
 """

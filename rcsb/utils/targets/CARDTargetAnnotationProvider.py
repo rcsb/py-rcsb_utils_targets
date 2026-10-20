@@ -5,6 +5,8 @@
 #  Updates:
 #  27-Aug-2024 dwp Update testCache and usage of CARDTargetOntologyProvider
 #   5-Jun-2025 dwp Update buildAnnotationList to use try/except in case of error
+#  14-Jul-2026 dwp Split entity IDs on the last underscore and stop forcing upper case entity IDs, to handle short or
+#                  extended PDB IDs
 #
 ##
 """

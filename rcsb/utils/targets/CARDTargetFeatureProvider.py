@@ -4,6 +4,8 @@
 #
 #  Updates:
 #   14-Mar-2023 dwp  CARD feature data will stop being used temporarily (in favor of CARD annotations)
+#   14-Jul-2026 dwp  Split entity IDs on the last underscore and stop forcing upper case entity IDs, to handle short or
+#                    extended PDB IDs
 ##
 """
 Accessors and generators for CARD target feature data.

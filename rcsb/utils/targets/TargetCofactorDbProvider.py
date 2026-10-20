@@ -5,6 +5,8 @@
 #  Updated:
 #  23-Aug-2024 dwp Use context manager for opening connections to ensure they close properly
 #  26-Aug-2024 dwp Revert back to persistent client connections
+#  14-Jul-2026 dwp Stop forcing upper case entity IDs when loading and fetching cofactor data, to handle short or
+#                  extended PDB IDs
 #
 ##
 """

@@ -3,7 +3,8 @@
 #  Date:           11-Jun-2021 jdw
 #
 #  Updated:
-#  20-Oct-2026 dwp  Update assignment key documentation for SAbDab2 assignments
+#  20-Oct-2026 dwp  Update assignment key documentation for SAbDab2 assignments;
+#                   use the SAbDab assignment data version (source data date) as the feature data version
 #
 ##
 """
@@ -52,6 +53,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
             return False
 
     def getVersion(self):
+        """Return the version (date, YYYY-MM-DD) of the SAbDab source data used to build the feature data."""
         try:
             return self.__fD["version"]
         except Exception:
@@ -221,7 +223,8 @@ class SAbDabTargetFeatureProvider(StashableBase):
         #
         fp = self.__getFeatureDataPath()
         tS = datetime.datetime.now().isoformat()
-        vS = datetime.datetime.now().strftime("%Y-%m-%d")
+        # Version of the source data (SAbDab2 data date), used as the assignment version of instance features
+        vS = assignVersion
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": qD, "assignments": stP.getAssignments()}, fmt="json", indent=3)
         return ok
 

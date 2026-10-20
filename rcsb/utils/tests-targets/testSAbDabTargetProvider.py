@@ -6,7 +6,8 @@
 #
 # Update:
 #   19-Oct-2026 dwp  Add SAbDab2 assignment tests
-#   20-Oct-2026 dwp  Add primary source availability and fallback tests (incl. gzipped backup and version date)
+#   20-Oct-2026 dwp  Add primary source availability and fallback tests (incl. gzipped backup and version date);
+#                    add extended/short ID lookup tests
 #
 #
 ##
@@ -69,6 +70,19 @@ class SAbDabTargetProviderTests(unittest.TestCase):
         self.assertEqual(time.strftime("%Y-%m-%d"), stP.getAssignmentVersion())
         self.assertTrue(stP.testCache())
         self.assertGreater(len(stP.getAssignments()), 20000)
+
+    def testAssignmentKeyLookup(self):
+        """Test lookups with extended and short entry IDs (no network)."""
+        aD = {"pdb_00004hhb.A": {"x": 1}, "pdb_00019999.B": {"x": 2}, "5bk0.A": {"x": 3}}  # last entry: key from an older short-ID cache
+        key = SAbDabTargetProvider.getAssignmentKey
+        self.assertEqual("pdb_00004hhb.A", key(aD, "4hhb.A"))
+        self.assertEqual("pdb_00004hhb.A", key(aD, "4HHB.A"))
+        self.assertEqual("pdb_00004hhb.A", key(aD, "pdb_00004hhb.A"))
+        self.assertEqual("pdb_00019999.B", key(aD, "pdb_00019999.B"))  # extended-only ID with no short form
+        self.assertEqual("5bk0.A", key(aD, "5bk0.A"))
+        self.assertEqual("5bk0.A", key(aD, "pdb_00005bk0.A"))
+        self.assertIsNone(key(aD, "4hhb.B"))
+        self.assertIsNone(key(aD, "pdb_00029999.B"))
 
     def testStashBackupSources(self):
         """Test the default stash backup sources (fetched over the network) by making the primary sources unavailable."""
@@ -151,6 +165,7 @@ def fetchSAbDabTargets():
     suiteSelect = unittest.TestSuite()
     suiteSelect.addTest(SAbDabTargetProviderTests("testFetchSAbDabTargets"))
     suiteSelect.addTest(SAbDabTargetProviderTests("testPrimarySourcesAvailable"))
+    suiteSelect.addTest(SAbDabTargetProviderTests("testAssignmentKeyLookup"))
     suiteSelect.addTest(SAbDabTargetProviderTests("testStashBackupSources"))
     suiteSelect.addTest(SAbDabTargetProviderTests("testFallbackSources"))
     suiteSelect.addTest(SAbDabTargetProviderTests("testSAbDabAssignments"))

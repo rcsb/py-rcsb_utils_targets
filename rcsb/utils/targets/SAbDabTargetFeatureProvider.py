@@ -3,6 +3,7 @@
 #  Date:           11-Jun-2021 jdw
 #
 #  Updated:
+#  20-Oct-2026 dwp  Look up assignments by extended or short entry IDs
 #
 ##
 """
@@ -70,16 +71,17 @@ class SAbDabTargetFeatureProvider(StashableBase):
         """Return the value of the key feature for the input instance identifier.
 
         Args:
-            instanceId (str): instance identifier '<pdbId>.<authAsymId>'
-            featureKey (str): assignment feature key: one of pdb|Hchain|Lchain|model|antigen_chain|antigen_type|
-                              antigen_het_name|antigen_name|heavy_subclass|light_subclass|light_ctype)
+            instanceId (str): instance identifier '<entryId>.<authAsymId>' (extended or short entry ID)
+            featureKey (str): assignment feature key: one of pdb|model|antigen_name|heavy_subclass|light_subclass|light_ctype
+                              (antigen_name is ' | ' joined; light_ctype is Kappa|Lambda)
 
         Returns:
             str:  feature value or None
         """
         fVal = None
         try:
-            fVal = self.__fD["assignments"][instanceId][featureKey]
+            aD = self.__fD["assignments"]
+            fVal = aD[SAbDabTargetProvider.getAssignmentKey(aD, instanceId)][featureKey]
         except Exception:
             fVal = None
         return fVal
@@ -88,12 +90,12 @@ class SAbDabTargetFeatureProvider(StashableBase):
         """Return if assignment data is available for the input instance.
 
         Args:
-            instanceId (str): instance identifier '<pdbId>.<authAsymId>'
+            instanceId (str): instance identifier '<entryId>.<authAsymId>' (extended or short entry ID)
 
         Returns:
             bool: True for success or False otherwise
         """
-        return instanceId in self.__fD["assignments"]
+        return SAbDabTargetProvider.getAssignmentKey(self.__fD["assignments"], instanceId) is not None
 
     def __getFeatureDataPath(self):
         return os.path.join(self.__dirPath, "sabdab-feature-data.json")

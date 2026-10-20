@@ -10,7 +10,7 @@
 #  19-Oct-2026 dwp  Switch SAbDab assignments to the SAbDab2 JSON API (rcsb-pdb-annotations)
 #  20-Oct-2026 dwp  Add validation and fallback sources for SAbDab and Thera-SAbDab data, and record the sources used;
 #                   support gzipped sources; use the source data's date as the assignment version;
-#                   store assignments under extended IDs only and look up by extended or short ID
+#                   key assignments by (lower case) extended entry ID, as provided by the source data
 ##
 """
 Accessors for Thera-SAbDab(Therapeutic Structural Antibody Database) target data.
@@ -71,7 +71,7 @@ class SAbDabTargetProvider(object):
         """Return the value of the key feature for the input instance identifier.
 
         Args:
-            instanceId (str): instance identifier '<entryId>.<authAsymId>' (extended or short entry ID)
+            instanceId (str): instance identifier '<extendedEntryId>.<authAsymId>' (lower case extended entry ID, e.g. 'pdb_00004hhb.A')
             featureKey (str): assignment feature key: one of pdb|model|antigen_name|heavy_subclass|light_subclass|light_ctype
                               (antigen_name is ' | ' joined; light_ctype is Kappa|Lambda)
 
@@ -80,7 +80,7 @@ class SAbDabTargetProvider(object):
         """
         fVal = None
         try:
-            fVal = self.__aD[self.getAssignmentKey(self.__aD, instanceId)][featureKey]
+            fVal = self.__aD[instanceId][featureKey]
         except Exception:
             fVal = None
         return fVal
@@ -89,37 +89,12 @@ class SAbDabTargetProvider(object):
         """Return if assignment data is available for the input instance.
 
         Args:
-            instanceId (str): instance identifier '<entryId>.<authAsymId>' (extended or short entry ID)
+            instanceId (str): instance identifier '<extendedEntryId>.<authAsymId>' (lower case extended entry ID, e.g. 'pdb_00004hhb.A')
 
         Returns:
             bool: True for success or False otherwise
         """
-        return self.getAssignmentKey(self.__aD, instanceId) is not None
-
-    @staticmethod
-    def getAssignmentKey(assignmentD, instanceId):
-        """Find the key of an instance in an assignments dictionary, using either extended or short entry IDs.
-
-        Assignments are stored under extended IDs ('pdb_00004hhb.A'), but callers (and assignment caches
-        built by older versions) may use short IDs ('4hhb.A'), so the instance ID as given is tried first,
-        then its extended/short equivalent.
-        # TODO: Remove the short ID handling when fully switched over to extended IDs
-
-        Args:
-            assignmentD (dict): assignments keyed by '<entryId>.<authAsymId>'
-            instanceId (str): instance identifier '<entryId>.<authAsymId>' (entry ID as extended or short ID, any case; chain ID is case sensitive)
-
-        Returns:
-            str: matching key in assignmentD or None
-        """
-        entryId, sep, authAsymId = instanceId.partition(".")  # chain IDs are case sensitive; entry IDs are not
-        entryId = entryId.lower()
-        candidateL = [entryId + sep + authAsymId]
-        if re.fullmatch(r"[0-9][a-z0-9]{3}", entryId):
-            candidateL.append("pdb_0000" + entryId + sep + authAsymId)
-        elif re.fullmatch(r"pdb_0000[0-9][a-z0-9]{3}", entryId):
-            candidateL.append(entryId.removeprefix("pdb_0000") + sep + authAsymId)
-        return next((k for k in candidateL if k in assignmentD), None)
+        return instanceId in self.__aD
 
     def getAssignments(self):
         return self.__aD
@@ -298,7 +273,7 @@ class SAbDabTargetProvider(object):
         (a wrapper {"version": ..., "records": [...]} around the same JSON, stored gzipped).
 
         Returns:
-            (dict, dict): assignments keyed by '<entryId>.<authAsymId>' (extended entry ID, lower case),
+            (dict, dict): assignments keyed by '<entryId>.<authAsymId>' (lower case extended entry ID),
                           and the source used {"url": str, "fallback": bool, "version": str}
 
         Raises:

@@ -3,7 +3,7 @@
 #  Date:           11-Jun-2021 jdw
 #
 #  Updated:
-#  20-Oct-2026 dwp  Look up assignments by extended or short entry IDs
+#  20-Oct-2026 dwp  Update assignment key documentation for SAbDab2 assignments
 #
 ##
 """
@@ -71,7 +71,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
         """Return the value of the key feature for the input instance identifier.
 
         Args:
-            instanceId (str): instance identifier '<entryId>.<authAsymId>' (extended or short entry ID)
+            instanceId (str): instance identifier '<extendedEntryId>.<authAsymId>' (lower case extended entry ID, e.g. 'pdb_00004hhb.A')
             featureKey (str): assignment feature key: one of pdb|model|antigen_name|heavy_subclass|light_subclass|light_ctype
                               (antigen_name is ' | ' joined; light_ctype is Kappa|Lambda)
 
@@ -80,8 +80,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
         """
         fVal = None
         try:
-            aD = self.__fD["assignments"]
-            fVal = aD[SAbDabTargetProvider.getAssignmentKey(aD, instanceId)][featureKey]
+            fVal = self.__fD["assignments"][instanceId][featureKey]
         except Exception:
             fVal = None
         return fVal
@@ -90,12 +89,12 @@ class SAbDabTargetFeatureProvider(StashableBase):
         """Return if assignment data is available for the input instance.
 
         Args:
-            instanceId (str): instance identifier '<entryId>.<authAsymId>' (extended or short entry ID)
+            instanceId (str): instance identifier '<extendedEntryId>.<authAsymId>' (lower case extended entry ID, e.g. 'pdb_00004hhb.A')
 
         Returns:
             bool: True for success or False otherwise
         """
-        return SAbDabTargetProvider.getAssignmentKey(self.__fD["assignments"], instanceId) is not None
+        return instanceId in self.__fD["assignments"]
 
     def __getFeatureDataPath(self):
         return os.path.join(self.__dirPath, "sabdab-feature-data.json")

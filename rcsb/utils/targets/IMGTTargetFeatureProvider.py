@@ -3,6 +3,8 @@
 #  Date:           7-Jul-2021 jdw
 #
 #  Updated:
+#  14-Jul-2026 dwp Split IMGT chain IDs on the last underscore, to handle short or extended entry IDs
+#  20-Oct-2026 dwp Document that instance keys keep the entry ID as provided by IMGT
 #
 ##
 """
@@ -51,7 +53,8 @@ class IMGTTargetFeatureProvider(StashableBase):
         """Return if features exist for the input instance identifier (auth_asym_id)
 
         Args:
-            rcsbInstanceId (str): <pdbId (lower case)>.<auth_asym_id (case sensitive)>
+            rcsbInstanceId (str): <entryId>.<auth_asym_id (case sensitive)>, with the entry ID as provided by IMGT
+                                  (currently a lower case short PDB ID, e.g. '6bla.L')
 
         Returns:
             bool: True for success or False otherwise
@@ -62,7 +65,8 @@ class IMGTTargetFeatureProvider(StashableBase):
         """Return features for the instance identifier (auth_asym_id)
 
         Args:
-            rcsbInstanceId (str): <pdbId (lower case)>.<auth_asym_id (case sensitive)>
+            rcsbInstanceId (str): <entryId>.<auth_asym_id (case sensitive)>, with the entry ID as provided by IMGT
+                                  (currently a lower case short PDB ID, e.g. '6bla.L')
 
         Returns:
             list: list of feature dictionaries
@@ -172,8 +176,9 @@ class IMGTTargetFeatureProvider(StashableBase):
         ii = 1
         #
         for chainId, chD in chainD.items():
-            entryId = chainId[:4]
-            authAsymId = chainId.split("_")[1]
+            # IMGT chain ID '<entryId>_<authAsymId>'; the entry ID is kept as provided by IMGT (short or extended)
+            entryId = "_".join(chainId.split("_")[0:-1])
+            authAsymId = chainId.split("_")[-1]
             # descriptive features -
             for fTup in fTupL:
                 rD = {
@@ -241,8 +246,8 @@ class IMGTTargetFeatureProvider(StashableBase):
         #
         qD = {}
         for rD in rDL:
-            eId = rD["entry_id"] + "." + rD["auth_asym_id"]
-            qD.setdefault(eId, []).append(rD)
+            instId = rD["entry_id"] + "." + rD["auth_asym_id"]
+            qD.setdefault(instId, []).append(rD)
         #
         logger.info("IMGT antibody chain features (%d)", len(qD))
         #

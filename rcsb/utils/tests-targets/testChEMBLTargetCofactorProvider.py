@@ -5,6 +5,7 @@
 # Version: 0.001
 #
 # Update:
+#  20-Oct-2026 dwp Look up entity IDs in the case of the test data (upper case is no longer forced)
 #
 #
 ##
@@ -64,9 +65,9 @@ class ChEMBLTargetCofactorProviderTests(unittest.TestCase):
         stfP = ChEMBLTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasTarget("5fn7_1")
+        ok = stfP.hasTarget("5FN7_1")
         self.assertTrue(ok)
-        aL = stfP.getTargets("5fn7_1")
+        aL = stfP.getTargets("5FN7_1")
         self.assertGreaterEqual(len(aL[0]["cofactors"]), 5)
 
     def testChEMBLTargetsCofactorsDb(self):
@@ -74,7 +75,7 @@ class ChEMBLTargetCofactorProviderTests(unittest.TestCase):
         stfP = ChEMBLTargetCofactorProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasTarget("5fn7_1")
+        ok = stfP.hasTarget("5FN7_1")
         self.assertTrue(ok)
         ok = stfP.loadCofactorData(cfgOb=self.__cfgOb)
         self.assertTrue(ok)
@@ -82,7 +83,7 @@ class ChEMBLTargetCofactorProviderTests(unittest.TestCase):
         # Now test access of data in mongo
         stfA = ChEMBLTargetCofactorAccessor(cachePath=self.__cachePath, cfgOb=self.__cfgOb)
         ok = stfA.testCache()
-        tDL = stfA.getTargets("5fn7_1")
+        tDL = stfA.getTargets("5FN7_1")
         ok = len(tDL) > 0
         self.assertTrue(ok)
 

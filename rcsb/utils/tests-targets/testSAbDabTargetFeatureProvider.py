@@ -5,6 +5,8 @@
 # Version: 0.001
 #
 # Update:
+#   20-Oct-2026 dwp  Look up assignments by extended ID and entity features without forcing case;
+#                    check the feature data version is the assignment data version
 #
 #
 ##
@@ -59,15 +61,18 @@ class SAbDabTargetFeatureProviderTests(unittest.TestCase):
         stfP = SAbDabTargetFeatureProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasFeatures("4g6k_2")
+        ok = stfP.hasFeatures("4G6K_2")
         self.assertTrue(ok)
-        fL = stfP.getFeatures("4g6k_2")
+        fL = stfP.getFeatures("4G6K_2")
         self.assertGreaterEqual(len(fL), 3)
-        # "5bk0|A"
-        ok = stfP.hasAssignment("5bk0.A")
+        # Assignments are keyed by extended ID
+        ok = stfP.hasAssignment("pdb_00005bk0.A")
         self.assertTrue(ok)
-        ok = stfP.getAssignment("5bk0.A", "antigen_name")
+        ok = stfP.getAssignment("pdb_00005bk0.A", "antigen_name")
         self.assertTrue(ok)
+        # Feature data version is the SAbDab assignment data version (also used for the entity features)
+        self.assertRegex(stfP.getVersion(), r"^\d{4}-\d{2}-\d{2}$")
+        self.assertEqual(stfP.getVersion(), fL[0]["assignment_version"])
 
     @unittest.skip("Bootstrap test")
     def testSabdabCacheBootstrap(self):

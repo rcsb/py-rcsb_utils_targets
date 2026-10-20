@@ -5,6 +5,7 @@
 # Version: 0.001
 #
 # Update:
+#  20-Oct-2026 dwp Look up entity IDs in the case of the test data (upper case is no longer forced)
 #
 #
 ##
@@ -57,9 +58,9 @@ class CARDTargetFeatureProviderTests(unittest.TestCase):
         stfP = CARDTargetFeatureProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasFeatures("5f64_1")
+        ok = stfP.hasFeatures("5F64_1")
         self.assertTrue(ok)
-        fL = stfP.getFeatures("5f64_1")
+        fL = stfP.getFeatures("5F64_1")
         self.assertGreaterEqual(len(fL), 1)
 
 

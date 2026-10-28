@@ -7,6 +7,7 @@
 # 13-Aug-2019  jdw export config support token prior to launching tox runner
 #  9-Sep-2019  jdw set unlimited timeout
 # 22-Sep-2026  dwp install MongoDB on macOS from official tarball (Homebrew 6 dropped Intel bottles)
+# 28-Oct-2026  dwp check that mongod is listening on linux (as on macOS), and show its status and logs if not
 #
 ##
 parameters:
@@ -119,6 +120,18 @@ jobs:
               sudo service mongod start
               sudo ss -tulpn
             displayName: "Start Mongo service"
+          #
+          - bash: |
+              for i in $(seq 1 30); do
+                if timeout 1 bash -c '</dev/tcp/127.0.0.1/27017' 2>/dev/null; then echo "mongod is listening on port 27017"; exit 0; fi
+                sleep 2
+              done
+              echo "mongod is not listening on port 27017"
+              sudo systemctl status mongod --no-pager || true
+              sudo journalctl -u mongod --no-pager -n 50 || true
+              sudo tail -n 100 /var/log/mongodb/mongod.log || true
+              exit 1
+            displayName: "Check mongodb service"
         #
       - ${{ if and(contains(parameters.fixtures, 'mongodb'), startsWith(parameters.os, 'macos')) }}:
           # Homebrew 6.0 no longer provides bottles for Intel (x86_64) macOS, so `brew install mongodb-community`

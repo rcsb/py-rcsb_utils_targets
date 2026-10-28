@@ -4,6 +4,8 @@
 #
 #  Updates:
 #   14-Mar-2023 dwp  CARD feature data will stop being used temporarily (in favor of CARD annotations)
+#   14-Jul-2026 dwp  Split entity IDs on the last underscore and stop forcing upper case entity IDs, to handle short or
+#                    extended PDB IDs
 ##
 """
 Accessors and generators for CARD target feature data.
@@ -44,11 +46,11 @@ class CARDTargetFeatureProvider(StashableBase):
             return False
 
     def hasFeatures(self, rcsbEntityId):
-        return rcsbEntityId.upper() in self.__fD["features"]
+        return rcsbEntityId in self.__fD["features"]
 
     def getFeatures(self, rcsbEntityId):
         try:
-            return self.__fD["features"][rcsbEntityId.upper()]
+            return self.__fD["features"][rcsbEntityId]
         except Exception:
             pass
         return []
@@ -111,8 +113,8 @@ class CARDTargetFeatureProvider(StashableBase):
                 else:
                     fpL = [{"beg_seq_id": matchD["targetBegin"], "end_seq_id": matchD["targetEnd"]}]
                 tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
+                entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                entityId = tCmtD["entityId"].split("_")[-1]
                 nm = cardP.getModelValue(modelId, "modelName")
                 descr = cardP.getModelValue(modelId, "descr")
                 featureId = cardP.getModelValue(modelId, "cvTermId")

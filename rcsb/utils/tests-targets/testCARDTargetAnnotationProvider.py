@@ -5,6 +5,7 @@
 # Version: 0.001
 #
 # Update:
+#  20-Oct-2026 dwp Look up entity IDs in the case of the test data (upper case is no longer forced)
 #
 ##
 """
@@ -57,9 +58,9 @@ class CARDTargetAnnotationProviderTests(unittest.TestCase):
         stfP = CARDTargetAnnotationProvider(cachePath=self.__cachePath, useCache=True)
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasAnnotation("5f64_1")
+        ok = stfP.hasAnnotation("5F64_1")
         self.assertTrue(ok)
-        aD = stfP.getAnnotation("5f64_1")
+        aD = stfP.getAnnotation("5F64_1")
         self.assertGreaterEqual(len(list(aD)), 10)
         #
         ok = stfP.hasAnnotation("4GD8_1")

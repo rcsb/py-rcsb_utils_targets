@@ -5,6 +5,7 @@
 # Version: 0.001
 #
 # Update:
+#  20-Oct-2026 dwp Look up entity IDs in the case of the test data (upper case is no longer forced)
 #
 #
 ##
@@ -85,9 +86,9 @@ class DrugBankTargetProviderTests(unittest.TestCase):
         stfP = DrugBankTargetCofactorProvider(cachePath=self.__cachePath, useCache=True, fmt="json")
         ok = stfP.testCache()
         self.assertTrue(ok)
-        ok = stfP.hasTarget("5vbn_2")
+        ok = stfP.hasTarget("5VBN_2")
         self.assertTrue(ok)
-        fL = stfP.getTargets("5vbn_2")
+        fL = stfP.getTargets("5VBN_2")
         self.assertGreaterEqual(len(fL), 1)
 
 

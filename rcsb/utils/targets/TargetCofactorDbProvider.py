@@ -5,6 +5,8 @@
 #  Updated:
 #  23-Aug-2024 dwp Use context manager for opening connections to ensure they close properly
 #  26-Aug-2024 dwp Revert back to persistent client connections
+#  14-Jul-2026 dwp Stop forcing upper case entity IDs when loading and fetching cofactor data, to handle short or
+#                  extended PDB IDs
 #
 ##
 """
@@ -59,7 +61,7 @@ class TargetCofactorDbProvider:
         """
         data = []
         try:
-            document = self.__collection.find_one({"rcsb_id": rcsbEntityId.upper()})
+            document = self.__collection.find_one({"rcsb_id": rcsbEntityId})
             if document and dataFieldName in document:
                 data = document[dataFieldName]
         except Exception as e:
@@ -100,7 +102,7 @@ class TargetCofactorDbProvider:
         #
         cofactorDataDict = cofactorProvider.getCofactorDataDict()
         dL = []
-        dL = [{"rcsb_id": k.upper(), "rcsb_cofactors": vL} for k, vL in cofactorDataDict.items()]
+        dL = [{"rcsb_id": k, "rcsb_cofactors": vL} for k, vL in cofactorDataDict.items()]
         #
         startTime = time.time()
         ok = dl.load(self.__databaseName, self.__collectionName, loadType=loadType, documentList=dL, indexAttributeList=["rcsb_id"], keyNames=None, schemaLevel=None)

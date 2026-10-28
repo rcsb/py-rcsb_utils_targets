@@ -3,6 +3,8 @@
 #  Date:           11-Jun-2021 jdw
 #
 #  Updated:
+#  20-Oct-2026 dwp  Update assignment key documentation for SAbDab2 assignments;
+#                   use the SAbDab assignment data version (source data date) as the feature data version
 #
 ##
 """
@@ -51,6 +53,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
             return False
 
     def getVersion(self):
+        """Return the version (date, YYYY-MM-DD) of the SAbDab source data used to build the feature data."""
         try:
             return self.__fD["version"]
         except Exception:
@@ -58,11 +61,11 @@ class SAbDabTargetFeatureProvider(StashableBase):
         return None
 
     def hasFeatures(self, rcsbEntityId):
-        return rcsbEntityId.upper() in self.__fD["features"]
+        return rcsbEntityId in self.__fD["features"]
 
     def getFeatures(self, rcsbEntityId):
         try:
-            return self.__fD["features"][rcsbEntityId.upper()]
+            return self.__fD["features"][rcsbEntityId]
         except Exception:
             return []
 
@@ -70,9 +73,9 @@ class SAbDabTargetFeatureProvider(StashableBase):
         """Return the value of the key feature for the input instance identifier.
 
         Args:
-            instanceId (str): instance identifier '<pdbId>.<authAsymId>'
-            featureKey (str): assignment feature key: one of pdb|Hchain|Lchain|model|antigen_chain|antigen_type|
-                              antigen_het_name|antigen_name|heavy_subclass|light_subclass|light_ctype)
+            instanceId (str): instance identifier '<extendedEntryId>.<authAsymId>' (lower case extended entry ID, e.g. 'pdb_00004hhb.A')
+            featureKey (str): assignment feature key: one of pdb|model|antigen_name|heavy_subclass|light_subclass|light_ctype
+                              (antigen_name is ' | ' joined; light_ctype is Kappa|Lambda)
 
         Returns:
             str:  feature value or None
@@ -88,7 +91,7 @@ class SAbDabTargetFeatureProvider(StashableBase):
         """Return if assignment data is available for the input instance.
 
         Args:
-            instanceId (str): instance identifier '<pdbId>.<authAsymId>'
+            instanceId (str): instance identifier '<extendedEntryId>.<authAsymId>' (lower case extended entry ID, e.g. 'pdb_00004hhb.A')
 
         Returns:
             bool: True for success or False otherwise
@@ -151,8 +154,8 @@ class SAbDabTargetFeatureProvider(StashableBase):
             chainType = qCmtD["chain"]
             for matchD in matchDL:
                 tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
+                entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                entityId = tCmtD["entityId"].split("_")[-1]
                 iD[(thName, chainType, entryId)] = entityId
         logger.info("Match index length (%d)", len(iD))
         for (thName, chainType, entryId), entityId in iD.items():
@@ -179,8 +182,8 @@ class SAbDabTargetFeatureProvider(StashableBase):
                     fpL = [{"beg_seq_id": matchD["targetBegin"], "end_seq_id": matchD["targetEnd"]}]
                 #
                 tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
+                entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                entityId = tCmtD["entityId"].split("_")[-1]
                 if (thName, chainType, entryId, entityId) not in fullMatchD:
                     continue
                 ii = 1
@@ -220,7 +223,8 @@ class SAbDabTargetFeatureProvider(StashableBase):
         #
         fp = self.__getFeatureDataPath()
         tS = datetime.datetime.now().isoformat()
-        vS = datetime.datetime.now().strftime("%Y-%m-%d")
+        # Version of the source data (SAbDab2 data date), used as the assignment version of instance features
+        vS = assignVersion
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "features": qD, "assignments": stP.getAssignments()}, fmt="json", indent=3)
         return ok
 

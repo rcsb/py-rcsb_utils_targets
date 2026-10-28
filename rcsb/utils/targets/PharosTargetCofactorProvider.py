@@ -5,6 +5,8 @@
 #  Updated:
 #   3-Mar-2023 aae Handle missing activityType in buildCofactorList
 #  20-Aug-2024 dwp Add support for loading and accessing data on MongoDB
+#  14-Jul-2026 dwp Split entity IDs on the last underscore and stop forcing upper case entity IDs, to handle short or
+#                  extended PDB IDs
 #
 ##
 """
@@ -48,11 +50,11 @@ class PharosTargetCofactorProvider(StashableBase):
             return False
 
     def hasTarget(self, rcsbEntityId):
-        return rcsbEntityId.upper() in self.__fD["cofactors"]
+        return rcsbEntityId in self.__fD["cofactors"]
 
     def getTargets(self, rcsbEntityId):
         try:
-            return self.__fD["cofactors"][rcsbEntityId.upper()]
+            return self.__fD["cofactors"][rcsbEntityId]
         except Exception:
             return []
 
@@ -93,7 +95,7 @@ class PharosTargetCofactorProvider(StashableBase):
         Args:
             sequenceMatchFilePath (str): sequence match output file path
             crmpObj (obj, optional): instance of ChemRefMappingProviderObj(). Defaults to None.
-            lnmpObj (obj, optional): instance of LigandNeighborMappingProviderObj(). Defaults to None.
+            lnmpObj (obj, optional): instance of LigandNeighborMappingProvider(). Defaults to None.
             maxActivity (int, optional): maximum number of prioritized activity records per target. Defaults to 5.
 
         Returns:
@@ -150,8 +152,8 @@ class PharosTargetCofactorProvider(StashableBase):
             if lnmpObj:
                 for matchD in matchDL:
                     tCmtD = self.__decodeComment(matchD["target"])
-                    entryId = tCmtD["entityId"].split("_")[0]
-                    entityId = tCmtD["entityId"].split("_")[1]
+                    entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                    entityId = tCmtD["entityId"].split("_")[-1]
                     rcsbEntityId = entryId + "_" + entityId
                     chemCompIdList = lnmpObj.getLigandNeighbors(rcsbEntityId)
                     chemCompNeighborsD.update({k: True for k in chemCompIdList})
@@ -160,8 +162,8 @@ class PharosTargetCofactorProvider(StashableBase):
             # --
             for matchD in matchDL:
                 tCmtD = self.__decodeComment(matchD["target"])
-                entryId = tCmtD["entityId"].split("_")[0]
-                entityId = tCmtD["entityId"].split("_")[1]
+                entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                entityId = tCmtD["entityId"].split("_")[-1]
                 rcsbEntityId = entryId + "_" + entityId
                 #
                 taDL = chaP.getTargetActivity(pharosId)

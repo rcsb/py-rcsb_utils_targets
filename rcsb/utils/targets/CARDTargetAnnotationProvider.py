@@ -5,6 +5,8 @@
 #  Updates:
 #  27-Aug-2024 dwp Update testCache and usage of CARDTargetOntologyProvider
 #   5-Jun-2025 dwp Update buildAnnotationList to use try/except in case of error
+#  14-Jul-2026 dwp Split entity IDs on the last underscore and stop forcing upper case entity IDs, to handle short or
+#                  extended PDB IDs
 #
 ##
 """
@@ -47,11 +49,11 @@ class CARDTargetAnnotationProvider(StashableBase):
         return ok
 
     def hasAnnotation(self, rcsbEntityId):
-        return rcsbEntityId.upper() in self.__fD["annotations"]
+        return rcsbEntityId in self.__fD["annotations"]
 
     def getAnnotation(self, rcsbEntityId):
         try:
-            return self.__fD["annotations"][rcsbEntityId.upper()]
+            return self.__fD["annotations"][rcsbEntityId]
         except Exception:
             pass
         return None
@@ -119,8 +121,8 @@ class CARDTargetAnnotationProvider(StashableBase):
                 try:
                     #
                     tCmtD = self.__decodeComment(matchD["target"])
-                    entryId = tCmtD["entityId"].split("_")[0]
-                    entityId = tCmtD["entityId"].split("_")[1]
+                    entryId = "_".join(tCmtD["entityId"].split("_")[0:-1])
+                    entityId = tCmtD["entityId"].split("_")[-1]
                     seqIdPct = matchD["sequenceIdentity"]
                     bitScore = matchD["bitScore"]
                     nm = cardP.getModelValue(modelId, "modelName")

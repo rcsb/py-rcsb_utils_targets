@@ -5,6 +5,8 @@
 #  Updated:
 #  14-Jul-2026 dwp Split IMGT chain IDs on the last underscore, to handle short or extended entry IDs
 #  20-Oct-2026 dwp Document that instance keys keep the entry ID as provided by IMGT
+#  28-Oct-2026 dwp Rename the loop variable to imgtChainId and document IMGT's '<entryId>_<authAsymId>' chain ID format;
+#                  note that instance keys use auth_asym_id
 #
 ##
 """
@@ -53,7 +55,7 @@ class IMGTTargetFeatureProvider(StashableBase):
         """Return if features exist for the input instance identifier (auth_asym_id)
 
         Args:
-            rcsbInstanceId (str): <entryId>.<auth_asym_id (case sensitive)>, with the entry ID as provided by IMGT
+            rcsbInstanceId (str): <entryId>.<auth_asym_id (case sensitive; not label_asym_id)>, with the entry ID as provided by IMGT
                                   (currently a lower case short PDB ID, e.g. '6bla.L')
 
         Returns:
@@ -65,7 +67,7 @@ class IMGTTargetFeatureProvider(StashableBase):
         """Return features for the instance identifier (auth_asym_id)
 
         Args:
-            rcsbInstanceId (str): <entryId>.<auth_asym_id (case sensitive)>, with the entry ID as provided by IMGT
+            rcsbInstanceId (str): <entryId>.<auth_asym_id (case sensitive; not label_asym_id)>, with the entry ID as provided by IMGT
                                   (currently a lower case short PDB ID, e.g. '6bla.L')
 
         Returns:
@@ -175,10 +177,11 @@ class IMGTTargetFeatureProvider(StashableBase):
         ]
         ii = 1
         #
-        for chainId, chD in chainD.items():
-            # IMGT chain ID '<entryId>_<authAsymId>'; the entry ID is kept as provided by IMGT (short or extended)
-            entryId = "_".join(chainId.split("_")[0:-1])
-            authAsymId = chainId.split("_")[-1]
+        for imgtChainId, chD in chainD.items():
+            # IMGT's own chain ID format is '<entryId>_<authAsymId>' (they use an underscore to separate the entry and chain/instance ID, rather than a period);
+            # the entry ID is kept as provided by IMGT (short or extended); features are keyed '<entryId>.<authAsymId>' below
+            entryId = "_".join(imgtChainId.split("_")[0:-1])
+            authAsymId = imgtChainId.split("_")[-1]
             # descriptive features -
             for fTup in fTupL:
                 rD = {
@@ -205,14 +208,14 @@ class IMGTTargetFeatureProvider(StashableBase):
                     begSeqId = dD["alignment"]["begEntitySeqId"]
                     endSeqId = dD["alignment"]["endEntitySeqId"]
                 else:
-                    logger.debug("%r missing alignment for in %r", chainId, dD)
+                    logger.debug("%r missing alignment for in %r", imgtChainId, dD)
                 #
                 gaL = []
                 if "geneAlleles" in dD:
                     for gD in dD["geneAlleles"]:
                         gaL.append(gD["geneAllele"])
                 else:
-                    logger.debug("%r missing gene and alleles for in %r", chainId, dD)
+                    logger.debug("%r missing gene and alleles for in %r", imgtChainId, dD)
                 #
                 #
                 rD = {

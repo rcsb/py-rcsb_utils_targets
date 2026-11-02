@@ -5,6 +5,7 @@
 # Version: 0.001
 #
 # Update:
+#  26-Oct-2026 dwp Add test for IMGT source entry IDs (fails once IMGT uses extended PDB IDs)
 #
 #
 ##
@@ -35,6 +36,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
+def getNonShortEntryIds(entryIds):
+    """Return the entry IDs that aren't short (4-character) PDB IDs, e.g. extended (12-character) PDB IDs."""
+    return sorted({eId for eId in entryIds if len(eId) != 4})
+
+
 class IMGTTargetProviderTests(unittest.TestCase):
     def setUp(self):
         self.__cachePath = os.path.join(HERE, "test-output", "CACHE")
@@ -61,11 +67,23 @@ class IMGTTargetProviderTests(unittest.TestCase):
         ok = imgtP.exportFasta()
         self.assertTrue(ok)
 
+    def testCSourceEntryIds(self):
+        """Check that the IMGT source data (REMARK 410 chain IDs, '<entryId>_<authAsymId>') still uses short (4-character) PDB IDs.
+
+        Like testBExportFasta, reads the cache built from the source data by testIMGTTargetFeatureProvider.py.
+        """
+        imgtP = IMGTTargetProvider(self.__cachePath, useCache=True)
+        self.assertTrue(imgtP.testCache())
+        # Fails once the source data uses extended PDB IDs; then update this package and rcsb.utils.dictionary for them
+        badL = getNonShortEntryIds({"_".join(chainId.split("_")[:-1]) for chainId in imgtP.getChains()})
+        self.assertEqual(badL, [], "IMGT source data has entry IDs that aren't 4-char PDB IDs: %r" % badL[:10])
+
 
 def imgtTargetPrep():
     suiteSelect = unittest.TestSuite()
     suiteSelect.addTest(IMGTTargetProviderTests("testAPrepTargetData"))
     suiteSelect.addTest(IMGTTargetProviderTests("testBExportFasta"))
+    suiteSelect.addTest(IMGTTargetProviderTests("testCSourceEntryIds"))
     return suiteSelect
 
 

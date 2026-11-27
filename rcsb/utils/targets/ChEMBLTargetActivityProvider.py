@@ -5,6 +5,9 @@
 #  Updated:
 #   9-Feb-2023 aae  Update ChEMBL baseVersion to 31
 #  18-Jul-2023 dwp  Update ChEMBL baseVersion to 33
+#  27-Nov-2026 dwp  Don't record targets from a failed ChEMBL API chunk as tried (the worker reports them as
+#                   failures and fetchTargetActivityDataMulti() leaves them out of "all_ids"), so they're
+#                   fetched again on the next run; fetchTargetActivityData() records each chunk's own targets
 ##
 """
 Accessors for ChEMBL target activity data.
@@ -61,11 +64,13 @@ class ChEMBLTargetActivityWorker(object):
 
             for ii in range(0, len(dataList), chunkSize):
                 logger.info("Begin chunk at ii %d/(for %d targets)", ii, len(dataList))
+                chunkIdL = dataList[ii: ii + chunkSize]
+                chunkRetL = []
                 try:
                     act = new_client.activity  # pylint: disable=no-member
                     act.set_format("json")
                     actDL = (
-                        act.filter(target_chembl_id__in=dataList[ii: ii + chunkSize])
+                        act.filter(target_chembl_id__in=chunkIdL)
                         .filter(standard_type__in=["IC50", "Ki", "EC50", "Kd"])
                         .filter(standard_value__isnull=False)
                         .order_by("-standard_value")
@@ -77,12 +82,16 @@ class ChEMBLTargetActivityWorker(object):
                             actD = self.__activitySelect(atL, actD)
                             actD["molecule_name"], actD["inchi_key"], _ = self.__getMoleculeDetails(actD["molecule_chembl_id"])
                             actD["action"], actD["moa"], actD["max_phase"] = self.__getMechanismDetails(actD["molecule_chembl_id"])
-                            retList.append((actD["target_chembl_id"], actD))
+                            chunkRetL.append((actD["target_chembl_id"], actD))
+                    # Keep a chunk's results only if the whole chunk succeeded
+                    retList.extend(chunkRetL)
                 except Exception as e:
+                    # Report the chunk's targets as failed so that they aren't recorded as tried (and are retried next time)
+                    failList.extend(chunkIdL)
                     logger.exception("Failing for chunk starting at %d with %s", ii, str(e)[:200])
             successList = sorted(set(dataList) - set(failList))
             if failList:
-                logger.info("%s returns %d definitions with failures: %r", procName, len(failList), failList)
+                logger.warning("%s returns %d definitions with failures: %r", procName, len(failList), failList)
 
             logger.debug("%s built target interactions for %d/%d entries failures %d", procName, len(retList), len(dataList), len(failList))
         except Exception as e:
@@ -278,7 +287,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
                             actD["action_type"], actD["moa"], actD["max_phase"] = self.getMechanismDetails(actD["molecule_chembl_id"])
                             targetD.setdefault(actD["target_chembl_id"], []).append(actD)
                     #
-                    allIdS.update(set(idList))
+                    allIdS.update(set(idList[ii: ii + chunkSize]))
                     #
                     logger.info("Completed chunk starting at (%d)", ii)
                     tS = datetime.datetime.now().isoformat()
@@ -402,11 +411,15 @@ class ChEMBLTargetActivityProvider(StashableBase):
                 logger.info("Begin outer chunk at ii %d (total targets %d)", ii, numToProcess)
                 tIdList = idList[ii: ii + chunkSize]
                 #
-                tD = self.__getActivityMulti(tIdList, atL, maxActivity=maxActivity, numProc=numProc, chunkSize=5)
+                tD, failIdL = self.__getActivityMulti(tIdList, atL, maxActivity=maxActivity, numProc=numProc, chunkSize=5)
                 targetD.update(tD)
                 #
                 tmpIdL.extend(tIdList)
-                allIdL.extend(tIdList)
+                # Don't record failed targets as tried, so that the next run (skip="tried") fetches them again
+                failIdS = set(failIdL)
+                allIdL.extend([tId for tId in tIdList if tId not in failIdS])
+                if failIdS:
+                    logger.warning("Outer chunk (%d) failed for (%d) targets (left untried, to retry next time): %r", ii, len(failIdS), sorted(failIdS))
                 #
                 logger.info("Completed outer chunk (%d) total processed targets (%d/%d)", ii, len(tmpIdL), numToProcess)
                 tS = datetime.datetime.now().isoformat()
@@ -418,7 +431,11 @@ class ChEMBLTargetActivityProvider(StashableBase):
         return ok
 
     def __getActivityMulti(self, idList, atL, maxActivity=None, numProc=2, chunkSize=5):
-        """ """
+        """Fetch activity data for the input target list in parallel.
+
+        Returns:
+            (dict, list): activity records keyed by target ID, and the target IDs that failed
+        """
         rD = {}
         ctaW = ChEMBLTargetActivityWorker()
         mpu = MultiProcUtil(verbose=True)
@@ -433,7 +450,7 @@ class ChEMBLTargetActivityProvider(StashableBase):
             rD.setdefault(targetId, []).append(actD)
         #
         logger.info("Completed with multi-proc status %r failures %r total targets with data (%d)", ok, len(failList), len(rD))
-        return rD
+        return rD, failList
 
     def __decodeComment(self, comment, separator="|"):
         dD = {}

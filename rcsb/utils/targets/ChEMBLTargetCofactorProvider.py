@@ -6,6 +6,8 @@
 #  20-Aug-2024 dwp Add support for loading and accessing data on MongoDB
 #  14-Jul-2026 dwp Split entity IDs on the last underscore and stop forcing upper case entity IDs, to handle short or
 #                  extended PDB IDs
+#  27-Nov-2026 dwp Fix the nM to M conversion of ChEMBL activity values (was 1e-8 instead of 1e-9, so every
+#                  pIC50/pKi/pEC50/pKd was 1.0 too low); move it to nanomolarToPValue()
 ##
 """
 Accessors for ChEMBL target cofactors.
@@ -175,7 +177,7 @@ class ChEMBLTargetCofactorProvider(StashableBase):
                         if taD["assay_type"] in ["B", "F"]:
                             try:
                                 if taD["standard_units"] == "nM" and taD["standard_value"] and float(taD["standard_value"]) > 0.0:
-                                    pV = -math.log10(float(taD["standard_value"]) * 10.0e-9)
+                                    pV = self.nanomolarToPValue(taD["standard_value"])
                                     actD = {
                                         "cofactor_id": taD["molecule_chembl_id"],
                                         "assay_id": taD["assay_chembl_id"],
@@ -258,6 +260,18 @@ class ChEMBLTargetCofactorProvider(StashableBase):
         ok = self.__mU.doExport(fp, {"version": vS, "created": tS, "cofactors": qD}, fmt="json", indent=3)
         #
         return ok
+
+    @staticmethod
+    def nanomolarToPValue(valueNm):
+        """Convert a concentration in nM to its negative base-10 logarithm in M (e.g., IC50 -> pIC50).
+
+        Args:
+            valueNm (float or str): concentration in nM (must be > 0)
+
+        Returns:
+            float: -log10(value in M), e.g., 1.0 nM -> 9.0
+        """
+        return -math.log10(float(valueNm) * 1.0e-9)
 
     def __addLocalIds(self, cfD, crmpObj=None):
         #

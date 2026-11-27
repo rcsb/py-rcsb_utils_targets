@@ -6,6 +6,7 @@
 #
 # Update:
 #  20-Oct-2026 dwp Look up entity IDs in the case of the test data (upper case is no longer forced)
+#  27-Nov-2026 dwp Add testNanomolarToPValue (checked against ChEMBL pchembl_value)
 #
 #
 ##
@@ -56,6 +57,14 @@ class ChEMBLTargetCofactorProviderTests(unittest.TestCase):
         endTime = time.time()
         logger.info("Completed %s at %s (%.4f seconds)", self.id(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - self.__startTime)
 
+    def testNanomolarToPValue(self):
+        """nM -> p-value conversion matches ChEMBL's own pchembl_value (ChEMBL API, 27-Nov-2026)."""
+        self.assertAlmostEqual(ChEMBLTargetCofactorProvider.nanomolarToPValue(1.0), 9.0)
+        self.assertAlmostEqual(ChEMBLTargetCofactorProvider.nanomolarToPValue("1000"), 6.0)
+        # (standard_value nM, pchembl_value) for Kd records of CHEMBL5725043 and CHEMBL6066321
+        for valueNm, pChembl in [(43.45, 7.36), (16.66, 7.78), (54473.49, 4.26)]:
+            self.assertEqual(round(ChEMBLTargetCofactorProvider.nanomolarToPValue(valueNm), 2), pChembl)
+
     def testBuildChEMBLTargetsCofactors(self):
         stfP = ChEMBLTargetCofactorProvider(cachePath=self.__cachePath, useCache=False)
         ok = stfP.testCache()
@@ -90,6 +99,7 @@ class ChEMBLTargetCofactorProviderTests(unittest.TestCase):
 
 def buildChEMBLTargetCofactors():
     suiteSelect = unittest.TestSuite()
+    suiteSelect.addTest(ChEMBLTargetCofactorProviderTests("testNanomolarToPValue"))
     suiteSelect.addTest(ChEMBLTargetCofactorProviderTests("testBuildChEMBLTargetsCofactors"))
     suiteSelect.addTest(ChEMBLTargetCofactorProviderTests("testChEMBLTargetsCofactorsDb"))
     return suiteSelect

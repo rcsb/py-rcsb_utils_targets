@@ -97,3 +97,8 @@
                        (e.g., pdb_00004hhb.A), with validation, gzipped stash fallbacks and source tracking for
                        SAbDab and Thera-SAbDab data; use the SAbDab2 data date as the SAbDab assignment/feature version.
                        NOTE: requires rcsb.utils.dictionary >= 1.43 in the loaders before SAbDab feature data is rebuilt
+  27-Nov-2026  - V0.94 ChEMBL activity: report the targets of a failed ChEMBL API chunk as failures and don't record
+                       them as tried ("all_ids"), so the next incremental run (skip="tried") fetches them again
+                       (previously a transient API error left those targets without activity data for good)
+  27-Nov-2026  - V0.95 ChEMBL cofactors: fix the nM to M conversion of activity values (1e-9, was 1e-8), so the
+                       pIC50/pKi/pEC50/pKd measurement values are no longer 1.0 too low
